@@ -1,0 +1,17 @@
+.register-button{
+    background-color: var(--esp-azul-institucional); /* azul oscuro */
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.register-button:hover{
+    color: var(--esp-azul-institucional);
+    background-color: var(--button-page-hover);
+}

@@ -1,0 +1,105 @@
+/* Header.css */
+.app-header {
+  background-color: var(--esp-azul-institucional);
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 4px solid var(--amarillo-espol);
+  max-height: 300px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo-container {
+  /* Estilos para cuando agregues la imagen */
+  max-height: 300px;
+}
+
+.logo-img{
+  height: 80px;
+}
+
+.logo-placeholder {
+  background-color: white;
+  color: #3b4d7a;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.header-subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.header-department {
+  font-size: 13px;
+  font-weight: 300;
+  margin: 0;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--amarillo-espol);
+  font-weight: bold;
+}
+
+.user-role {
+  font-size: 13px;
+  font-weight: 400;
+  opacity: 0.9;
+  color: var(--amarillo-espol)
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background-color: #fbbf24;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar svg {
+  color: #3b4d7a;
+}

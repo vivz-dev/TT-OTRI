@@ -11,3 +11,21 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.page-header-title{
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.page-header-subtitle{
+  font-size: 15px;
+  font-weight: normal;
+}
+
+.page-container{
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  background-color: #f8f8f8;
+}

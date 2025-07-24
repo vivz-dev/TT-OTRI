@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import './styles/App.css';
-import { PageLayout } from './components/PageLayout';
+import { PageLayout } from './components/Inicio/PageLayout';
 import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from '@azure/msal-react';
 import Button from 'react-bootstrap/Button';
-import { loginRequest } from './authConfig';
-import { callMsGraph } from './graph';
+import { loginRequest } from './components/Auth/authConfig';
+import { callMsGraph } from './components/Auth/graph';
 import { ProfileData } from './components/ProfileData';
 
+//rutas
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import RoleSelection from './components/Roles/rolePage';
+import Inicio from './components/Inicio/Inicio';   //  ←  path correcto
 
 /**
  * Renders information about the signed-in user or a button to retrieve data about the user
@@ -58,10 +62,25 @@ const MainContent = () => {
     );
 };
 
-export default function App() {
-    return (
-        <PageLayout>
-            <MainContent />
-        </PageLayout>
-    );
+// export default function App() {
+//     return (
+//         <RoleSelection>
+//         </RoleSelection>
+//         // <PageLayout>
+//         //     <MainContent />
+//         // </PageLayout>
+//     );
+// }
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<RoleSelection />} />
+        <Route path="/inicio" element={<Inicio />} />
+      </Routes>
+    </Router>
+  );
 }
+
+export default App;

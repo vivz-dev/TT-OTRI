@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+
+/* COLORES DE ESPOL */
+
+/* src/index.css  ───  Colores corporativos ESPOL */
+:root {
+  /* Facultades / institucionales */
+  --esp-azul-institucional: #243165; /* Azul ESPOL */
+  --esp-fadcom:            #E02185;  /* FADCOM */
+  --esp-fcnm:              #5B007B;  /* FCNM */
+  --esp-fcsh:              #FFDD00;  /* FCSH */
+  --esp-fcv:               #52AE32;  /* FCV */
+  --esp-fict:              #436035;  /* FICT */
+  --esp-fiec:              #7196AB;  /* FIEC */
+  --esp-fimcm:             #00B4C1;  /* FIMCM */
+  --esp-fimcp:             #1D6DB3;  /* FIMCP */
+
+  /* Neutros y complementarios */
+  --esp-gris-contorno:     #DBDBDB;
+  --esp-comp-1:            #a9c7e0;
+  --esp-comp-2:            #0094C8;
+  --esp-comp-3:            #28BED1;
+  --esp-comp-4:            #6CC427;
+  --esp-comp-5:            #EEC427;
+  --esp-comp-6:            #FF938C;
+  --esp-comp-7:            #CA83C0;
+
+  --amarillo-espol: #fbbf24;
+
+  /* Botones */
+  --sidebar-btn-hover:     #e3ecff;
+  --button-page-active: rgb(17, 30, 61);
+  --button-page-hover: #92aeeb;
+
+}
+
+/* (Opcional) helpers de texto y fondo para que no tengas que repetir var() */
+.text-azul       { color: var(--esp-azul-institucional); }
+.bg-azul         { background-color: var(--esp-azul-institucional); }
+.border-gris     { border-color: var(--esp-gris-contorno); }
+
+html, body {
+  font-family: "Nunito", sans-serif;
+}
+
+ 
+/* #243165  Azul institucional
+ 
+#E02185 -FADCOM
+ 
+#5B007B -FCNM
+ 
+#FFDD00 -FCSH
+ 
+#52AE32 -FCV
+ 
+#436035 -FICT
+ 
+#7196AB -FIEC
+ 
+#00B4C1 -FIMCM
+ 
+#1D6DB3 -FIMCP
+ 
+#DBDBDB Gris para contornos de tablas
+Colores complementarios para usar
+ 
+#006EC8
+ 
+#0094C8
+ 
+#28BED1
+ 
+#6CC427
+ 
+#EEC427
+ 
+#FF938C
+ 
+#CA83C0 */

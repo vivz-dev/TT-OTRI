@@ -1,0 +1,6 @@
+.card-scroll{
+    /* border: 1px daßshed red; */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

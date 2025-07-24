@@ -30,3 +30,5 @@ export const SignOutButton = () => {
         </DropdownButton>
     )
 }
+
+export default SignOutButton;
