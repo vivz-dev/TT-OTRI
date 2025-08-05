@@ -5,6 +5,8 @@ import './styles/index.css';
 import App from './App';
 import { PublicClientApplication, InteractionRequiredAuthError } from '@azure/msal-browser';
 import { MsalProvider } from '@azure/msal-react';
+import { Provider } from 'react-redux';
+import { store } from './store';
 import { msalConfig, loginRequest } from './components/Auth/authConfig';
 import './index.css';
 
@@ -53,21 +55,15 @@ async function bootstrap() {
     }
 
     ReactDOM.createRoot(rootEl).render(
-        <React.StrictMode>
-            <MsalProvider instance={msalInstance}>
-                <App />
-            </MsalProvider>
-        </React.StrictMode>
-
-    )
+    <React.StrictMode>
+        <Provider store={store}>
+        <MsalProvider instance={msalInstance}>
+            <App />
+        </MsalProvider>
+        </Provider>
+    </React.StrictMode>
+    );
     
 }
-// root.render(
-//     <React.StrictMode>
-//         <MsalProvider instance={msalInstance}>
-//             <App />
-//         </MsalProvider>
-//     </React.StrictMode>
-// );
 
 bootstrap();

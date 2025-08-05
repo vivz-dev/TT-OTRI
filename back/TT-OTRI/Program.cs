@@ -7,6 +7,11 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(o =>
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddCors(o =>
+    o.AddDefaultPolicy(p =>
+        p.AllowAnyHeader()
+            .AllowAnyMethod()
+            .WithOrigins("http://localhost:5173", "http://localhost:3000")));
 builder.Services.AddInfrastructure();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -21,5 +26,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.MapControllers();
 app.Run();

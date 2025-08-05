@@ -1,63 +1,59 @@
 import './ResolucionesPage.css';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
+import { useGetResolutionsQuery } from '../../services/resolutionsApi';
+
+/* --- helpers locales --- */
+const estadoToColor = (estado) =>
+  estado === 'Vigente' ? '#4ade80' : '#f87171';
+
+/* Formatea fecha ISO a “16 de septiembre de 2025” */
+const fmtFecha = (iso) =>
+  new Date(iso).toLocaleDateString('es-EC', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
 
 const ResolucionesPage = ({ onRegister }) => {
+  /* 1️⃣  Hook generado por RTK Query */
+  const { data: apiData = [], isLoading, error } = useGetResolutionsQuery();
+
+  /* 2️⃣  Mapea propiedades que solo el front necesita */
+  const dummyData = useMemo(
+    () =>
+      apiData.map((r) => ({
+        ...r,
+        estadoColor: estadoToColor(r.estado),
+        fecha: fmtFecha(r.fechaResolucion),
+        iconoFecha: 'calendar',
+        usuario: r.usuarioRegistrador,
+      })),
+    [apiData]
+  );
+
+  /* 3️⃣  Filtros locales (no van al store) */
   const [filter, setFilter] = useState('todas');
   const [searchText, setSearchText] = useState('');
 
+  if (isLoading) return <p>Cargando…</p>;
+  if (error)     return <p>Error 😢</p>;
+
+  console.log(apiData)
+
   const filterOptions = [
-    { label: 'Todas', value: 'todas' },
-    { label: 'Vigentes', value: 'Vigente' },
-    { label: 'Derogadas', value: 'Derogada' }
+    { label: 'Todas',     value: 'todas'   },
+    { label: 'Vigentes',  value: 'Vigente' },
+    { label: 'Derogadas', value: 'Derogada'},
   ];
-
-  const dummyData = [
-  {
-    id: 1,
-    numero: '24-07-228',
-    estado: 'Vigente',
-    estadoColor: '#4ade80',
-    titulo: 'Resolución 1',
-    descripcion: 'Supongamos que es una descripción muy larga... También puede ser el título del documento de resolución.',
-    fecha: '16 de septiembre de 2025',
-    iconoFecha: 'calendar',
-    usuario: 'Viviana Yolanda Vera Falconí',
-    completed: true,
-  },
-  {
-    id: 2,
-    numero: '22-04-386',
-    estado: 'Derogada',
-    estadoColor: '#f87171',
-    titulo: 'Resolución derogada',
-    descripcion: 'Distribución cancelada. Este documento ya no se encuentra vigente.',
-    fecha: '10 de enero de 2023',
-    iconoFecha: 'calendar',
-    usuario: 'Juan Pérez',
-    completed: false,
-  },
-  {
-    id: 3,
-    numero: '21-12-118',
-    estado: 'Vigente',
-    estadoColor: '#4ade80',
-    titulo: 'Convenio Internacional',
-    descripcion: 'Documento de colaboración internacional con participación activa en investigaciones.',
-    fecha: '01 de julio del 2024',
-    iconoFecha: 'calendar',
-    usuario: 'María López',
-    completed: true,
-  },
-];
-
 
   return (
     <main className="page-container">
-      <PageHeader 
-      title="Resoluciones"
-      subtitle="Gestiona y consulta todas las resoluciones."
-    />
+      <PageHeader
+        title="Resoluciones"
+        subtitle="Gestiona y consulta todas las resoluciones."
+      />
+
       <ActionBar
         filter={filter}
         setFilter={setFilter}
@@ -66,6 +62,7 @@ const ResolucionesPage = ({ onRegister }) => {
         setSearchText={setSearchText}
         onRegister={onRegister}
       />
+
       <CardScroll
         filter={filter}
         searchText={searchText}
@@ -73,7 +70,6 @@ const ResolucionesPage = ({ onRegister }) => {
       />
     </main>
   );
-}
-
+};
 
 export default ResolucionesPage;
