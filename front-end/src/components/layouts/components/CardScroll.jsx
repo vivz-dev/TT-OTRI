@@ -14,9 +14,17 @@ const CardScroll = ({ filter, searchText, dummyData }) => {
       (item.titulo ?? '').toLowerCase().includes(search) ||
       (item.descripcion ?? '').toLowerCase().includes(search) ||
       (item.numero ?? '').toLowerCase().includes(search);
-
     return matchEstado && matchTexto;
   });
+
+  /* ➜  Si no hay nada que mostrar */
+  if (filtered.length === 0) {
+    return (
+      <div className="card-scroll empty">
+        <p className="empty-msg">No hay datos para mostrar</p>
+      </div>
+    );
+  }
 
   return (
     <div className="card-scroll">

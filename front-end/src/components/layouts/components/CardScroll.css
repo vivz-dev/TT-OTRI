@@ -4,3 +4,15 @@
     flex-direction: column;
     gap: 10px;
 }
+
+.card-scroll.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;       /* espacio mínimo */
+}
+
+.empty-msg {
+  font-size: 1.1rem;
+  color: #666;
+}

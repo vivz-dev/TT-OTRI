@@ -3,11 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetResolutionsQuery } from '../../services/resolutionsApi';
 
-/* --- helpers locales --- */
-const estadoToColor = (estado) =>
-  estado === 'Vigente' ? '#4ade80' : '#f87171';
-
-/* Formatea fecha ISO a “16 de septiembre de 2025” */
+/* --- helpers --- */
+const estadoToColor = (e) => (e === 'Vigente' ? '#4ade80' : '#f87171');
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString('es-EC', {
     day: '2-digit',
@@ -16,35 +13,32 @@ const fmtFecha = (iso) =>
   });
 
 const ResolucionesPage = ({ onRegister }) => {
-  /* 1️⃣  Hook generado por RTK Query */
-  const { data: apiData = [], isLoading, error } = useGetResolutionsQuery();
+  const { data = [], isLoading, error } = useGetResolutionsQuery();
 
-  /* 2️⃣  Mapea propiedades que solo el front necesita */
+  /* ➜  Mapea solo cuando hay data válida */
   const dummyData = useMemo(
     () =>
-      apiData.map((r) => ({
+      (error ? [] : data).map((r) => ({
         ...r,
         estadoColor: estadoToColor(r.estado),
         fecha: fmtFecha(r.fechaResolucion),
         iconoFecha: 'calendar',
         usuario: r.usuarioRegistrador,
       })),
-    [apiData]
+    [data, error]
   );
 
-  /* 3️⃣  Filtros locales (no van al store) */
+  /* Filtros locales */
   const [filter, setFilter] = useState('todas');
   const [searchText, setSearchText] = useState('');
 
+  /* Loader a pantalla completa */
   if (isLoading) return <p>Cargando…</p>;
-  if (error)     return <p>Error 😢</p>;
-
-  console.log(apiData)
 
   const filterOptions = [
-    { label: 'Todas',     value: 'todas'   },
-    { label: 'Vigentes',  value: 'Vigente' },
-    { label: 'Derogadas', value: 'Derogada'},
+    { label: 'Todas', value: 'todas' },
+    { label: 'Vigentes', value: 'Vigente' },
+    { label: 'Derogadas', value: 'Derogada' },
   ];
 
   return (
@@ -63,6 +57,7 @@ const ResolucionesPage = ({ onRegister }) => {
         onRegister={onRegister}
       />
 
+      {/* CardScroll recibirá [] si hay error o lista vacía */}
       <CardScroll
         filter={filter}
         searchText={searchText}
