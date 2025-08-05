@@ -1,12 +1,35 @@
 namespace TT_OTRI.Domain;
 
-public enum ResolutionStatus { Borrador, Vigente, Archivada }
+/// <summary>
+/// Estados válidos de una resolución.
+/// </summary>
+public enum ResolutionStatus
+{
+    Vigente,
+    Derogada
+}
 
 public class Resolution
 {
-    public Guid Id { get; init; } = Guid.NewGuid();
-    public string Titulo { get; set; } = string.Empty;
-    public ResolutionStatus Estado { get; set; } = ResolutionStatus.Borrador;
-    public bool Completed { get; set; }
-    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+    // --- Identidad ---
+    public int    Id      { get; set; }
+    public string Numero  { get; set; } = string.Empty; // "24-07-228"
+
+    // --- Estado y color asociado ---
+    public ResolutionStatus Estado { get; set; } = ResolutionStatus.Vigente;
+
+    // --- Texto principal ---
+    public string Titulo      { get; set; } = string.Empty;
+    public string Descripcion { get; set; } = string.Empty;
+
+    // --- Fechas ---
+    public DateTime FechaResolucion { get; set; }       
+    public DateTime FechaVigencia{ get; set; }       // 2025-09-16
+
+    // --- Metadatos ---
+    public string UsuarioRegistrador { get; set; } = string.Empty;
+    public bool   Completed          { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; }  = DateTime.UtcNow;
 }
