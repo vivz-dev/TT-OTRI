@@ -1,0 +1,18 @@
+.btn-finish {
+  background-color: #2eaf2e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-finish:hover {
+  background-color: #1e7e1e;
+}

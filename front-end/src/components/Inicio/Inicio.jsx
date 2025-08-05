@@ -31,7 +31,7 @@ const Inicio = () => {
       
       <div className="app-body">
         <Sidebar onMenuSelect={handleMenuSelect} />
-        <Page activeSection={activeSection} />
+        <Page activeSection={activeSection} setActiveSection={setActiveSection}/>
       </div>
     </div>
   );

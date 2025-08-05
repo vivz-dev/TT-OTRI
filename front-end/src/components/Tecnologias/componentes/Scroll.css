@@ -1,0 +1,91 @@
+/* contenedor principal */
+.step-scroll {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+/* botón siguiente */
+.step-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* deja que el botón de la izquierda se quede a la izquierda */
+.step-actions .left .register-button {
+  margin-left: 0 !important;   /* anula el auto */
+  margin-right: auto !important;
+}
+
+/* el de la derecha conserva el comportamiento original */
+.step-actions .right .register-button {
+  margin-left: auto !important;
+  margin-right: 10px !important; /* ya era así, por claridad */
+}
+
+
+.btn-next {
+  background: #1e2a5a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.8rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-next:hover {
+  background: #0f172a;
+}
+
+/* ---------- STEP BAR ---------- */
+.stepper {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+/* cada celda flex ocupa el mismo espacio */
+.step {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* círculo */
+.step::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #d1d5db;              /* gris */
+  position: relative;
+  z-index: 2;
+}
+
+/* conector entre círculos */
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;                        /* desde el centro del círculo */
+  width: calc(100% - 24px);         /* hasta centro del siguiente */
+  height: 2px;
+  background: #d1d5db;              /* gris */
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* estados — azul institucional */
+.step.active::before,
+.step.completed::before {
+  background: #1e3a8a;
+}
+
+.step.completed:not(:last-child)::after {
+  background: #1e3a8a;
+}

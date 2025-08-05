@@ -1,0 +1,162 @@
+/* contenedor principal */
+.distribucion-card {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 12px;
+  padding: 1.8rem;
+  margin-top: 2rem;
+  font-family: inherit;
+}
+
+/* -------- Monto -------- */
+.monto-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.monto-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.monto-input input {
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  width: 6rem;
+}
+
+.limite-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+/* -------- Tabla distribución -------- */
+.tabla-titulo {
+  text-align: center;
+  margin: 0.5rem 0 1rem;
+  font-weight: 600;
+}
+
+.tabla-distribucion {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.tabla-distribucion th,
+.tabla-distribucion td {
+  padding: 0.9rem 0.8rem;
+}
+
+.beneficiarios {
+  background: #f6f8fa;
+  font-size: 1.1rem;
+  text-align: center;
+  border-bottom: 1px solid #dcdcdc;
+}
+
+.nombre-col {
+  width: 60%;
+}
+
+.input-col input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  text-align: right;
+}
+
+.input-select select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.fila-subtotal {
+  background: #d9e2ff;          /* azul neutro, elegante */
+  font-weight: 500;
+}
+
+.subtotal {
+  text-align: right;
+  color: #364b6e;
+}
+
+.simbolo {
+  width: 3%;
+  text-align: left;
+}
+
+/* -------- Total -------- */
+.total-label {
+  padding-top: 1.2rem;
+  font-weight: 600;
+  border-top: 2px solid #e2e2e2;
+}
+
+.total-valor {
+  padding-top: 1.2rem;
+  text-align: right;
+  font-weight: 700;
+  border-top: 2px solid #e2e2e2;
+}
+
+/* -------- Botón añadir -------- */
+.btn-add {
+  margin: 2rem auto 0;
+  display: block;
+  background: #d9e2ff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+
+.btn-add:hover {
+  background: #b6c7ff;
+}
+
+.total-ok    { color: #15803d; }  /* verde */
+.total-error { color: #dc2626; }  /* rojo  */
+
+/* columna del icono */
+.delete-col {
+  width: 35px;
+  text-align: center;
+}
+
+.btn-delete {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem;
+  color: #9ca3af;          /* gris */
+  transition: color 0.2s;
+}
+
+.btn-delete:hover {
+  color: #dc2626;          /* rojo al pasar el mouse */
+}
+
+.subtotales-error {
+  color: #dc2626;          /* rojo */
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0 0;
+  text-align: right;       /* alinea con las cifras si lo colocas bajo la tabla */
+}
+
+.field-error {
+  border: 1.5px solid #dc2626 !important;
+}

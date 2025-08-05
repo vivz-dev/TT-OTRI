@@ -1,0 +1,12 @@
+/* src/components/RegistrarResolucionHeader.css */
+.registrar-resolucion-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* .back-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+} */

@@ -3,7 +3,7 @@ import './ActionBar.css'
 import * as Buttons from '../buttons/buttons_index';
 import SearchInput from './SearchInput'; // asegúrate que la ruta sea correcta
 
-const ActionBar = ({ filter, setFilter, options, searchText, setSearchText }) =>{
+const ActionBar = ({ filter, setFilter, options, searchText, setSearchText, onRegister }) =>{
 
 return (
   <section className="action-bar">
@@ -28,7 +28,7 @@ return (
     </div>
 
     {/* Botón Registrar */}
-    <Buttons.RegisterButton/>
+    <Buttons.RegisterButton onClick={onRegister} text={"+ Registrar"}/>
   </section>
 );
 

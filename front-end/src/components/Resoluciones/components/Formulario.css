@@ -1,0 +1,41 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: white;
+}
+
+.num-resolucion {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+input,
+textarea {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+textarea {
+  resize: none;
+  height: 100px;
+}
+
+.char-count {
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: -0.5rem;
+}
+
+.error {
+  border: 1.5px solid var(--error-msg);
+}
+
+.error-msg {
+  color: var(--error-msg);
+  font-size: 0.85rem;
+  margin-top: -0.5rem;
+}

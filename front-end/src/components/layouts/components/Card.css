@@ -16,8 +16,9 @@
 
 .card-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: bold;
   margin: 0;
+  text-transform: capitalize;
 }
 
 .card-status {
@@ -38,6 +39,7 @@
   font-size: 16px;
   font-weight: 600;
   margin: 12px 0 6px;
+  text-transform: capitalize;
 }
 
 .card-description {
@@ -53,22 +55,25 @@
   border-top: 1px solid #e5e7eb;
   padding-top: 12px;
   gap: 10px;
+  color: #898989;
+  font-size: small ;
 }
 
 .footer-item {
   display: flex;
   align-items: center;
-  color: #6b7280;
-  font-size: 14px;
+  gap: 0.25rem;
 }
 
 .icon {
-  margin-right: 8px;
-  font-size: 16px;
-  display: inline-flex;
-  align-items: center;
+  display: flex;
 }
+
 
 .footer-extra {
   margin-left: auto;
+}
+
+.field-error {
+  border: 1.5px solid #dc2626 !important;
 }

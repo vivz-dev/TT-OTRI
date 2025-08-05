@@ -1,22 +1,9 @@
 import React from 'react';
 import './Page.css';
 import ResolucionesPage from '../../Resoluciones/ResolucionesPage'
+import RegistrarResolucionPage from '../../Resoluciones/RegistrarResolucionPage';
 import TecnologiasPage from '../../Tecnologias/TecnologiasPage'
-
-// Componentes de páginas individuales
-// const ResolucionesPage = () => (
-//   <div className="page-content">
-//     <h2>Resoluciones</h2>
-//     <p>Contenido de resoluciones...</p>
-//   </div>
-// );
-
-// const TecnologiasPage = () => (
-//   <div className="page-content">
-//     <h2>Tecnologías/Know-how</h2>
-//     <p>Contenido de tecnologías...</p>
-//   </div>
-// );
+import RegistrarTecnologiasPage from '../../Tecnologias/RegistrarTecnologiasPage'
 
 const TransferenciaTecnologicaPage = () => (
   <div className="page-content">
@@ -46,13 +33,17 @@ const AjustesPage = () => (
   </div>
 );
 
-const Page = ({ activeSection }) => {
+const Page = ({ activeSection, setActiveSection }) => {
   const renderContent = () => {
     switch (activeSection) {
+      case 'registrar-resolucion':
+        return <RegistrarResolucionPage onBack={() => setActiveSection('resoluciones')} />;
       case 'resoluciones':
-        return <ResolucionesPage />;
+        return <ResolucionesPage onRegister={() => setActiveSection('registrar-resolucion')}/>;
       case 'tecnologias':
-        return <TecnologiasPage />;
+        return <TecnologiasPage onRegister={() => setActiveSection('registrar-tecnologia')}/>;
+      case 'registrar-tecnologia':
+        return <RegistrarTecnologiasPage onBack={() => setActiveSection('tecnologias')} />;
       case 'transferencia-tecnologica':
         return <TransferenciaTecnologicaPage />;
       case 'pagos':

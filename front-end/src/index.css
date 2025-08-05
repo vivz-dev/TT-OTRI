@@ -37,6 +37,8 @@
   --button-page-active: rgb(17, 30, 61);
   --button-page-hover: #92aeeb;
 
+  --error-msg: #b10707;
+
 }
 
 /* (Opcional) helpers de texto y fondo para que no tengas que repetir var() */
