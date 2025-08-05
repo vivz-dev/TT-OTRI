@@ -9,7 +9,7 @@ const Inicio = () => {
   const { accounts } = useMsal();
   const account = accounts[0];
 
-  console.log(account)
+  console.log("account ->",account)
   
   // Obtener el rol del localStorage
   const userRole = localStorage.getItem('selectedRole') || 'Admin de Sistema';
