@@ -20,6 +20,7 @@ const DatosTecnologia = forwardRef((_, ref) => {
   const [tiposProteccion, setTiposProteccion] = useState({});
   const [cotitularidad, setCotitularidad] = useState(null);
   const [archivosPorProteccion, setArchivosPorProteccion] = useState({});
+  const [fechasConcesion, setFechasConcesion] = useState({});
   const [errores, setErrores] = useState({
     nombre: false,
     descripcion: false,
@@ -34,7 +35,12 @@ const DatosTecnologia = forwardRef((_, ref) => {
     archivos: false,
     cotitularidad: false
   });
-
+  const handleFechaChange = (index, fecha) => {
+    setFechasConcesion((prev) => ({
+      ...prev,
+      [index]: fecha
+    }));
+  };
 
   const handleCheckboxChange = (index, checked) => {
     setTiposProteccion((prev) => {
@@ -75,6 +81,20 @@ const DatosTecnologia = forwardRef((_, ref) => {
         }
       }
 
+      let fechasOk = true;
+      if (!seleccionoNoAplica) {
+        for (const idx of Object.keys(tiposProteccion)) {
+          const archivos = archivosPorProteccion[idx] || [];
+          const fecha = fechasConcesion[idx];
+          if (
+            archivos.length === 0 || !archivos.some(a => a.file) || !fecha
+          ) {
+            fechasOk = false;
+            break;
+          }
+        }
+      }
+
       const cotitularidadOk = cotitularidad !== null;
 
       setErrores({
@@ -82,7 +102,8 @@ const DatosTecnologia = forwardRef((_, ref) => {
         descripcion: !descripcionOk,
         tipoProteccion: !seleccionoAlMenosUno,
         archivos: !archivosOk,
-        cotitularidad: !cotitularidadOk
+        cotitularidad: !cotitularidadOk,
+        fecha: !fechasOk,
       });
 
       // Agitar sólo los bloques con error
@@ -158,6 +179,8 @@ const DatosTecnologia = forwardRef((_, ref) => {
               disabled={tiposProteccion[7] && index !== 7}
               onChange={(checked) => handleCheckboxChange(index, checked)}
               onArchivoChange={(archivos) => handleArchivoChange(index, archivos)}
+              onFechaChange={(fecha) => handleFechaChange(index, fecha)}
+              fechaConcesion={fechasConcesion[index]}
             />
           ))}
         </div>

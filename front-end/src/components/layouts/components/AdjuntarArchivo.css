@@ -9,6 +9,7 @@
 .adjuntar-container h4 {
   margin-bottom: 0.5rem;
   font-weight: bold;
+  width: 100%;
 }
 
 .descripcion {

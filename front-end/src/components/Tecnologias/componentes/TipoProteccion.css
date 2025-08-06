@@ -10,12 +10,16 @@
   font-size: 1rem;
 }
 
+.proteccion-container{
+  background: white;
+  margin: 25px;
+}
+
 .archivos-container {
   margin-top: 0.8rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  padding-left: 1.8rem;
 }
 
 .archivo-item {

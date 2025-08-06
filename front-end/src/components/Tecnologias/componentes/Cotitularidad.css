@@ -1,0 +1,36 @@
+/* src/pages/Resoluciones/components/Cotitularidad.css */
+
+/* contenedor scroll para mantener la tabla dentro de la card */
+.tabla-cotitular-scroll {
+  overflow-x: auto;     /* scroll solo si lo necesita */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* tabla con ancho mínimo razonable */
+.cotitular-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.95rem;
+}
+
+/* celdas */
+.cotitular-table th,
+.cotitular-table td {
+  border: 1px solid #ccc;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+/* inputs → que no rompan la fila */
+.cotitular-table input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* mensaje de error */
+.error-msg {
+  color: var(--error-msg);
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
