@@ -26,24 +26,25 @@ const Cotitularidad = () => {
   ]);
   const [errorPorcentaje, setErrorPorcentaje] = useState(false);
 
-  /* ───────── helpers ───────── */
-  /** Actualiza una propiedad (incluso anidada) de la fila */
+  /* ───────── helper ───────── */
   const updateFila = (idx, path, value) =>
-    setFilas((prev) =>
+    setFilas(prev =>
       prev.map((f, i) => {
         if (i !== idx) return f;
-        const copia = structuredClone(f);            // deep-clone
-        const keys = path.split('.');                // ej. "representante.nombre"
-        let ref = copia;
-        keys.slice(0, -1).forEach((k) => (ref = ref[k]));
+        const clone = structuredClone(f);
+        const keys = path.split('.');
+        let ref = clone;
+        keys.slice(0, -1).forEach(k => (ref = ref[k]));
         ref[keys.at(-1)] = value;
-        return copia;
+        return clone;
       }),
     );
 
-  /** Comprueba que la suma de porcentajes sea exactamente 100 */
-  const validarPorcentajeTotal = (lista) => {
-    const sum = lista.reduce((acc, f) => acc + Number(f.representante.porcentaje || 0), 0);
+  const validarTotal = lista => {
+    const sum = lista.reduce(
+      (acc, f) => acc + Number(f.representante.porcentaje || 0),
+      0,
+    );
     setErrorPorcentaje(sum !== 100);
   };
 
@@ -56,10 +57,9 @@ const Cotitularidad = () => {
   };
 
   const handlePorcentajeChange = (idx, value) => {
-    // 1–100 únicamente
-    if (value === '' || (/^(100|[1-9]?\d)$/).test(value)) {
+    if (value === '' || /^(100|[1-9]?\d)$/.test(value)) {
       updateFila(idx, 'representante.porcentaje', value);
-      validarPorcentajeTotal(
+      validarTotal(
         filas.map((f, i) =>
           i === idx ? { ...f, representante: { ...f.representante, porcentaje: value } } : f,
         ),
@@ -70,7 +70,13 @@ const Cotitularidad = () => {
   const handleAddFila = () => {
     const nuevaLista = [...filas, structuredClone(NUEVA_FILA)];
     setFilas(nuevaLista);
-    validarPorcentajeTotal(nuevaLista);
+    validarTotal(nuevaLista);
+  };
+
+  const handleRemoveFila = idx => {
+    const lista = filas.filter((_, i) => i !== idx);
+    setFilas(lista);
+    validarTotal(lista);
   };
 
   /* ───────── render ───────── */
@@ -79,8 +85,8 @@ const Cotitularidad = () => {
       <div className="form-header">
         <h1 className="titulo-principal-form">Cotitularidad</h1>
         <p className="subtitulo-form">
-          Complete los datos de las instituciones cotitulares según lo establecido en el acuerdo
-          de cotitularidad.
+          Complete los datos de las instituciones cotitulares según lo establecido en el acuerdo de
+          cotitularidad.
         </p>
       </div>
 
@@ -100,6 +106,7 @@ const Cotitularidad = () => {
                 <th>Correo institucional</th>
                 <th>Teléfono de contacto</th>
                 <th>% titularidad</th>
+                <th /> {/* columna icono */}
               </tr>
             </thead>
 
@@ -120,6 +127,7 @@ const Cotitularidad = () => {
                     index={idx}
                     onChange={(path, val) => updateFila(idx, path, val)}
                     onPorcentajeChange={handlePorcentajeChange}
+                    onDelete={() => handleRemoveFila(idx)}
                   />
                 ),
               )}
@@ -127,7 +135,7 @@ const Cotitularidad = () => {
 
             <tfoot>
               <tr>
-                <td colSpan={6} style={{ textAlign: 'right' }}>
+                <td colSpan={7} style={{ textAlign: 'right' }}>
                   <strong>Total de cotitularidad</strong>
                 </td>
                 <td>

@@ -34,3 +34,25 @@
   font-weight: 600;
   margin: 0.5rem 0;
 }
+
+/* ancho fijo de la columna ícono */
+.cotitular-table th:last-child,
+.cotitular-table td:last-child {
+  width: 38px;
+}
+
+/* botón eliminar */
+.delete-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  line-height: 0;
+  color: #dc2626;              /* rojo suave */
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+
+.delete-btn:hover {
+  transform: scale(1.15);
+}
+

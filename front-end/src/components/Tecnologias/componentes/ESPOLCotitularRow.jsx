@@ -12,7 +12,7 @@ const ESPOLCotitularRow = ({ fila, index, onSelectUsuario, onPorcentajeChange })
 
     <td>
       <div className="correo-institucional-wrapper">
-        <CorreoESPOLInput onSelectUsuario={(u) => onSelectUsuario(u, index)} />
+        <CorreoESPOLInput onSelectUsuario={u => onSelectUsuario(u, index)} />
         <span className="correo-dominio">@espol.edu.ec</span>
       </div>
     </td>
@@ -25,11 +25,14 @@ const ESPOLCotitularRow = ({ fila, index, onSelectUsuario, onPorcentajeChange })
         inputMode="numeric"
         pattern="[0-9]*"
         value={fila.representante.porcentaje}
-        onChange={(e) => onPorcentajeChange(index, e.target.value)}
+        onChange={e => onPorcentajeChange(index, e.target.value)}
         placeholder="Ej: 50"
         className="input-porcentaje"
       />
     </td>
+
+    {/* celda vacía para alinear con el botón de otras filas */}
+    <td />
   </tr>
 );
 
