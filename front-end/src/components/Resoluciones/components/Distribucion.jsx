@@ -1,19 +1,18 @@
+// src/components/Distribucion.jsx
 import React, {
   useState,
   useMemo,
   forwardRef,
   useImperativeHandle,
 } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, MinusCircle } from 'lucide-react';
 import './Distribucion.css';
 
-const Distribucion = forwardRef((_, ref) => {
-  /* ---------- estado ---------- */
+const Distribucion = forwardRef(({ onDelete }, ref) => {
   const [pctAutores, setPctAutores] = useState('');
   const [centros, setCentros] = useState([{ institucion: '', porcentaje: '' }]);
-  const [showErrors, setShowErrors] = useState(false); // para remarcar campos
+  const [showErrors, setShowErrors] = useState(false);
 
-  /* ---------- helpers ---------- */
   const clamp = (v) => {
     if (v === '') return '';
     const n = Number(v);
@@ -36,7 +35,6 @@ const Distribucion = forwardRef((_, ref) => {
   const removeCentro = (i) =>
     setCentros((prev) => prev.filter((_, idx) => idx !== i));
 
-  /* ---------- subtotal / total ---------- */
   const subtotalAutores = pctAutores === '' ? 0 : Number(pctAutores);
   const subtotalCentros = useMemo(
     () =>
@@ -49,7 +47,6 @@ const Distribucion = forwardRef((_, ref) => {
   const total = subtotalAutores + subtotalCentros;
   const totalClass = total === 100 ? 'total-ok' : 'total-error';
 
-  /* ---------- VALIDACIÓN expuesta ---------- */
   useImperativeHandle(ref, () => ({
     validate() {
       const autoresOk = pctAutores !== '';
@@ -57,29 +54,33 @@ const Distribucion = forwardRef((_, ref) => {
         (c) => c.institucion !== '' && c.porcentaje !== ''
       );
       const totalOk = total === 100;
-
       const valido = autoresOk && centrosOk && totalOk;
-      setShowErrors(!valido); // muestra/oculta bordes rojos
+      setShowErrors(!valido);
       return valido;
     },
   }));
 
-  /* ---------- UI ---------- */
   return (
     <div className="distribucion-card">
+      {/* BOTÓN ELIMINAR CARD */}
+      <div className="distribucion-delete-top">
+        <button className="btn-delete-top" onClick={onDelete}>
+          <MinusCircle size={18} />
+        </button>
+      </div>
+
       <h3 className="tabla-titulo">Tabla de porcentajes de distribución</h3>
 
       <table className="tabla-distribucion">
         <thead>
           <tr>
             <th colSpan={4} className="beneficiarios">
-              Lista de beneficiarios
+              Listado de beneficiarios
             </th>
           </tr>
         </thead>
 
         <tbody>
-          {/* autores */}
           <tr>
             <td className="nombre-col">Autores / inventores</td>
             <td className="input-col">
@@ -98,7 +99,6 @@ const Distribucion = forwardRef((_, ref) => {
             <td />
           </tr>
 
-          {/* subtotal autores */}
           <tr className="fila-subtotal">
             <td>Subtotal de autores / inventores</td>
             <td className="subtotal" colSpan={3}>
@@ -106,18 +106,13 @@ const Distribucion = forwardRef((_, ref) => {
             </td>
           </tr>
 
-          {/* instituciones */}
           {centros.map((c, idx) => (
             <tr key={idx}>
               <td className="input-select">
                 <select
                   value={c.institucion}
-                  className={
-                    showErrors && c.institucion === '' ? 'field-error' : ''
-                  }
-                  onChange={(e) =>
-                    updateCentro(idx, 'institucion', e.target.value)
-                  }
+                  className={showErrors && c.institucion === '' ? 'field-error' : ''}
+                  onChange={(e) => updateCentro(idx, 'institucion', e.target.value)}
                 >
                   <optgroup label="Seleccionar Institución...">
                     <option value="Unidades/Centros">Unidades/Centros</option>
@@ -137,29 +132,21 @@ const Distribucion = forwardRef((_, ref) => {
                   step="1"
                   value={c.porcentaje}
                   placeholder="0"
-                  className={
-                    showErrors && c.porcentaje === '' ? 'field-error' : ''
-                  }
-                  onChange={(e) =>
-                    updateCentro(idx, 'porcentaje', e.target.value)
-                  }
+                  className={showErrors && c.porcentaje === '' ? 'field-error' : ''}
+                  onChange={(e) => updateCentro(idx, 'porcentaje', e.target.value)}
                 />
               </td>
 
               <td className="simbolo">%</td>
 
               <td className="delete-col">
-                <button
-                  className="btn-delete"
-                  onClick={() => removeCentro(idx)}
-                >
+                <button className="btn-delete" onClick={() => removeCentro(idx)}>
                   <Trash2 size={16} />
                 </button>
               </td>
             </tr>
           ))}
 
-          {/* subtotal centros */}
           <tr className="fila-subtotal">
             <td>Subtotal de instituciones / centros</td>
             <td className="subtotal" colSpan={3}>

@@ -40,13 +40,14 @@
 .tabla-titulo {
   text-align: center;
   margin: 0.5rem 0 1rem;
-  font-weight: 600;
+  font-weight: bold;
+  font-size: large;
 }
 
 .tabla-distribucion {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size:medium;
 }
 
 .tabla-distribucion th,
@@ -55,8 +56,10 @@
 }
 
 .beneficiarios {
-  background: #f6f8fa;
+  background: var(--esp-azul-institucional);
+  color: white;
   font-size: 1.1rem;
+  text-transform: uppercase;
   text-align: center;
   border-bottom: 1px solid #dcdcdc;
 }
@@ -159,4 +162,24 @@
 
 .field-error {
   border: 1.5px solid #dc2626 !important;
+}
+
+
+.distribucion-delete-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: -1rem;
+}
+
+.btn-delete-top {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s;
+  padding: 0.2rem;
+}
+
+.btn-delete-top:hover {
+  color: #dc2626;
 }

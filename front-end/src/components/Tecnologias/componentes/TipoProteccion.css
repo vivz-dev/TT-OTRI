@@ -1,0 +1,67 @@
+.tipo-proteccion-wrapper {
+  padding-bottom: 1rem;
+}
+
+.tipo-proteccion-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.archivos-container {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-left: 1.8rem;
+}
+
+.archivo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btn-remove-archivo {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  color: #9ca3af;
+  transition: color 0.2s;
+}
+
+.btn-remove-archivo:hover {
+  color: #dc2626;
+}
+
+.btn-add-archivo {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+  background: #d9e2ff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.25s;
+}
+
+.btn-add-archivo:hover {
+  background: #b6c7ff;
+}
+
+.archivo-nombre {
+  font-size: 0.9rem;
+  color: #374151;
+  margin-left: 0.5rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

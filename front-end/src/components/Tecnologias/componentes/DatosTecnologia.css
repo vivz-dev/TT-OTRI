@@ -1,0 +1,89 @@
+/* CONTENEDOR PRINCIPAL */
+.datos-tecnologia-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+
+/* TÍTULOS PRINCIPALES */
+.datos-tecnologia-header {
+  text-align: center;
+}
+
+.fieldsets{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.titulo-principal {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--esp-azul-institucional);
+}
+
+.subtitulo {
+  font-size: 1rem;
+  color: var(--gris-texto);
+  margin-top: 0.5rem;
+}
+
+/* CARD FORM VISUAL */
+.form-card {
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 1.8rem;
+  width: 100%;
+  max-width: 900px;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-header {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--esp-azul-institucional);
+}
+
+/* FILA DE INPUTS */
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* INPUTS */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.input-group input{
+  padding: 0.8rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f4f4f4;
+  color: #ababab;
+  resize: none;
+}
+
+.input-group input::placeholder,
+.input-group textarea::placeholder {
+  color: var(--gris-texto);
+}
+
+@media (min-width: 768px) {
+  .input-row {
+    flex-direction: row;
+  }
+
+  .input-group {
+    flex: 1;
+  }
+}

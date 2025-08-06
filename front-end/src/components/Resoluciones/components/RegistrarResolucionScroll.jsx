@@ -9,11 +9,16 @@ const RegistrarResolucionScroll = forwardRef(({ formulario }, ref) => {
   const distribRefs = useRef([]);
 
   const handleAddDistribucion = () => {
+    const newIndex = distribuciones.length;
     setDistribuciones((prev) => [...prev, {}]);
-    distribRefs.current.push(React.createRef());
+    distribRefs.current[newIndex] = React.createRef(); // asegura que el ref exista en el mismo índice
   };
 
-  /* ---------- validar todas las distribuciones ---------- */
+  const handleRemoveDistribucion = (idx) => {
+    setDistribuciones((prev) => prev.filter((_, i) => i !== idx));
+    distribRefs.current.splice(idx, 1); // eliminar el ref correspondiente
+  };
+
   useImperativeHandle(ref, () => ({
     validate() {
       if (distribRefs.current.length === 0) return true;
@@ -27,7 +32,11 @@ const RegistrarResolucionScroll = forwardRef(({ formulario }, ref) => {
 
       <div className="distribuciones-section">
         {distribuciones.map((_, idx) => (
-          <Distribucion key={idx} ref={distribRefs.current[idx]} />
+          <Distribucion
+            key={idx}
+            ref={distribRefs.current[idx]}
+            onDelete={() => handleRemoveDistribucion(idx)}
+          />
         ))}
       </div>
 
@@ -37,6 +46,5 @@ const RegistrarResolucionScroll = forwardRef(({ formulario }, ref) => {
     </section>
   );
 });
-
 
 export default RegistrarResolucionScroll;

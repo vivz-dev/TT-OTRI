@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import './Scroll.css';
-import RegisterButton from '../../layouts/buttons/RegisterButton'; // ajusta la ruta si cambia
+import RegisterButton from '../../layouts/buttons/RegisterButton';
+
+// Importa los formularios reales
+import DatosTecnologia from './DatosTecnologia';
+import Cotitularidad from './Cotitularidad';
+import AcuerdoDistribucion from './AcuerdoDistribucion';
 
 const Scroll = () => {
-  const [step, setStep] = useState(0);      // 0-1-2
+  const [step, setStep] = useState(0); // 0-1-2
 
   const next = () => setStep((p) => Math.min(p + 1, 2));
   const prev = () => setStep((p) => Math.max(p - 1, 0));
-
-  const labels = [
-    'Datos de la tecnología/know-how',
-    'Cotitularidad',
-    'Acuerdo de distribución',
-  ];
 
   return (
     <section className="step-scroll">
@@ -26,11 +25,12 @@ const Scroll = () => {
           return <div key={idx} className={`step ${state}`} />;
         })}
       </nav>
+
       {/* -------- contenido por paso -------- */}
       <div className="step-content">
-        {step === 0 && <p>Formulario paso 1 (vacío)</p>}
-        {step === 1 && <p>Formulario paso 2 (vacío)</p>}
-        {step === 2 && <p>Formulario paso 3 (vacío)</p>}
+        {step === 0 && <DatosTecnologia />}
+        {step === 1 && <Cotitularidad />}
+        {step === 2 && <AcuerdoDistribucion />}
       </div>
 
       {/* -------- botones -------- */}
