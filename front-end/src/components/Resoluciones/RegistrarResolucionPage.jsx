@@ -47,26 +47,24 @@ const RegistrarResolucionPage = ({ onBack }) => {
   return (
     <main className="page-container">
       <RegistrarResolucionHeader onBack={onBack} />
-
-      <RegistrarResolucionScroll
-        ref={scrollRef}
-        shakeFormulario={formError && shakeCards.formulario}  // ← Nuevo prop separado
-        formularioRef={formRef}
-      />
-
-      <div className={`form-card ${formError && shakeCards.archivo ? 'error shake' : formError ? 'error' : ''}`}>
+      <div className='registrar-resolucion-page'>
+        <RegistrarResolucionScroll
+          ref={scrollRef}
+          shakeFormulario={formError && shakeCards.formulario}
+          formularioRef={formRef}
+        />
         <RegistrarResolucionFooter
           file={file}
           onFileChange={handleFileChange}
           onSave={handleSave}
           onFinish={handleFinish}
           formError={formError}
+          shakeError={formError && shakeCards.archivo} // ← AÑADE ESTO
         />
+        {formError && (
+          <div className="warning-msg">Debe llenar todos los campos.</div>
+        )}
       </div>
-
-      {formError && (
-        <div className="warning-msg">Debe llenar todos los campos.</div>
-      )}
     </main>
   );
 };

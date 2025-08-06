@@ -10,60 +10,81 @@ import AcuerdoDistribucion from './AcuerdoDistribucion';
 const Scroll = () => {
   const [step, setStep] = useState(0); // 0-1-2
   const [showWarning, setShowWarning] = useState(false);
+  const [mostrarPasoCotitularidad, setMostrarPasoCotitularidad] = useState(true);
 
   const datosRef = useRef();
+
   const handleNext = () => {
-    if (step === 0 && !datosRef.current?.validate()) {
-      setShowWarning(true);
-      return;
+    if (step === 0) {
+      const isValid = datosRef.current?.validate();
+      if (!isValid) {
+        setShowWarning(true);
+        return;
+      }
+
+      const hayCotitularidad = datosRef.current?.getCotitularidad();
+      setMostrarPasoCotitularidad(hayCotitularidad); // guarda la decisión
+      setShowWarning(false);
+      setStep(hayCotitularidad ? 1 : 2);
+    } else {
+      setShowWarning(false);
+      setStep((prev) => Math.min(prev + 1, 2));
     }
-    setShowWarning(false);
-    setStep((p) => Math.min(p + 1, 2));
   };
-  const handlePrev = () => setStep((p) => Math.max(p - 1, 0));
+
+  const handlePrev = () => {
+    if (step === 2 && !mostrarPasoCotitularidad) {
+      setStep(0); // salta paso 1 si no se mostró antes
+    } else {
+      setStep((p) => Math.max(p - 1, 0));
+    }
+  };
 
   return (
     <section className="step-scroll">
-      {/* -------- barra de pasos -------- */}
+      {/* Barra de pasos */}
       <nav className="stepper">
         {[0, 1, 2].map((idx) => {
           const state =
-            idx < step ? 'completed'
-            : idx === step ? 'active'
-            : 'pending';
+            idx < step || (step === 2 && idx === 1 && !mostrarPasoCotitularidad)
+              ? 'completed'
+              : idx === step
+              ? 'active'
+              : 'pending';
+
           return <div key={idx} className={`step ${state}`} />;
         })}
       </nav>
 
-      {/* -------- contenido por paso -------- */}
+      {/* Contenido de pasos - MONTADOS PERMANENTEMENTE */}
       <div className="step-content">
-        {step === 0 && <DatosTecnologia ref={datosRef} />}
-        {step === 1 && <Cotitularidad />}
-        {step === 2 && <AcuerdoDistribucion />}
+        <div style={{ display: step === 0 ? 'block' : 'none' }}>
+          <DatosTecnologia ref={datosRef} />
+        </div>
+        <div style={{ display: step === 1 ? 'block' : 'none' }}>
+          <Cotitularidad />
+        </div>
+        <div style={{ display: step === 2 ? 'block' : 'none' }}>
+          <AcuerdoDistribucion />
+        </div>
       </div>
 
-      {/* -------- botones -------- */}
+      {/* Botones */}
       <div className="step-actions">
-        {/* botón Anterior o placeholder */}
         {step > 0 ? (
           <div className="left">
             <RegisterButton text="Anterior" onClick={handlePrev} />
           </div>
-        ) : (
-          <span />
-        )}
+        ) : <span />}
 
-        {/* botón Siguiente o placeholder */}
         {step < 2 ? (
           <div className="right">
             <RegisterButton text="Siguiente" onClick={handleNext} />
           </div>
-          
-        ) : (
-          <span />
-        )}
+        ) : <span />}
       </div>
-      {/* -------- mensaje de error -------- */}
+
+      {/* Alerta */}
       {showWarning && (
         <div className="warning-msg">Debe llenar todos los campos.</div>
       )}

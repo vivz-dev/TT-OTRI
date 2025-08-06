@@ -16,7 +16,6 @@ const TecnologiasPage = ({ onRegister }) => {
   {
     id: 1,
     estado: 'Disponible',
-    estadoColor: '#4ade80',
     titulo: 'SENTIFY',
     descripcion:
       'Supongamos que es una descripción muy larga… También puede ser el título del documento.',
@@ -27,7 +26,6 @@ const TecnologiasPage = ({ onRegister }) => {
   {
     id: 2,
     estado: 'No Disponible',
-    estadoColor: '#f87171',
     titulo: 'INVENTORY AI',
     descripcion:
       'Tecnología ya licenciada a tercero — actualmente no disponible.',
@@ -38,7 +36,6 @@ const TecnologiasPage = ({ onRegister }) => {
   {
     id: 3,
     estado: 'Disponible',
-    estadoColor: '#4ade80',
     titulo: 'SMART-AGRO',
     descripcion:
       'Plataforma de monitoreo agrícola basada en IoT y analítica.',

@@ -1,31 +1,31 @@
 import React from 'react';
-import { Lock, User } from 'lucide-react';     // iconos
+import { Lock, User, CalendarCheck } from 'lucide-react';
+import { LuClockAlert } from 'react-icons/lu';
+import { FaCheckCircle } from 'react-icons/fa';
 import './Card.css';
 
 const Card = ({
   number,
   estado,
-  estadoColor = '#22c55e',
   titulo,
   subtitulo,
   descripcion,
-  iconoFecha,
   textoFecha,
-  iconoRegistrado,
   textoRegistrado,
-  iconoExtra,
-  protecciones = [],          // ← NUEVO
+  protecciones = [],
+  completed
 }) => {
-  /* ------- helpers ------- */
   const esTecnologia = protecciones.length > 0;
 
+  const iconoExtra = completed
+    ? <FaCheckCircle color="#6edc68" title="Completo" />
+    : <LuClockAlert color="#909090ff" title="En espera" />;
+  
   return (
     <div className="custom-card">
-      {/* ---------- Encabezado ---------- */}
       <div className="card-header">
         {titulo && <h3 className="card-title">{titulo}</h3>}
-
-        <div className="card-status" style={{ backgroundColor: estadoColor }}>
+        <div className={`card-status ${estado.toLowerCase().replace(/\s+/g, '-')}`}>
           {estado}
         </div>
       </div>
@@ -34,46 +34,37 @@ const Card = ({
       {subtitulo && <h4 className="card-subtitle">{subtitulo}</h4>}
       {descripcion && <p className="card-description">{descripcion}</p>}
 
-      {/* ---------- Pie ---------- */}
       <div className="card-footer">
-        {/* --- caso Tecnologías: candado + protecciones --- */}
         {esTecnologia ? (
           <>
             <div className="footer-item">
-              <span className="icon">
-                <Lock size={16} />
-              </span>
-              <span className="footer-text">
-                {/* Tipo de protección:&nbsp; */}
-                {protecciones.join(', ')}
-              </span>
+              <span className="icon"><Lock size={16} /></span>
+              <span className="footer-text">{protecciones.join(', ')}</span>
             </div>
-
             <div className="footer-item">
-              <span className="icon">
-                {iconoRegistrado ?? <User size={16} />}
-              </span>
+              <span className="icon"><User size={16} /></span>
               <span className="footer-text">{textoRegistrado}</span>
             </div>
           </>
         ) : (
-          /* --- caso Resoluciones (fecha + usuario) --- */
           <>
             <div className="footer-item">
-              {iconoFecha && <span className="icon">{iconoFecha}</span>}
+              <span className="icon"><CalendarCheck size={16} /></span>
               <span className="footer-text">{textoFecha}</span>
             </div>
-
             <div className="footer-item">
-              {iconoRegistrado && (
-                <span className="icon">{iconoRegistrado}</span>
-              )}
+              <span className="icon"><User size={16} /></span>
               <span className="footer-text">{textoRegistrado}</span>
             </div>
           </>
         )}
 
-        {iconoExtra && <div className="footer-extra">{iconoExtra}</div>}
+        <div className="footer-extra tooltip-wrapper">
+          {iconoExtra}
+          <span className="tooltip-text">
+            {completed ? `El registro de este documento está completo.` : `Faltan datos para terminar de registrar este documento.`}
+          </span>
+        </div>
       </div>
     </div>
   );

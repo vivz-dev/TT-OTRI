@@ -112,7 +112,8 @@ const DatosTecnologia = forwardRef((_, ref) => {
         archivosOk &&
         cotitularidadOk
       );
-    }
+    },
+    getCotitularidad: () => cotitularidad
   }));
 
   return (
@@ -147,7 +148,7 @@ const DatosTecnologia = forwardRef((_, ref) => {
           </div>
         </div>
         <div className={`form-card ${errores.tipoProteccion || errores.archivos ? 'error' : ''} ${shake.tipoProteccion || shake.archivos ? 'shake' : ''}`}>
-          <h2 className="card-header">Tipo(s) de protección</h2>
+          <h2 className="form-card-header">Tipo(s) de protección</h2>
           {opcionesProteccion.map((texto, index) => (
             <TipoProteccion
               key={index}
@@ -161,7 +162,7 @@ const DatosTecnologia = forwardRef((_, ref) => {
           ))}
         </div>
         <div className={`form-card ${errores.cotitularidad ? 'error' : ''} ${shake.cotitularidad ? 'shake' : ''}`}>
-          <h2 className="card-header">¿Existe cotitularidad?</h2>
+          <h2 className="form-card-header">¿Existe cotitularidad?</h2>
           <div className='checkboxs-cotitularidad'>
           <label>
             <input

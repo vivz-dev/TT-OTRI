@@ -1,7 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
 
@@ -39,6 +35,11 @@
 
   --error-msg: #b10707;
   --error-background: #fff6f6;
+
+  --bullet-verde-bg: #adf79a;
+  --bullet-verde-text: #2d9114;
+  --bullet-rojo-bg: #ffcfcb;
+  --bullet-rojo-text: #8A1F0F;
 
 }
 
@@ -161,7 +162,31 @@ textarea.error {
     flex: 1;
   }
 }
- 
+
+/* CARD STATUS PARA BULLETS */
+.card-status {
+  font-size: 0.75rem;
+  font-weight: bolder;
+  display: inline-block;
+  text-transform: capitalize;
+  text-align: center;
+  width: 150px;
+}
+
+/* Verde para estados positivos */
+.card-status.disponible,
+.card-status.vigente {
+  background-color: var(--bullet-verde-bg);  /* Fondo verde claro */
+  color: var(--bullet-verde-text);             /* Texto verde oscuro */
+}
+/* Rojo para estados negativos */
+.card-status.no-disponible,
+.card-status.derogada {
+  background-color:  var(--bullet-rojo-bg);
+  color: var(--bullet-rojo-text);
+}
+
+
 /* #243165  Azul institucional
  
 #E02185 -FADCOM

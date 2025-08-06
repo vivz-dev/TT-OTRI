@@ -4,7 +4,6 @@ import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetResolutionsQuery } from '../../services/resolutionsApi';
 
 /* --- helpers --- */
-const estadoToColor = (e) => (e === 'Vigente' ? '#4ade80' : '#f87171');
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString('es-EC', {
     day: '2-digit',
@@ -20,7 +19,6 @@ const ResolucionesPage = ({ onRegister }) => {
     () =>
       (error ? [] : data).map((r) => ({
         ...r,
-        estadoColor: estadoToColor(r.estado),
         fecha: fmtFecha(r.fechaResolucion),
         iconoFecha: 'calendar',
         usuario: r.usuarioRegistrador,

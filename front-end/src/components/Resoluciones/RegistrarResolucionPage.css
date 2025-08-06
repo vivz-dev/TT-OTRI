@@ -1,4 +1,6 @@
 .registrar-resolucion-page {
   display: flex;
   flex-direction: column;
+  background: white;
+  border-radius: 10px;
 }

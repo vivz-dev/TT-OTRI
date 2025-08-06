@@ -1,9 +1,6 @@
 import React from 'react';
 import './CardScroll.css';
 import Card from './Card';
-import { LuClockAlert } from 'react-icons/lu';
-import { CalendarCheck, User } from 'lucide-react';
-import { FaCheckCircle } from 'react-icons/fa';
 
 const CardScroll = ({ filter, searchText, dummyData }) => {
   const search = searchText.toLowerCase();
@@ -29,25 +26,18 @@ const CardScroll = ({ filter, searchText, dummyData }) => {
   return (
     <div className="card-scroll">
       {filtered.map((item) => {
-        const iconoExtra = item.completed ? (
-          <FaCheckCircle color="#6edc68" title="Completo" />
-        ) : (
-          <LuClockAlert color="#909090ff" title="En espera" />
-        );
-
         return (
           <Card
             key={item.id}
             number={item.numero}
             estado={item.estado}
-            estadoColor={item.estadoColor}
             titulo={item.titulo}
+            subtitulo={item.subtitulo}
             descripcion={item.descripcion}
-            iconoFecha={<CalendarCheck size={16} />}
             textoFecha={item.fecha}
-            iconoRegistrado={<User size={16} />}
             textoRegistrado={item.usuario}
-            iconoExtra={iconoExtra}
+            protecciones={item.protecciones}
+            completed={item.completed}
           />
         );
       })}
