@@ -1,27 +1,22 @@
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  background-color: white;
-}
-
 .num-resolucion {
   display: flex;
+  flex-direction: row;
   gap: 0.5rem;
   align-items: center;
 }
-
-input,
-textarea {
-  padding: 0.6rem;
+.num-resolucion input{
+  padding: 0.8rem 1rem;
   border: 1px solid #ccc;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 1rem;
-}
-
-textarea {
+  background: #f4f4f4;
+  color: black;
   resize: none;
-  height: 100px;
+}
+.resolucion-card{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .char-count {

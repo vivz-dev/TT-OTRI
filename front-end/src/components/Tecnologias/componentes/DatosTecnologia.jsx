@@ -1,6 +1,6 @@
 // src/pages/Resoluciones/components/DatosTecnologia.jsx
-import React, { useState } from 'react';
-import TipoProteccion from './TipoProteccion'; // cada uno es el mismo componente reutilizado con props
+import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import TipoProteccion from './TipoProteccion';
 import './DatosTecnologia.css';
 
 const opcionesProteccion = [
@@ -14,28 +14,116 @@ const opcionesProteccion = [
   '8. No aplica',
 ];
 
-const DatosTecnologia = () => {
+const DatosTecnologia = forwardRef((_, ref) => {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [tiposProteccion, setTiposProteccion] = useState({});
-  const [cotitularidad, setCotitularidad] = useState(null); // true/false/null
+  const [cotitularidad, setCotitularidad] = useState(null);
+  const [archivosPorProteccion, setArchivosPorProteccion] = useState({});
+  const [errores, setErrores] = useState({
+    nombre: false,
+    descripcion: false,
+    tipoProteccion: false,
+    archivos: false,
+    cotitularidad: false,
+  });
+  const [shake, setShake] = useState({
+    nombre: false,
+    descripcion: false,
+    tipoProteccion: false,
+    archivos: false,
+    cotitularidad: false
+  });
 
-  const handleCheckboxChange = (key, checked) => {
-    setTiposProteccion(prev => ({
+
+  const handleCheckboxChange = (index, checked) => {
+    setTiposProteccion((prev) => {
+      const nuevoEstado = { ...prev };
+      if (index === 7) return checked ? { 7: true } : {};
+      if (checked) {
+        delete nuevoEstado[7];
+        nuevoEstado[index] = true;
+      } else {
+        delete nuevoEstado[index];
+      }
+      return nuevoEstado;
+    });
+  };
+
+  const handleArchivoChange = (index, archivos) => {
+    setArchivosPorProteccion((prev) => ({
       ...prev,
-      [key]: checked
+      [index]: archivos,
     }));
   };
 
+  useImperativeHandle(ref, () => ({
+    validate: () => {
+      const nombreOk = nombre.trim() !== '';
+      const descripcionOk = descripcion.trim() !== '';
+      const seleccionoAlMenosUno = Object.keys(tiposProteccion).length > 0;
+      const seleccionoNoAplica = tiposProteccion[7] === true;
+
+      let archivosOk = true;
+      if (!seleccionoNoAplica) {
+        for (const idx of Object.keys(tiposProteccion)) {
+          const archivos = archivosPorProteccion[idx] || [];
+          if (archivos.length === 0 || !archivos.some(a => a.file)) {
+            archivosOk = false;
+            break;
+          }
+        }
+      }
+
+      const cotitularidadOk = cotitularidad !== null;
+
+      setErrores({
+        nombre: !nombreOk,
+        descripcion: !descripcionOk,
+        tipoProteccion: !seleccionoAlMenosUno,
+        archivos: !archivosOk,
+        cotitularidad: !cotitularidadOk
+      });
+
+      // Agitar sólo los bloques con error
+      setShake({
+        nombre: !nombreOk,
+        descripcion: !descripcionOk,
+        tipoProteccion: !seleccionoAlMenosUno,
+        archivos: !archivosOk,
+        cotitularidad: !cotitularidadOk
+      });
+
+      // Quitar shake después de la animación
+      setTimeout(() => {
+        setShake({
+          nombre: false,
+          descripcion: false,
+          tipoProteccion: false,
+          archivos: false,
+          cotitularidad: false
+        });
+      }, 500);
+
+      return (
+        nombreOk &&
+        descripcionOk &&
+        seleccionoAlMenosUno &&
+        archivosOk &&
+        cotitularidadOk
+      );
+    }
+  }));
+
   return (
-    <form className="datos-tecnologia-form">
-      <div className="datos-tecnologia-header">
-        <h1 className="titulo-principal">Datos de la tecnología/know-how</h1>
-        <p className="subtitulo">Complete la información sobre su tecnología o conocimiento especializado</p>
+    <form className="formulario">
+      <div className="form-header">
+        <h1 className="titulo-principal-form">Datos de la tecnología/know-how</h1>
+        <p className="subtitulo-form">Complete la información sobre su tecnología o conocimiento especializado</p>
       </div>
-      <div className='fieldsets'>
-        <div className="form-card">
-          <h2 className="card-header">Información básica</h2>
+      <div className='form-fieldsets'>
+        <div className={`form-card ${errores.nombre || errores.descripcion ? 'error' : ''} ${shake.nombre || shake.descripcion ? 'shake' : ''}`}>
+          <h2 className="form-card-header">Información básica</h2>
           <div className="input-row">
             <label className="input-group">
               Nombre
@@ -58,18 +146,21 @@ const DatosTecnologia = () => {
             </label>
           </div>
         </div>
-        <div className="form-card">
+        <div className={`form-card ${errores.tipoProteccion || errores.archivos ? 'error' : ''} ${shake.tipoProteccion || shake.archivos ? 'shake' : ''}`}>
           <h2 className="card-header">Tipo(s) de protección</h2>
           {opcionesProteccion.map((texto, index) => (
             <TipoProteccion
               key={index}
               label={texto}
+              index={index}
               checked={!!tiposProteccion[index]}
+              disabled={tiposProteccion[7] && index !== 7}
               onChange={(checked) => handleCheckboxChange(index, checked)}
+              onArchivoChange={(archivos) => handleArchivoChange(index, archivos)}
             />
           ))}
         </div>
-        <div className='form-card'>
+        <div className={`form-card ${errores.cotitularidad ? 'error' : ''} ${shake.cotitularidad ? 'shake' : ''}`}>
           <h2 className="card-header">¿Existe cotitularidad?</h2>
           <div className='checkboxs-cotitularidad'>
           <label>
@@ -97,6 +188,6 @@ const DatosTecnologia = () => {
       </div>
     </form>
   );
-};
+});
 
 export default DatosTecnologia;

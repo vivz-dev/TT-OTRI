@@ -3,8 +3,9 @@ import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react'
 import './RegistrarResolucionScroll.css';
 import * as Buttons from '../../layouts/buttons/buttons_index';
 import Distribucion from './Distribucion';
+import Formulario from './Formulario';
 
-const RegistrarResolucionScroll = forwardRef(({ formulario }, ref) => {
+const RegistrarResolucionScroll = forwardRef(({ formularioRef, shakeFormulario }, ref) => {
   const [distribuciones, setDistribuciones] = useState([]);
   const distribRefs = useRef([]);
 
@@ -27,8 +28,10 @@ const RegistrarResolucionScroll = forwardRef(({ formulario }, ref) => {
   }));
 
   return (
-    <section className="registrar-resolucion-scroll">
-      <div className="formulario-section">{formulario}</div>
+   <section className="registrar-resolucion-scroll">
+      <div className="formulario-section">
+        <Formulario ref={formularioRef} shakeError={shakeFormulario} />
+      </div>
 
       <div className="distribuciones-section">
         {distribuciones.map((_, idx) => (

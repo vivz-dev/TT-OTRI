@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './Scroll.css';
 import RegisterButton from '../../layouts/buttons/RegisterButton';
 
@@ -9,9 +9,18 @@ import AcuerdoDistribucion from './AcuerdoDistribucion';
 
 const Scroll = () => {
   const [step, setStep] = useState(0); // 0-1-2
+  const [showWarning, setShowWarning] = useState(false);
 
-  const next = () => setStep((p) => Math.min(p + 1, 2));
-  const prev = () => setStep((p) => Math.max(p - 1, 0));
+  const datosRef = useRef();
+  const handleNext = () => {
+    if (step === 0 && !datosRef.current?.validate()) {
+      setShowWarning(true);
+      return;
+    }
+    setShowWarning(false);
+    setStep((p) => Math.min(p + 1, 2));
+  };
+  const handlePrev = () => setStep((p) => Math.max(p - 1, 0));
 
   return (
     <section className="step-scroll">
@@ -28,7 +37,7 @@ const Scroll = () => {
 
       {/* -------- contenido por paso -------- */}
       <div className="step-content">
-        {step === 0 && <DatosTecnologia />}
+        {step === 0 && <DatosTecnologia ref={datosRef} />}
         {step === 1 && <Cotitularidad />}
         {step === 2 && <AcuerdoDistribucion />}
       </div>
@@ -38,7 +47,7 @@ const Scroll = () => {
         {/* botón Anterior o placeholder */}
         {step > 0 ? (
           <div className="left">
-            <RegisterButton text="Anterior" onClick={prev} />
+            <RegisterButton text="Anterior" onClick={handlePrev} />
           </div>
         ) : (
           <span />
@@ -47,12 +56,17 @@ const Scroll = () => {
         {/* botón Siguiente o placeholder */}
         {step < 2 ? (
           <div className="right">
-            <RegisterButton text="Siguiente" onClick={next} />
+            <RegisterButton text="Siguiente" onClick={handleNext} />
           </div>
+          
         ) : (
           <span />
         )}
       </div>
+      {/* -------- mensaje de error -------- */}
+      {showWarning && (
+        <div className="warning-msg">Debe llenar todos los campos.</div>
+      )}
     </section>
   );
 };

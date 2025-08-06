@@ -11,13 +11,10 @@ const RegistrarResolucionFooter = ({ file, onFileChange, onSave, onFinish, formE
       file={file}
       onChange={onFileChange}
     />
-
     <div className="footer-buttons">
     <Buttons.SaveButton onClick={() => console.log('Guardar...')} />
     <Buttons.FinishButton onClick={onFinish} />
-    {formError && <p className="form-error-msg">Debe completar todos los campos.</p>}
-
-  </div>
+    </div>
   </footer>
 );
 

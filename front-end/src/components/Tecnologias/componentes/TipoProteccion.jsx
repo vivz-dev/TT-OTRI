@@ -3,27 +3,36 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import * as Components from '../../layouts/components/index';
 import './TipoProteccion.css';
 
-const TipoProteccion = ({ label, checked, onChange }) => {
+const TipoProteccion = ({ label, index, checked, disabled, onChange, onArchivoChange }) => {
   const [archivos, setArchivos] = useState([]);
 
-  // Resetear archivos si se desmarca el checkbox
   useEffect(() => {
-    if (!checked) setArchivos([]);
-    else if (checked && archivos.length === 0) setArchivos([{ file: null }]);
-  }, [checked]);
+    if (!checked) {
+      setArchivos([]);
+      onArchivoChange?.([]);
+    } else if (checked && archivos.length === 0 && index !== 7) {
+      const inicial = [{ file: null }];
+      setArchivos(inicial);
+      onArchivoChange?.(inicial);
+    }
+  }, [checked, index, archivos.length, onArchivoChange]);
+
+  const handleFileChange = (file, idx) => {
+    const updated = archivos.map((item, i) => (i === idx ? { ...item, file } : item));
+    setArchivos(updated);
+    onArchivoChange?.(updated);
+  };
 
   const handleAddArchivo = () => {
-    setArchivos(prev => [...prev, { file: null }]);
+    const updated = [...archivos, { file: null }];
+    setArchivos(updated);
+    onArchivoChange?.(updated);
   };
 
   const handleRemoveArchivo = (idx) => {
-    setArchivos(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleFileChange = (file, idx) => {
-    setArchivos(prev =>
-      prev.map((item, i) => (i === idx ? { ...item, file } : item))
-    );
+    const updated = archivos.filter((_, i) => i !== idx);
+    setArchivos(updated);
+    onArchivoChange?.(updated);
   };
 
   return (
@@ -32,12 +41,13 @@ const TipoProteccion = ({ label, checked, onChange }) => {
         <input
           type="checkbox"
           checked={checked}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
         />
         {label}
       </label>
 
-      {checked && (
+      {checked && label !== '8. No aplica' && (
         <div className="archivos-container">
           {archivos.map((item, idx) => (
             <div key={idx} className="archivo-item">
@@ -45,7 +55,7 @@ const TipoProteccion = ({ label, checked, onChange }) => {
                 descripcion={"Adjuntar la ficha tecnológica correspondiente a este tipo de protección."}
                 file={item.file}
                 onChange={(e) => handleFileChange(e.target.files[0], idx)}
-                />
+              />
               <button
                 type="button"
                 className="btn-remove-archivo"
@@ -66,7 +76,8 @@ const TipoProteccion = ({ label, checked, onChange }) => {
             Añadir archivo
           </button>
         </div>
-      )}
+)}
+
     </div>
   );
 };

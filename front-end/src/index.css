@@ -38,6 +38,7 @@
   --button-page-hover: #92aeeb;
 
   --error-msg: #b10707;
+  --error-background: #fff6f6;
 
 }
 
@@ -50,6 +51,116 @@ html, body {
   font-family: "Nunito", sans-serif;
 }
 
+/* FORMS */
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+.form-header {
+  text-align: center;
+}
+.titulo-principal-form {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--esp-azul-institucional);
+}
+.subtitulo-form {
+  font-size: 1rem;
+  color: var(--gris-texto);
+  margin-top: 0.5rem;
+}
+.form-fieldsets{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+.form-card {
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 1.8rem;
+  width: 100%;
+  max-width: 900px;
+  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.04);
+}
+.form-card-header {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: var(--esp-azul-institucional);
+}
+.form-card.error {
+  border: 1px solid var(--error-msg);
+  background-color: var(--error-background);
+}
+.warning-msg {
+  text-align: center;
+  color: var(--error-msg);
+  font-size: 0.95rem;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.input-group input{
+  padding: 0.8rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f4f4f4;
+  color: black;
+  resize: none;
+}
+.input-group textarea{
+  padding: 0.8rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f4f4f4;
+  color: black;
+  resize: none;
+}
+.input-group input::placeholder,
+.input-group textarea::placeholder {
+  color: #ababab;
+}
+input.error,
+textarea.error {
+  border-color: var(--error-msg);
+  background-color: var(--error-background);
+}
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+}
+.form-card.shake {
+  animation: shake 0.4s ease-in-out;
+}
+@media (min-width: 768px) {
+  .input-row {
+    flex-direction: row;
+  }
+
+  .input-group {
+    flex: 1;
+  }
+}
  
 /* #243165  Azul institucional
  
