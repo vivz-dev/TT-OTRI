@@ -1,35 +1,33 @@
+// -------------------------------------------------------------------------
+// File: Domain/Resolution.cs
+// Define la entidad de dominio “Resolution”, representación 1-a-1 de la
+// tabla T_OTRI_TT_RESOLUCION.  Incluye propiedades, enum de estado y
+// marcas de tiempo.
+//
+// NOTA: Mapear con EF Core => builder.ToTable("T_OTRI_TT_RESOLUCION")
+// -------------------------------------------------------------------------
 namespace TT_OTRI.Domain;
 
-/// <summary>
-/// Estados válidos de una resolución.
-/// </summary>
-public enum ResolutionStatus
-{
-    Vigente,
-    Derogada
-}
+public enum ResolutionStatus { Vigente = 'V', Derogada = 'D' }
 
 public class Resolution
 {
-    // --- Identidad ---
-    public int    Id      { get; set; }
-    public string Numero  { get; set; } = string.Empty; // "24-07-228"
+    // Identidad y relaciones
+    public int Id { get; set; }                  // IDOTRIRESOLUCION
+    public int IdUsuario { get; set; }           // FK → usuario ESPOL
 
-    // --- Estado y color asociado ---
-    public ResolutionStatus Estado { get; set; } = ResolutionStatus.Vigente;
+    // Campos descriptivos
+    public string Codigo       { get; set; } = string.Empty;
+    public string Titulo       { get; set; } = string.Empty;
+    public string Descripcion  { get; set; } = string.Empty;
 
-    // --- Texto principal ---
-    public string Titulo      { get; set; } = string.Empty;
-    public string Descripcion { get; set; } = string.Empty;
+    // Estado y fechas
+    public ResolutionStatus Estado         { get; set; } = ResolutionStatus.Vigente;
+    public DateTime         FechaResolucion{ get; set; }
+    public DateTime         FechaVigencia  { get; set; }
 
-    // --- Fechas ---
-    public DateTime FechaResolucion { get; set; }       
-    public DateTime FechaVigencia{ get; set; }       // 2025-09-16
-
-    // --- Metadatos ---
-    public string UsuarioRegistrador { get; set; } = string.Empty;
-    public bool   Completed          { get; set; }
-
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; }  = DateTime.UtcNow;
+    // Metadatos
+    public bool     Completed  { get; set; } = false;
+    public DateTime CreatedAt  { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt  { get; set; } = DateTime.UtcNow;
 }
