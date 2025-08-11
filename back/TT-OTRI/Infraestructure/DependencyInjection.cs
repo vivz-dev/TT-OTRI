@@ -18,47 +18,43 @@ namespace TT_OTRI.Infrastructure;
 /// Clase estática que proporciona un método de extensión para configurar
 /// la infraestructura de la aplicación. Según el proveedor indicado en
 /// la configuración (por defecto InMemory), selecciona las implementaciones
-/// correspondientes de repositorios y servicios.
+/// correspondientes de repositorios y registra los servicios de negocio.
 /// </summary>
 public static class DependencyInjection
 {
     /// <summary>
     /// Agrega los servicios y repositorios de infraestructura a la colección de servicios.
-    /// Lee la clave "Data:Provider" de la configuración para decidir si utilizar
-    /// implementaciones InMemory (valor por defecto) o DB2. 
-    /// - En modo "db2": se prepara el registro de repositorios DB2 (cuando existan).
-    /// - En cualquier otro caso: se registran repositorios InMemory y servicios de negocio.
-    /// Devuelve la colección de servicios para permitir el encadenamiento de llamadas.
+    /// Lee "Data:Provider" y elige implementaciones InMemory (default) o DB2.
+    /// Los servicios de aplicación se registran SIEMPRE como Scoped.
     /// </summary>
-    /// <param name="services">La colección de servicios a extender.</param>
-    /// <param name="cfg">Configuración de la aplicación para leer el proveedor.</param>
-    /// <returns>La colección de servicios con las dependencias agregadas.</returns>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration cfg)
     {
-        // Obtiene el proveedor configurado ("db2" o "inmemory") y lo normaliza.
         var provider = cfg.GetSection("Data")["Provider"]?.Trim().ToLowerInvariant() ?? "inmemory";
 
         switch (provider)
         {
             case "db2":
-                // Repositorios DB2 (descomentar cuando los implementes).
-                // services.AddSingleton<IResolutionRepository, ResolutionRepositoryDb2>();
-                // services.AddSingleton<IDistributionResolutionRepository, DistributionResolutionRepositoryDb2>();
+                // ─── Repositorios DB2 (descomentar cuando los implementes) ───
+                // services.AddScoped<IResolutionRepository, ResolutionRepositoryDb2>();
+                // services.AddScoped<IDistributionResolutionRepository, DistributionResolutionRepositoryDb2>();
+                // services.AddScoped<IRoleRepository, RoleRepositoryDb2>(); // Roles en DB2
 
-                // Registro de un repositorio de prueba para DB2.
+                // Utilitario de prueba de conectividad/lectura DB2
                 services.AddSingleton<TestDb2Repository>();
                 break;
 
-            default: // incluye "inmemory" y cualquier otro valor no reconocido
-                // Repositorios InMemory
+            default: // "inmemory" y cualquier otro valor no reconocido
+                // ─── Repositorios InMemory (Singleton para persistir el store) ───
                 services.AddSingleton<IResolutionRepository, ResolutionRepository>();
                 services.AddSingleton<IDistributionResolutionRepository, DistributionResolutionRepository>();
-
-                // Servicios de aplicación
-                services.AddScoped<ResolutionService>();
-                services.AddScoped<DistributionResolutionService>();
+                services.AddSingleton<IRoleRepository, RoleRepository>(); // Roles InMemory
                 break;
         }
+
+        // ─── Servicios de aplicación (SIEMPRE) ───
+        services.AddScoped<ResolutionService>();
+        services.AddScoped<DistributionResolutionService>();
+        services.AddScoped<RoleService>(); // Necesario para RolesController
 
         return services;
     }

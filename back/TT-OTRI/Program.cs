@@ -9,9 +9,7 @@
 
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
-using TT_OTRI.Application.Services;
-using TT_OTRI.Application.Interfaces;
-using TT_OTRI.Infrastructure.InMemory;
+using TT_OTRI.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,19 +23,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(o =>
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// ─────────────────────────────────────────────────────────────
-// Servicios de aplicación (agrega aquí todos los necesarios)
-// - Registra servicios de capa Application (orquestan lógica de negocio).
-// - Registra repositorios que cumplen las interfaces con una
-//   implementación InMemory (demo). Cambia por DB2 en Infrastructure/DI.
-// ─────────────────────────────────────────────────────────────
-builder.Services.AddScoped<ResolutionService>();
-builder.Services.AddScoped<DistributionResolutionService>();
-// Agrega otros servicios si los usas
-
-builder.Services.AddScoped<IResolutionRepository, ResolutionRepository>();
-builder.Services.AddScoped<IDistributionResolutionRepository, DistributionResolutionRepository>();
-
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // ─────────────────────────────────────────────────────────────
 // CORS
