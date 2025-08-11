@@ -4,13 +4,8 @@ import ResolucionesPage from '../../Resoluciones/ResolucionesPage'
 import RegistrarResolucionPage from '../../Resoluciones/RegistrarResolucionPage';
 import TecnologiasPage from '../../Tecnologias/TecnologiasPage'
 import RegistrarTecnologiasPage from '../../Tecnologias/RegistrarTecnologiasPage'
-
-const TransferenciaTecnologicaPage = () => (
-  <div className="page-content">
-    <h2>Transferencia Tecnológica</h2>
-    <p>Contenido de transferencia tecnológica...</p>
-  </div>
-);
+import TransferenciaTecnologicaPage from '../../Transferencia/TransferenciaTecnologicaPage';
+import RegistrarTransferenciaPage from '../../Transferencia/RegistrarTransferenciaPage';
 
 const PagosPage = () => (
   <div className="page-content">
@@ -45,7 +40,13 @@ const Page = ({ activeSection, setActiveSection }) => {
       case 'registrar-tecnologia':
         return <RegistrarTecnologiasPage onBack={() => setActiveSection('tecnologias')} />;
       case 'transferencia-tecnologica':
-        return <TransferenciaTecnologicaPage />;
+        return (
+          <TransferenciaTecnologicaPage
+            onRegister={() => setActiveSection('registrar-transferencia')}
+          />
+        );
+      case 'registrar-transferencia':
+        return <RegistrarTransferenciaPage onBack={() => setActiveSection('transferencia-tecnologica')} />;
       case 'pagos':
         return <PagosPage />;
       case 'roles-permisos':

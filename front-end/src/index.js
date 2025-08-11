@@ -45,7 +45,16 @@ async function bootstrap() {
 
     await msalInstance.acquireTokenSilent({...loginRequest, account })
     try {
-        await msalInstance.acquireTokenSilent(loginRequest);
+        const tokenResponse = await msalInstance.acquireTokenSilent(loginRequest);
+        const aadAccessToken = tokenResponse.accessToken;
+        await fetch("http://localhost:5196/api/auth/exchange", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${aadAccessToken}`
+            }
+        });
+
+        // await msalInstance.acquireTokenSilent(loginRequest);
     } catch (err) {
         if( err instanceof InteractionRequiredAuthError){
             msalInstance.loginRedirect(loginRequest);

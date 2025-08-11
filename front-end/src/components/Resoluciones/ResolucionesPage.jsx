@@ -1,9 +1,14 @@
+/**
+ * ResolucionesPage
+ * ----------------
+ * El título del Card será el código de la resolución
+ * y la descripción original pasa a `descripcion`.
+ */
 import './ResolucionesPage.css';
 import React, { useState, useMemo } from 'react';
 import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetResolutionsQuery } from '../../services/resolutionsApi';
 
-/* --- helpers --- */
 const fmtFecha = (iso) =>
   new Date(iso).toLocaleDateString('es-EC', {
     day: '2-digit',
@@ -14,27 +19,27 @@ const fmtFecha = (iso) =>
 const ResolucionesPage = ({ onRegister }) => {
   const { data = [], isLoading, error } = useGetResolutionsQuery();
 
-  /* ➜  Mapea solo cuando hay data válida */
   const dummyData = useMemo(
     () =>
       (error ? [] : data).map((r) => ({
-        ...r,
-        fecha: fmtFecha(r.fechaResolucion),
-        iconoFecha: 'calendar',
-        usuario: r.usuarioRegistrador,
+        id:          r.id,
+        estado:      r.estado,
+        completed:   r.completed,
+        titulo:      r.codigo,          // ← título = número/código
+        descripcion: r.descripcion,     // ← cuerpo = descripción
+        fecha:       fmtFecha(r.fechaResolucion),
+        usuario:     r.usuarioRegistrador,
       })),
     [data, error]
   );
 
-  /* Filtros locales */
-  const [filter, setFilter] = useState('todas');
-  const [searchText, setSearchText] = useState('');
+  const [filter, setFilter]     = useState('todas');
+  const [searchText, setSearch] = useState('');
 
-  /* Loader a pantalla completa */
   if (isLoading) return <p>Cargando…</p>;
 
   const filterOptions = [
-    { label: 'Todas', value: 'todas' },
+    { label: 'Todas',    value: 'todas'   },
     { label: 'Vigentes', value: 'Vigente' },
     { label: 'Derogadas', value: 'Derogada' },
   ];
@@ -51,11 +56,10 @@ const ResolucionesPage = ({ onRegister }) => {
         setFilter={setFilter}
         options={filterOptions}
         searchText={searchText}
-        setSearchText={setSearchText}
+        setSearchText={setSearch}
         onRegister={onRegister}
       />
 
-      {/* CardScroll recibirá [] si hay error o lista vacía */}
       <CardScroll
         filter={filter}
         searchText={searchText}

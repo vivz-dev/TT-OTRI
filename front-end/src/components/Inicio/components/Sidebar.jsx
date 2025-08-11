@@ -74,12 +74,12 @@ const Sidebar = ({ onMenuSelect }) => {
       label: 'Configuración',
       type: 'section'
     },
-    {
-      id: 'roles-permisos',
-      label: 'Roles y permisos',
-      icon: <Users size={18} />,
-      parent: 'configuracion'
-    },
+    // {
+    //   id: 'roles-permisos',
+    //   label: 'Roles y permisos',
+    //   icon: <Users size={18} />,
+    //   parent: 'configuracion'
+    // },
     {
       id: 'ajustes',
       label: 'Ajustes',

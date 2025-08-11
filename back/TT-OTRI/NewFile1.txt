@@ -1,0 +1,148 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+
+  "Data": {
+    "Provider": "InMemory"  // <-- Cambia a "Db2" para usar DB2
+  },
+
+  "ConnectionStrings": {
+    "Db2": "Server=tu-servidor-db2;Database=TU_DB;UID=usuario;PWD=clave;Port=50000;Protocol=TCPIP;"
+  }
+}
+
+
+
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "Jwt": {
+    "Key": "TT@0TR13$P0L@",
+    "Issuer": "TT-OTRI.API",
+    "Audience": "TT-OTRI.Web",
+    "AccessTokenMinutes": 60
+  },
+  "AzureAd": {
+    "Instance": "https://login.microsoftonline.com/",
+    "TenantId": "b7af8caf-83d8-4644-85ae-317c545223c1",
+    "Audience": "api://8dd6b24d-8e9b-4597-993e-4718fba81300" 
+  }
+}
+
+
+
+
+///
+
+
+using System.Text;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using TT_OTRI.Application.Services;
+
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Controllers
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+/* ───── App Services (¡REGISTRA AQUÍ!) ───── */
+// Si inyectas clases concretas en los controladores:
+builder.Services.AddScoped<ResolutionService>();
+builder.Services.AddScoped<DistributionResolutionService>();
+
+/* ───── CORS (solo si lo usas) ───── */
+builder.Services.AddCors(p => p.AddPolicy("Default", policy =>
+{
+    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+}));
+
+
+// Si tus controladores inyectan interfaces, registra las interfaces:
+// builder.Services.AddScoped<IResolutionService, ResolutionService>();
+// builder.Services.AddScoped<IDistributionResolutionService, DistributionResolutionService>();
+
+// ===== Esquema A: Validar Azure AD access tokens (para /auth/exchange) =====
+var azure = builder.Configuration.GetSection("AzureAd");
+builder.Services.AddAuthentication()
+    .AddJwtBearer("AzureAD", options =>
+    {
+        options.Authority = $"{azure["Instance"]}{azure["TenantId"]}/v2.0";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidAudience = azure["Audience"],   // api://<YOUR_API_APP_ID_URI>
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true
+        };
+    });
+
+// ===== Esquema B: Tu JWT interno (para el resto del API) =====
+var jwt = builder.Configuration.GetSection("Jwt");
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
+
+builder.Services.AddAuthentication()
+    .AddJwtBearer("AppJwt", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwt["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwt["Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = key,
+            ValidateLifetime = true
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", p => p.RequireRole("AdminSistema", "AdminContrato"));
+});
+
+
+// Swagger con Bearer (para tu JWT interno; si quieres, puedes agregar otro para AzureAD)
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "TT-OTRI API", Version = "v1" });
+    var appJwtScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Description = "Bearer {tu JWT interno}",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "AppJwt" }
+    };
+    c.AddSecurityDefinition("AppJwt", appJwtScheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement { { appJwtScheme, Array.Empty<string>() } });
+});
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors("Default"); 
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();

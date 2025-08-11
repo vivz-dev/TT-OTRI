@@ -1,3 +1,11 @@
+/**
+ * Card
+ * ----
+ * Muestra solo:
+ *   • Título  → número/código de resolución
+ *   • Descripción
+ * Mantiene iconos de estado, fechas y usuario.
+ */
 import React from 'react';
 import { Lock, User, CalendarCheck } from 'lucide-react';
 import { LuClockAlert } from 'react-icons/lu';
@@ -5,34 +13,32 @@ import { FaCheckCircle } from 'react-icons/fa';
 import './Card.css';
 
 const Card = ({
-  number,
   estado,
   titulo,
-  subtitulo,
   descripcion,
   textoFecha,
   textoRegistrado,
   protecciones = [],
-  completed
+  completed,
 }) => {
   const esTecnologia = protecciones.length > 0;
 
   const iconoExtra = completed
     ? <FaCheckCircle color="#6edc68" title="Completo" />
     : <LuClockAlert color="#909090ff" title="En espera" />;
-  
+
   return (
     <div className="custom-card">
       <div className="card-header">
-        {titulo && <h3 className="card-title">{titulo}</h3>}
+        {titulo && <h3 className="card-title">{titulo || '—'}</h3>}
         <div className={`card-status ${estado.toLowerCase().replace(/\s+/g, '-')}`}>
           {estado}
         </div>
       </div>
 
-      {number && !esTecnologia && <p className="card-number">No. {number}</p>}
-      {subtitulo && <h4 className="card-subtitle">{subtitulo}</h4>}
+      {/* Ya no se renderiza número ni subtítulo */}
       {descripcion && <p className="card-description">{descripcion}</p>}
+      {!descripcion && <p className="card-description">—</p>}
 
       <div className="card-footer">
         {esTecnologia ? (
@@ -62,7 +68,9 @@ const Card = ({
         <div className="footer-extra tooltip-wrapper">
           {iconoExtra}
           <span className="tooltip-text">
-            {completed ? `El registro de este documento está completo.` : `Faltan datos para terminar de registrar este documento.`}
+            {completed
+              ? 'El registro de este documento está completo.'
+              : 'Faltan datos para terminar de registrar este documento.'}
           </span>
         </div>
       </div>

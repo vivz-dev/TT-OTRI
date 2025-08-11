@@ -1,4 +1,9 @@
-// src/components/RegistrarResolucionScroll.jsx
+/**
+ * Scroll que agrupa Formulario + n distribuciones.
+ * ------------------------------------------------
+ * • Devuelve validate()  -> bool
+ * • Devuelve getDistribuciones() -> array de objetos listos para API
+ */
 import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import './RegistrarResolucionScroll.css';
 import * as Buttons from '../../layouts/buttons/buttons_index';
@@ -9,15 +14,14 @@ const RegistrarResolucionScroll = forwardRef(({ formularioRef, shakeFormulario }
   const [distribuciones, setDistribuciones] = useState([]);
   const distribRefs = useRef([]);
 
-  const handleAddDistribucion = () => {
-    const newIndex = distribuciones.length;
-    setDistribuciones((prev) => [...prev, {}]);
-    distribRefs.current[newIndex] = React.createRef(); // asegura que el ref exista en el mismo índice
+  const addDistribucion = () => {
+    const index = distribuciones.length;
+    setDistribuciones((p) => [...p, {}]);
+    distribRefs.current[index] = React.createRef();
   };
-
-  const handleRemoveDistribucion = (idx) => {
-    setDistribuciones((prev) => prev.filter((_, i) => i !== idx));
-    distribRefs.current.splice(idx, 1); // eliminar el ref correspondiente
+  const removeDistribucion = (idx) => {
+    setDistribuciones((p) => p.filter((_, i) => i !== idx));
+    distribRefs.current.splice(idx, 1);
   };
 
   useImperativeHandle(ref, () => ({
@@ -25,10 +29,17 @@ const RegistrarResolucionScroll = forwardRef(({ formularioRef, shakeFormulario }
       if (distribRefs.current.length === 0) return true;
       return distribRefs.current.every((r) => r?.current?.validate());
     },
+
+    getDistribuciones() {
+      return distribRefs.current
+        .map((r) => r?.current?.getData())
+        .filter(Boolean); // descarta refs eliminados
+    },
   }));
 
+  /* ---------------- UI --------------- */
   return (
-   <section className="registrar-resolucion-scroll">
+    <section className="registrar-resolucion-scroll">
       <div className="formulario-section">
         <Formulario ref={formularioRef} shakeError={shakeFormulario} />
       </div>
@@ -38,13 +49,13 @@ const RegistrarResolucionScroll = forwardRef(({ formularioRef, shakeFormulario }
           <Distribucion
             key={idx}
             ref={distribRefs.current[idx]}
-            onDelete={() => handleRemoveDistribucion(idx)}
+            onDelete={() => removeDistribucion(idx)}
           />
         ))}
       </div>
 
       <div className="boton-section">
-        <Buttons.RegisterButton onClick={handleAddDistribucion} text="Añadir distribución" />
+        <Buttons.RegisterButton onClick={addDistribucion} text="Añadir distribución" />
       </div>
     </section>
   );

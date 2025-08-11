@@ -1,4 +1,12 @@
-// src/components/Distribucion.jsx
+/**
+ * Card Distribución
+ * -----------------
+ * • Autor/inventores + instituciones con porcentajes.
+ * • validate() comprueba campos y totales; getData() devuelve payload.
+ * • Se añadió una opción placeholder en el <select> para evitar que el
+ *   valor quede en '' después de seleccionar “Unidades/Centros”.
+ * • Al modificar un campo se limpia showErrors si todo queda válido.
+ */
 import React, {
   useState,
   useMemo,
@@ -9,10 +17,12 @@ import { Trash2, MinusCircle } from 'lucide-react';
 import './Distribucion.css';
 
 const Distribucion = forwardRef(({ onDelete }, ref) => {
+  /* ---------------- estado ---------------- */
   const [pctAutores, setPctAutores] = useState('');
   const [centros, setCentros] = useState([{ institucion: '', porcentaje: '' }]);
   const [showErrors, setShowErrors] = useState(false);
 
+  /* ---------------- helpers ---------------- */
   const clamp = (v) => {
     if (v === '') return '';
     const n = Number(v);
@@ -21,48 +31,71 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   };
 
   const addCentro = () =>
-    setCentros((prev) => [...prev, { institucion: '', porcentaje: '' }]);
+    setCentros((p) => [...p, { institucion: '', porcentaje: '' }]);
 
-  const updateCentro = (i, field, value) =>
-    setCentros((prev) =>
-      prev.map((c, idx) =>
-        idx === i
-          ? { ...c, [field]: field === 'porcentaje' ? clamp(value) : value }
-          : c
+  const removeCentro = (idx) =>
+    setCentros((p) => p.filter((_, i) => i !== idx));
+
+  const updateCentro = (idx, field, value) =>
+    setCentros((p) =>
+      p.map((c, i) =>
+        i === idx ? { ...c, [field]: field === 'porcentaje' ? clamp(value) : value } : c
       )
     );
 
-  const removeCentro = (i) =>
-    setCentros((prev) => prev.filter((_, idx) => idx !== i));
-
+  /* ---------------- cálculos ---------------- */
   const subtotalAutores = pctAutores === '' ? 0 : Number(pctAutores);
   const subtotalCentros = useMemo(
-    () =>
-      centros.reduce(
-        (acc, c) => acc + (c.porcentaje === '' ? 0 : Number(c.porcentaje)),
-        0
-      ),
+    () => centros.reduce((acc, c) => acc + (c.porcentaje === '' ? 0 : Number(c.porcentaje)), 0),
     [centros]
   );
   const total = subtotalAutores + subtotalCentros;
   const totalClass = total === 100 ? 'total-ok' : 'total-error';
 
+  /* ---------------- validación + API ---------------- */
+  const isValid = () => {
+    const autoresOk = pctAutores !== '';
+    const centrosOk = centros.every(
+      (c) => c.institucion !== '' && c.porcentaje !== ''
+    );
+    return autoresOk && centrosOk && total === 100;
+  };
+
+  /* expone al padre */
   useImperativeHandle(ref, () => ({
     validate() {
-      const autoresOk = pctAutores !== '';
-      const centrosOk = centros.every(
-        (c) => c.institucion !== '' && c.porcentaje !== ''
-      );
-      const totalOk = total === 100;
-      const valido = autoresOk && centrosOk && totalOk;
+      const valido = isValid();
       setShowErrors(!valido);
       return valido;
     },
+    getData() {
+      return {
+        montoMaximo: 0,
+        montoMinimo: 0,
+        porcSubtotalAutores: subtotalAutores / 100,
+        porcSubtotalInstitut: subtotalCentros / 100,
+      };
+    },
   }));
 
+  /* Si el usuario corrige campos, intentamos ocultar errores */
+  const handleAutores = (v) => {
+    setPctAutores(clamp(v));
+    if (showErrors) setShowErrors(!isValid());
+  };
+  const handleCentroSelect = (idx, v) => {
+    updateCentro(idx, 'institucion', v);
+    if (showErrors) setShowErrors(!isValid());
+  };
+  const handleCentroPct = (idx, v) => {
+    updateCentro(idx, 'porcentaje', v);
+    if (showErrors) setShowErrors(!isValid());
+  };
+
+  /* ---------------- UI ---------------- */
   return (
     <div className="distribucion-card">
-      {/* BOTÓN ELIMINAR CARD */}
+      {/* botón eliminar card */}
       <div className="distribucion-delete-top">
         <button className="btn-delete-top" onClick={onDelete}>
           <MinusCircle size={18} />
@@ -81,6 +114,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
         </thead>
 
         <tbody>
+          {/* ------- fila autores -------- */}
           <tr>
             <td className="nombre-col">Autores / inventores</td>
             <td className="input-col">
@@ -88,11 +122,10 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
                 type="number"
                 min="1"
                 max="100"
-                step="1"
                 value={pctAutores}
                 placeholder="0"
                 className={showErrors && pctAutores === '' ? 'field-error' : ''}
-                onChange={(e) => setPctAutores(clamp(e.target.value))}
+                onChange={(e) => handleAutores(e.target.value)}
               />
             </td>
             <td className="simbolo">%</td>
@@ -106,21 +139,24 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
             </td>
           </tr>
 
+          {/* ------- filas centros -------- */}
           {centros.map((c, idx) => (
             <tr key={idx}>
               <td className="input-select">
                 <select
                   value={c.institucion}
                   className={showErrors && c.institucion === '' ? 'field-error' : ''}
-                  onChange={(e) => updateCentro(idx, 'institucion', e.target.value)}
+                  onChange={(e) => handleCentroSelect(idx, e.target.value)}
                 >
-                  <optgroup label="Seleccionar Institución...">
-                    <option value="Unidades/Centros">Unidades/Centros</option>
-                    <option value="ESPOL (institución)">ESPOL (institución)</option>
-                    <option value="Oficina de Transferencia de Resultados de Investigación (OTRI)">
-                      Oficina de Transferencia de Resultados de Investigación (OTRI)
-                    </option>
-                  </optgroup>
+                  {/* placeholder real para evitar valor = '' “fantasma” */}
+                  <option value="" disabled>
+                    Seleccionar institución...
+                  </option>
+                  <option value="Unidades/Centros">Unidades/Centros</option>
+                  <option value="ESPOL (institución)">ESPOL (institución)</option>
+                  <option value="Oficina de Transferencia de Resultados de Investigación (OTRI)">
+                    Oficina de Transferencia de Resultados de Investigación (OTRI)
+                  </option>
                 </select>
               </td>
 
@@ -129,11 +165,10 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
                   type="number"
                   min="1"
                   max="100"
-                  step="1"
                   value={c.porcentaje}
                   placeholder="0"
                   className={showErrors && c.porcentaje === '' ? 'field-error' : ''}
-                  onChange={(e) => updateCentro(idx, 'porcentaje', e.target.value)}
+                  onChange={(e) => handleCentroPct(idx, e.target.value)}
                 />
               </td>
 
