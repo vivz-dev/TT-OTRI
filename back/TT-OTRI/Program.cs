@@ -7,6 +7,7 @@
 //   Nota: En este setup se cablean implementaciones InMemory de los repositorios.
 // ============================================================================
 
+using TT_OTRI.Infrastructure;
 using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
 using TT_OTRI.Infrastructure;

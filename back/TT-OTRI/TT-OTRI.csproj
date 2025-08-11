@@ -15,14 +15,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.*" />
     <PackageReference Include="Net.IBM.Data.Db2-osx" Version="8.0.0.500" />
+    <PackageReference Include="Scrutor" Version="6.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.1" />
   </ItemGroup>
 
   <!-- ✅ Copia IBM.Data.Db2.dll desde la ruta real en tu máquina -->
   <ItemGroup>
-    <None Include="$(HOME)/.nuget/packages/net.ibm.data.db2-osx/8.0.0.500/lib/net8.0/IBM.Data.Db2.dll"
-          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(HOME)/.nuget/packages/net.ibm.data.db2-osx/8.0.0.500/lib/net8.0/IBM.Data.Db2.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <_ContentIncludedByDefault Remove="legacy\TT-OTRI.Api\appsettings.Development.json" />

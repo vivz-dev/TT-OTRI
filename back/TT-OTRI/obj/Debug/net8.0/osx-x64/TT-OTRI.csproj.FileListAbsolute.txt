@@ -92,6 +92,8 @@
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/TT-OTRI.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/TT-OTRI.pdb
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.Extensions.DependencyModel.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.Identity.Abstractions.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.IdentityModel.Abstractions.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.IdentityModel.JsonWebTokens.dll
@@ -100,6 +102,7 @@
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.IdentityModel.Tokens.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Microsoft.OpenApi.dll
+/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Scrutor.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Swashbuckle.AspNetCore.Swagger.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Swashbuckle.AspNetCore.SwaggerGen.dll
 /Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/bin/Debug/net8.0/osx-x64/Swashbuckle.AspNetCore.SwaggerUI.dll
