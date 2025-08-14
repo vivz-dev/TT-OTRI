@@ -1,0 +1,223 @@
+/* src/pages/Resoluciones/components/AcuerdoDistribucion.css */
+
+/* ---------- Card & header ---------- */
+.acuerdo-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 0 rgba(16,24,40,.02);
+}
+
+.acuerdo-header h2,
+.titulo-principal-form {
+  margin: 0 0 .35rem 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.acuerdo-header p,
+.subtitulo-form {
+  margin: 0 0 1rem 0;
+  color: #475569;
+}
+
+/* ---------- Tabla ---------- */
+.tabla-wrapper {
+  width: 100%;
+  /* overflow-x: auto; */
+}
+
+.acuerdo-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .95rem;
+  color: #0f172a;
+  table-layout: fixed; /* columnas fijas */
+}
+
+/* Anchos por columna (≈100%) */
+.acuerdo-table td:nth-child(1),
+.acuerdo-table th:nth-child(1) { width: 24%; } /* Correo */
+.acuerdo-table td:nth-child(2),
+.acuerdo-table th:nth-child(2) { width: 14%; } /* Identificación (RO) */
+.acuerdo-table td:nth-child(3),
+.acuerdo-table th:nth-child(3) { width: 23%; } /* Nombre (RO) */
+.acuerdo-table td:nth-child(4),
+.acuerdo-table th:nth-child(4) { width: 14%; } /* Unidad/Centro (editable) */
+.acuerdo-table td:nth-child(5),
+.acuerdo-table th:nth-child(5) { width: 10%; text-align: center; } /* % Autor */
+.acuerdo-table td:nth-child(6),
+.acuerdo-table th:nth-child(6) { width: 10%; text-align: center; } /* % Unidad */
+.acuerdo-table td:nth-child(7),
+.acuerdo-table th:nth-child(7) {
+  width: 5%;
+  max-width: 48px;
+  min-width: 44px;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+} /* Acciones */
+
+.acuerdo-table thead th {
+  font-weight: 700;
+  background: #f3f4f6;
+  color: #111827;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 14px 12px;
+  vertical-align: middle;
+}
+
+/* Header agrupado para % */
+.acuerdo-table thead .th-group { padding: 0; }
+.th-group-inner {
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  gap: 4px;
+}
+.th-group-inner > span { font-weight: 700; }
+.th-subcols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  font-weight: 600;
+  font-size: .9rem;
+  color: #1f2937;
+}
+
+/* Celdas */
+.acuerdo-table tbody td,
+.acuerdo-table tfoot td {
+  border-bottom: 1px solid #eef2f7;
+  padding: 12px 10px;
+  vertical-align: middle;
+  text-align: left;
+  /* overflow: hidden; que nada empuje columnas */
+}
+.acuerdo-table tbody tr:nth-child(odd) td { background: #fafafa; }
+
+/* Permitir que el dropdown de correo se “desborde” de la celda */
+.acuerdo-table td.correo-cell {
+  overflow: visible;      /* ⬅️ clave */
+  position: relative;     /* para anclar el absolute */
+  z-index: 5;
+}
+
+/* Sube por encima de la tabla/headers */
+.autocomplete .sug-list {
+  z-index: 1000;          /* antes estaba en 20/50; subimos más por si acaso */
+}
+
+
+/* Tfoot (totales) */
+.acuerdo-table tfoot td {
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+.tfoot-label { text-align: right; font-weight: 700; color: #111827; }
+.total-ok  { background: #ecfdf5; color: #065f46; border-radius: 999px; text-align:center; }
+.total-bad { background: #fef2f2; color: #991b1b; border-radius: 999px; text-align:center; }
+.acuerdo-table tfoot td.total-ok strong,
+.acuerdo-table tfoot td.total-bad strong { display: inline-block; padding: 6px 10px; }
+
+/* ---------- Inputs: editables vs solo lectura ---------- */
+.acuerdo-table input,
+.acuerdo-table select {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #0f172a;
+}
+
+/* Estado enfocado (solo editables) */
+.acuerdo-table input:focus:not([readonly]):not([disabled]),
+.acuerdo-table select:focus:not([disabled]) {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30,58,138,.12);
+}
+
+/* Solo lectura / deshabilitados: look pasivo y sin halo */
+.acuerdo-table input[readonly],
+.acuerdo-table input[disabled],
+.acuerdo-table select[disabled] {
+  background: #f9fafb;
+  color: #475569;
+  cursor: default;
+}
+.acuerdo-table input[readonly]:focus,
+.acuerdo-table input[disabled]:focus,
+.acuerdo-table select[disabled]:focus {
+  border-color: #d1d5db;
+  box-shadow: none;
+}
+.acuerdo-table input[readonly]::selection { background: rgba(15,23,42,.12); }
+
+/* % celdas */
+.pct-cell { text-align: center; }
+.pct-cell input { width: 88px; text-align: center; }
+
+/* ---------- Autocomplete correo ---------- */
+.autor-row .correo-cell { position: relative; }
+.autocomplete .sug-list {
+  position: absolute;
+  z-index: 20;
+  left: 0; right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15,23,42,.08);
+  max-height: 260px;
+  /* overflow: auto; */
+}
+.sug-list li { padding: 10px 12px; cursor: pointer; }
+.sug-list li + li { border-top: 1px solid #f1f5f9; }
+.sug-list li:hover, .sug-list li.active { background: #eef2ff; }
+.sug-top { font-weight: 700; color: #0f172a; }
+.sug-sub { font-size: .86rem; color: #475569; }
+
+/* ---------- Acciones (eliminar) ---------- */
+.acciones-cell { text-align: center; }
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  transition: background .15s, transform .1s, box-shadow .15s;
+}
+.btn-icon:hover { background: #fef2f2; transform: scale(1.03); }
+
+/* ---------- Alertas y acciones ---------- */
+.alerts .alert {
+  display: flex; align-items: center; gap: 8px;
+  margin: 10px 0 0; color: #991b1b;
+}
+.acciones { margin-top: 14px; }
+.btn-add {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid #d1d5db; background: #fff; color: #111827;
+  border-radius: 10px; padding: 10px 14px; font-weight: 600; cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.btn-add:hover { border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30,58,138,.12); }
+
+/* ---------- Bloque beneficios ---------- */
+.bloque-beneficios { margin-top: 1.25rem; }
+.bloque-beneficios h3 {
+  margin: 0 0 .35rem 0; font-size: 1.35rem; font-weight: 800; color: #0f172a;
+}
+.bloque-beneficios .nota { margin: 0; color: #475569; }

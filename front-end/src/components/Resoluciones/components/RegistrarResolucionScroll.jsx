@@ -45,6 +45,12 @@ const RegistrarResolucionScroll = forwardRef(({ formularioRef, shakeFormulario }
       </div>
 
       <div className="distribuciones-section">
+        <div className="formulario">
+          <div className="form-header">
+            <h1 className="titulo-principal-form">Formularios de distribución de beneficios económicos</h1>
+            <p className="subtitulo-form">Añade todos los formularios de distribuciones económicas asociados a esta resolución.</p>
+          </div>
+        </div>
         {distribuciones.map((_, idx) => (
           <Distribucion
             key={idx}
@@ -55,7 +61,12 @@ const RegistrarResolucionScroll = forwardRef(({ formularioRef, shakeFormulario }
       </div>
 
       <div className="boton-section">
-        <Buttons.RegisterButton onClick={addDistribucion} text="Añadir distribución" />
+        {/* <Buttons.RegisterButton className="boton-dist" onClick={addDistribucion} text="Añadir distribución" /> */}
+        <button
+            className={'boton-dist'} onClick={addDistribucion}
+          >
+            Añadir distribución
+          </button>
       </div>
     </section>
   );

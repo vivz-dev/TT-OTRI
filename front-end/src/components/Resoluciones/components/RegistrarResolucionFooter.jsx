@@ -20,7 +20,7 @@ const RegistrarResolucionFooter = ({
   <footer className="registrar-resolucion-footer">
     <div className={`form-card ${shakeError ? 'error shake' : ''}`}>
       <AdjuntarArchivo
-        descripcion="Documento(s) con especificaciones técnicas y funcionales de la resolución, con firma electrónica de responsabilidad."
+        descripcion="La resolución firmada y aprobada."
         file={file}
         onChange={onFileChange}
       />

@@ -1,11 +1,11 @@
+// src/pages/Resoluciones/components/Distribucion.jsx
 /**
  * Card Distribución
  * -----------------
  * • Autor/inventores + instituciones con porcentajes.
- * • validate() comprueba campos y totales; getData() devuelve payload.
- * • Se añadió una opción placeholder en el <select> para evitar que el
- *   valor quede en '' después de seleccionar “Unidades/Centros”.
- * • Al modificar un campo se limpia showErrors si todo queda válido.
+ * • Monto mínimo/máximo con "No aplica límite".
+ * • validate() comprueba campos/porcentajes y (si aplica) el rango de montos.
+ * • getData() devuelve payload listo para API.
  */
 import React, {
   useState,
@@ -16,10 +16,25 @@ import React, {
 import { Trash2, MinusCircle } from 'lucide-react';
 import './Distribucion.css';
 
+const INSTITUCIONES = [
+  { value: 'Unidades/Centros', label: 'Unidades/Centros' },
+  { value: 'ESPOL (institución)', label: 'ESPOL (institución)' },
+  {
+    value: 'Oficina de Transferencia de Resultados de Investigación (OTRI)',
+    label: 'Oficina de Transferencia de Resultados de Investigación (OTRI)',
+  },
+];
+
 const Distribucion = forwardRef(({ onDelete }, ref) => {
   /* ---------------- estado ---------------- */
   const [pctAutores, setPctAutores] = useState('');
   const [centros, setCentros] = useState([{ institucion: '', porcentaje: '' }]);
+
+  // 💰 Monto mínimo/máximo
+  const [noLimit, setNoLimit] = useState(false);
+  const [montoMin, setMontoMin] = useState('');
+  const [montoMax, setMontoMax] = useState('');
+
   const [showErrors, setShowErrors] = useState(false);
 
   /* ---------------- helpers ---------------- */
@@ -39,18 +54,61 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   const updateCentro = (idx, field, value) =>
     setCentros((p) =>
       p.map((c, i) =>
-        i === idx ? { ...c, [field]: field === 'porcentaje' ? clamp(value) : value } : c
+        i === idx
+          ? { ...c, [field]: field === 'porcentaje' ? clamp(value) : value }
+          : c
       )
     );
+
+  const parseMoney = (v) => {
+    if (v === '' || v === null || v === undefined) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
 
   /* ---------------- cálculos ---------------- */
   const subtotalAutores = pctAutores === '' ? 0 : Number(pctAutores);
   const subtotalCentros = useMemo(
-    () => centros.reduce((acc, c) => acc + (c.porcentaje === '' ? 0 : Number(c.porcentaje)), 0),
+    () =>
+      centros.reduce(
+        (acc, c) => acc + (c.porcentaje === '' ? 0 : Number(c.porcentaje)),
+        0
+      ),
     [centros]
   );
   const total = subtotalAutores + subtotalCentros;
   const totalClass = total === 100 ? 'total-ok' : 'total-error';
+
+  // 🔒 valores seleccionados (excluye vacíos)
+  const selectedValues = useMemo(
+    () => centros.map((c) => c.institucion).filter(Boolean),
+    [centros]
+  );
+
+  // 🎯 opciones disponibles para un índice concreto:
+  //   - todas las NO usadas por otras filas
+  //   - + la que ya tenga la fila actual (para que no desaparezca)
+  const availableFor = (idx) => {
+    const current = centros[idx]?.institucion;
+    return INSTITUCIONES.filter(
+      (opt) => opt.value === current || !selectedValues.includes(opt.value)
+    );
+  };
+
+  // ¿Quedan opciones libres para añadir otra fila?
+  const canAddMore = selectedValues.length < INSTITUCIONES.length;
+
+  const montosValidos = () => {
+    const min = parseMoney(montoMin);
+    if (min === null || min < 0) return false;
+
+    if (!noLimit) {
+      const max = parseMoney(montoMax);
+      if (max === null || max < 0) return false;
+      if (min > max) return false;
+    }
+    return true;
+  };
 
   /* ---------------- validación + API ---------------- */
   const isValid = () => {
@@ -58,7 +116,12 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
     const centrosOk = centros.every(
       (c) => c.institucion !== '' && c.porcentaje !== ''
     );
-    return autoresOk && centrosOk && total === 100;
+
+    // (Opcional extra) asegurar unicidad:
+    const uniqueCount = new Set(selectedValues).size;
+    const sinDuplicados = uniqueCount === selectedValues.length;
+
+    return autoresOk && centrosOk && sinDuplicados && total === 100 && montosValidos();
   };
 
   /* expone al padre */
@@ -69,11 +132,18 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
       return valido;
     },
     getData() {
+      const min = parseMoney(montoMin);
+      const max = noLimit ? null : parseMoney(montoMax);
       return {
-        montoMaximo: 0,
-        montoMinimo: 0,
+        montoMinimo: min, // obligatorio
+        montoMaximo: max, // null si no aplica límite
         porcSubtotalAutores: subtotalAutores / 100,
         porcSubtotalInstitut: subtotalCentros / 100,
+        // Tip: si necesitas mandar el detalle:
+        beneficiariosInstitucionales: centros.map((c) => ({
+          institucion: c.institucion,
+          porcentaje: Number(c.porcentaje) / 100,
+        })),
       };
     },
   }));
@@ -92,17 +162,96 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
     if (showErrors) setShowErrors(!isValid());
   };
 
+  const handleNoLimit = (checked) => {
+    setNoLimit(checked);
+    if (checked) {
+      setMontoMin('');
+      setMontoMax('');
+    }
+    if (showErrors) setShowErrors(!isValid());
+  };
+
+  const handleMontoMin = (v) => {
+    setMontoMin(v);
+    if (showErrors) setShowErrors(!isValid());
+  };
+  const handleMontoMax = (v) => {
+    setMontoMax(v);
+    if (showErrors) setShowErrors(!isValid());
+  };
+
   /* ---------------- UI ---------------- */
   return (
-    <div className="distribucion-card">
+    <div className="form-card">
       {/* botón eliminar card */}
+      <h2 className="form-card-header">Tabla de porcentaje de distribución</h2>
       <div className="distribucion-delete-top">
         <button className="btn-delete-top" onClick={onDelete}>
           <MinusCircle size={18} />
         </button>
       </div>
 
-      <h3 className="tabla-titulo">Tabla de porcentajes de distribución</h3>
+      {/* 💰 Sección de montos */}
+      <div className="monto-section">
+        <div className="monto-row">
+          <div className="monto-item">
+            <label className="monto-label">Monto Mínimo</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={montoMin}
+              disabled={false}
+              className={
+                showErrors &&
+                !noLimit &&
+                !montosValidos() &&
+                (montoMin === '' || parseMoney(montoMin) === null)
+                  ? 'field-error'
+                  : ''
+              }
+              onChange={(e) => handleMontoMin(e.target.value)}
+            />
+          </div>
+
+          <div className="monto-item">
+            <label className="monto-label">Monto Máximo</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={noLimit ? '' : montoMax}
+              disabled={noLimit}
+              className={
+                showErrors &&
+                !noLimit &&
+                !montosValidos() &&
+                (montoMax === '' || parseMoney(montoMax) === null)
+                  ? 'field-error'
+                  : ''
+              }
+              onChange={(e) => handleMontoMax(e.target.value)}
+            />
+          </div>
+
+          <label className="nolimit-check">
+            <input
+              type="checkbox"
+              checked={noLimit}
+              onChange={(e) => handleNoLimit(e.target.checked)}
+            />
+            <span>No aplica límite</span>
+          </label>
+        </div>
+
+        {!noLimit && showErrors && !montosValidos() && (
+          <p className="monto-error">
+            Verifica los montos: ambos requeridos, no negativos y Mínimo ≤ Máximo.
+          </p>
+        )}
+      </div>
 
       <table className="tabla-distribucion">
         <thead>
@@ -116,7 +265,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
         <tbody>
           {/* ------- fila autores -------- */}
           <tr>
-            <td className="nombre-col">Autores / inventores</td>
+            <td className="nombre-col">Autores/Inventores beneficiarios</td>
             <td className="input-col">
               <input
                 type="number"
@@ -133,7 +282,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
           </tr>
 
           <tr className="fila-subtotal">
-            <td>Subtotal de autores / inventores</td>
+            <td>Subtotal de autores/inventores beneficiarios</td>
             <td className="subtotal" colSpan={3}>
               {pctAutores === '' ? '-%' : `${pctAutores}%`}
             </td>
@@ -148,15 +297,14 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
                   className={showErrors && c.institucion === '' ? 'field-error' : ''}
                   onChange={(e) => handleCentroSelect(idx, e.target.value)}
                 >
-                  {/* placeholder real para evitar valor = '' “fantasma” */}
                   <option value="" disabled>
-                    Seleccionar institución...
+                    Seleccionar beneficiario institucional...
                   </option>
-                  <option value="Unidades/Centros">Unidades/Centros</option>
-                  <option value="ESPOL (institución)">ESPOL (institución)</option>
-                  <option value="Oficina de Transferencia de Resultados de Investigación (OTRI)">
-                    Oficina de Transferencia de Resultados de Investigación (OTRI)
-                  </option>
+                  {availableFor(idx).map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </td>
 
@@ -183,7 +331,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
           ))}
 
           <tr className="fila-subtotal">
-            <td>Subtotal de instituciones / centros</td>
+            <td>Subtotal de beneficiarios institucionales</td>
             <td className="subtotal" colSpan={3}>
               {subtotalCentros === 0 ? '-%' : `${subtotalCentros}%`}
             </td>
@@ -204,9 +352,12 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
         <p className="subtotales-error">¡Los subtotales deben sumar 100 %!</p>
       )}
 
-      <button className="btn-add" onClick={addCentro}>
-        Añadir Centro/Institución
+      <button className="btn-add" onClick={addCentro} disabled={!canAddMore}>
+        Añadir beneficiario institucional
       </button>
+      {!canAddMore && (
+        <p className="hint">No hay más beneficiarios institucionales disponibles para agregar.</p>
+      )}
     </div>
   );
 });

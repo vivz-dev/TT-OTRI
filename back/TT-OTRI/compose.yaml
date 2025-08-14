@@ -1,0 +1,14 @@
+﻿services:
+  ttotri_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms: ["linux/amd64"]
+    image: ttotri-api:latest
+    environment:
+      ASPNETCORE_URLS: "http://0.0.0.0:8080"
+      DB2_CONNSTRING: "Server=192.168.254.53:50000;Database=SAAC;UserID=USROTRI;Password=wL8QUtS9FbprI;"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./certs:/certs:ro

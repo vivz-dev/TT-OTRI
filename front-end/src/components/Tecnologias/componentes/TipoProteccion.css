@@ -69,3 +69,40 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+
+.date-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  background: #fff;
+  gap: 0.4rem;
+  /* max-width: 200px; */
+  transition: border-color 0.2s ease;
+}
+
+.date-input-wrapper:hover {
+  border-color: #1976d2;
+}
+
+.date-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: black;
+}
+
+.date-input-wrapper input[type="date"] {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.date-icon {
+  color: #1976d2;
+  font-size: 1.1rem;
+  cursor: pointer;
+}

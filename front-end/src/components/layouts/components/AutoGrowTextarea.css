@@ -1,0 +1,60 @@
+/* Envuelve cada campo de forma vertical y ocupando todo el ancho */
+.agt-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;  /* Evita centrar horizontalmente */
+  width: 100%;              /* Que ocupe todo el ancho disponible */
+  gap: 0.35rem;              /* Separación entre label, textarea y contador */
+  margin-bottom: 1rem;       /* Espacio inferior entre campos */
+}
+
+.agt-label {
+  font-size: 0.95rem;
+  /* color: #0f172a; */
+  /* font-weight: 600; */
+}
+
+.agt-textarea {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  font: inherit;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.agt-textarea:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.15);
+}
+
+.agt-meta {
+  width: 100%;               /* Contador alineado al ancho del textarea */
+  display: flex;
+  justify-content: flex-end; /* Contador a la derecha */
+}
+
+.agt-counter {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.agt-counter.warn {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+
+.agt-wrapper.agt-error .agt-textarea {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, .15);
+}
+.agt-error-text {
+  color: #ef4444;
+  margin-left: .5rem;
+}

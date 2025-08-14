@@ -1,5 +1,5 @@
 // src/pages/Resoluciones/components/Cotitularidad.jsx
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import './Cotitularidad.css';
 import { AdjuntarArchivo } from '../../layouts/components';
 import ESPOLCotitularRow from './ESPOLCotitularRow';
@@ -13,8 +13,7 @@ const NUEVA_FILA = {
   esEspol: false,
 };
 
-const Cotitularidad = () => {
-  /* ───────── estado ───────── */
+const Cotitularidad = forwardRef((_, ref) => {
   const [filas, setFilas] = useState([
     {
       institucion: 'ESPOL',
@@ -24,9 +23,17 @@ const Cotitularidad = () => {
       esEspol: true,
     },
   ]);
-  const [errorPorcentaje, setErrorPorcentaje] = useState(false);
 
-  /* ───────── helper ───────── */
+  const [errorPorcentaje, setErrorPorcentaje] = useState(false);
+  const [archivoAcuerdo, setArchivoAcuerdo] = useState(null);
+
+  const handleArchivoChange = (fileOrFiles) => {
+    const file =
+      Array.isArray(fileOrFiles) ? fileOrFiles[0]
+      : fileOrFiles?.target?.files?.[0] ?? fileOrFiles ?? null;
+    setArchivoAcuerdo(file || null);
+  };
+
   const updateFila = (idx, path, value) =>
     setFilas(prev =>
       prev.map((f, i) => {
@@ -46,9 +53,9 @@ const Cotitularidad = () => {
       0,
     );
     setErrorPorcentaje(sum !== 100);
+    return sum === 100;
   };
 
-  /* ───────── handlers ───────── */
   const handleSelectUsuarioESPOL = (usuario, idx) => {
     updateFila(idx, 'representante.nombre', usuario.nombre);
     updateFila(idx, 'representante.username', usuario.username);
@@ -79,24 +86,57 @@ const Cotitularidad = () => {
     validarTotal(lista);
   };
 
-  /* ───────── render ───────── */
+  const filaCompleta = (f) => {
+    const porcOk = f.representante.porcentaje !== '' && Number(f.representante.porcentaje) >= 0;
+    if (f.esEspol) return !!f.representante.username && porcOk;
+    const reqText = (t) => typeof t === 'string' && t.trim().length > 0;
+    return (
+      reqText(f.institucion) &&
+      reqText(f.ruc) &&
+      reqText(f.correo) &&
+      reqText(f.representante.nombre) &&
+      reqText(f.representante.correo) &&
+      porcOk
+    );
+  };
+
+  useImperativeHandle(ref, () => ({
+    validate: () => {
+      const totalOk = validarTotal(filas);
+      const filasOk = filas.every(filaCompleta);
+      const archivoOk = !!archivoAcuerdo;
+      return totalOk && filasOk && archivoOk;
+    },
+    getPayload: () => ({
+      filas: filas.map(f => ({
+        esEspol: f.esEspol,
+        institucion: f.institucion,
+        ruc: f.ruc,
+        correo: f.correo,
+        representante: { ...f.representante },
+      })),
+      acuerdoArchivoNombre: archivoAcuerdo?.name ?? null,
+      acuerdoArchivoTipo: archivoAcuerdo?.type ?? null,
+    }),
+  }));
+
+  const total = filas.reduce((acc, f) => acc + Number(f.representante.porcentaje || 0), 0);
+  const totalOk = total === 100;
+
   return (
-    <form className="formulario">
+    <form className="coti-form">
       <div className="form-header">
         <h1 className="titulo-principal-form">Cotitularidad</h1>
-        <p className="subtitulo-form">
-          Complete los datos de las instituciones cotitulares según lo establecido en el acuerdo de
-          cotitularidad.
-        </p>
+        <p className="subtitulo-form">Complete los datos de las instituciones cotitulares según el acuerdo.</p>
       </div>
-
-      <div className="form-card">
-        <div className="tabla-cotitular-scroll">
-          <table className="cotitular-table">
+      <section className="card coti-card">
+        <div className="table-wrap">
+          <table className="coti-table">
             <thead>
-              <tr>
+              <tr className="th-group">
                 <th colSpan={3}>Institución cotitular</th>
                 <th colSpan={4}>Representante cotitular</th>
+                <th />
               </tr>
               <tr>
                 <th>Nombre</th>
@@ -106,7 +146,7 @@ const Cotitularidad = () => {
                 <th>Correo institucional</th>
                 <th>Teléfono de contacto</th>
                 <th>% titularidad</th>
-                <th /> {/* columna icono */}
+                <th></th>
               </tr>
             </thead>
 
@@ -135,17 +175,9 @@ const Cotitularidad = () => {
 
             <tfoot>
               <tr>
-                <td colSpan={7} style={{ textAlign: 'right' }}>
-                  <strong>Total de cotitularidad</strong>
-                </td>
-                <td>
-                  <strong>
-                    {filas.reduce(
-                      (acc, f) => acc + Number(f.representante.porcentaje || 0),
-                      0,
-                    )}
-                    %
-                  </strong>
+                <td colSpan={7} className="tfoot-label">Total de cotitularidad</td>
+                <td className="tfoot-badge">
+                  <span className={`badge-total ${totalOk ? 'ok' : 'warn'}`}>{total}%</span>
                 </td>
               </tr>
             </tfoot>
@@ -153,23 +185,26 @@ const Cotitularidad = () => {
         </div>
 
         {errorPorcentaje && (
-          <p className="error-msg">El total de % de titularidad debe sumar exactamente 100.</p>
+          <p className="coti-error">El total debe sumar exactamente 100%.</p>
         )}
 
-        <button type="button" className="btn-add-cotitular" onClick={handleAddFila}>
-          Añadir cotitular
+        <button type="button" className="btn-outline" onClick={handleAddFila}>
+          <span className="plus">+</span> Añadir cotitular
         </button>
-      </div>
+      </section>
 
-      <div className="form-card">
+      <section className="card attach-card">
         <AdjuntarArchivo
           descripcion="Documento(s) con especificaciones acerca de la cotitularidad."
-          file={null}
-          onChange={() => {}}
+          file={archivoAcuerdo}
+          onChange={handleArchivoChange}
         />
-      </div>
+        {!archivoAcuerdo && (
+          <p className="coti-hint">Adjunta al menos un archivo para continuar.</p>
+        )}
+      </section>
     </form>
   );
-};
+});
 
 export default Cotitularidad;

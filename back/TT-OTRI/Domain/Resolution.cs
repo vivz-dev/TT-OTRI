@@ -6,13 +6,16 @@
 //
 // NOTA: Mapear con EF Core => builder.ToTable("T_OTRI_TT_RESOLUCION")
 // ============================================================================
+using System.Text.Json.Serialization;
 
 namespace TT_OTRI.Domain;
+
 
 /// <summary>
 /// Estado de una resolución.
 /// Se almacena como <c>char</c> en DB2: 'V' = Vigente, 'D' = Derogada.
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum ResolutionStatus
 {
     /// <summary>Resolución vigente ('V').</summary>

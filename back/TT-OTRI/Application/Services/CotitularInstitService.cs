@@ -85,4 +85,32 @@ public class CotitularInstitService
     /*------------------- Delete --------------------*/
     /// <summary>Elimina un cotitular institucional por Id.</summary>
     public Task<bool> DeleteAsync(int id) => _repo.DeleteAsync(id);
+    
+    /// <summary>
+    /// Resuelve una institución: si existe por RUC o Correo, la retorna;
+    /// si no existe, la crea con el Nombre provisto. Si no se provee RUC ni Correo, crea una nueva.
+    /// Retorna null si falta Nombre.
+    /// </summary>
+    public async Task<CotitularInstit?> ResolveAsync(CotitularInstitCreateDto dto)
+    {
+        if (dto is null || string.IsNullOrWhiteSpace(dto.Nombre)) return null;
+
+        var ruc    = dto.Ruc?.Trim();
+        var correo = dto.Correo?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(ruc))
+        {
+            var byRuc = await _repo.GetByRucAsync(ruc);
+            if (byRuc is not null) return byRuc;
+        }
+
+        if (!string.IsNullOrWhiteSpace(correo))
+        {
+            var byCorreo = await _repo.GetByCorreoAsync(correo);
+            if (byCorreo is not null) return byCorreo;
+        }
+
+        // No existe → crear
+        return await CreateAsync(dto);
+    }
 }

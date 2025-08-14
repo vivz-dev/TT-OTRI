@@ -13,19 +13,19 @@ namespace TT_OTRI.Api.Controllers
     /// <summary>
     /// Controlador utilitario para pruebas rápidas contra DB2.
     /// Permite verificar cadena de conexión, apertura de conexión y lectura
-    /// de resultados a través de <see cref="TestDb2Repository"/>.
+    /// de resultados a través de <see cref="TestDb2RepositoryDb2"/>.
     /// </summary>
     [ApiController]
     [Route("api/db2-test")]
     public class TestDb2Controller : ControllerBase
     {
-        private readonly TestDb2Repository _repo;
+        private readonly TestDb2RepositoryDb2 _repo;
 
         /// <summary>
         /// Constructor. Inyecta el repositorio de prueba para DB2.
         /// </summary>
         /// <param name="repo">Repositorio utilitario para ejecutar lecturas simples.</param>
-        public TestDb2Controller(TestDb2Repository repo)
+        public TestDb2Controller(TestDb2RepositoryDb2 repo)
         {
             _repo = repo;
         }

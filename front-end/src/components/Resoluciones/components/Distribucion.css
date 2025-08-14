@@ -6,6 +6,8 @@
   padding: 1.8rem;
   margin-top: 2rem;
   font-family: inherit;
+  max-width: 980px;
+  
 }
 
 /* -------- Monto -------- */
@@ -183,3 +185,15 @@
 .btn-delete-top:hover {
   color: #dc2626;
 }
+
+
+/* --- Montos --- */
+.monto-section { margin-bottom: 16px; }
+.monto-titulo { font-size: 16px; margin: 0 0 8px; }
+.monto-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center;}
+.monto-item { display: flex; flex-direction: column; align-items: center; justify-content: center;}
+.monto-label { font-style: italic; color: #6b7280; margin-bottom: 6px; }
+.monto-item input { padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 10px; width: 180px; }
+.nolimit-check { display: inline-flex; align-items: center; gap: 8px; color: #374151; }
+.monto-error { color: #ef4444; margin-top: 6px; }
+.field-error { border-color: #ef4444 !important; }

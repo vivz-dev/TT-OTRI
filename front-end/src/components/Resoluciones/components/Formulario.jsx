@@ -16,32 +16,45 @@ const Formulario = forwardRef(({ shakeError }, ref) => {
     fechaVigencia: false,
     descripcion: false,
   });
-    useImperativeHandle(ref, () => ({
-    validate() {
-        const nuevoError = {
-        num1: !num1,
-        num2: !num2,
-        num3: !num3,
-        fechaResolucion: !fechaResolucion,
-        fechaVigencia: !fechaVigencia,
-        descripcion: !descripcion,
-        };
-        setErrores(nuevoError);
+  useImperativeHandle(ref, () => ({
+  validate() {
+    const nuevoError = {
+      num1: !num1,
+      num2: !num2,
+      num3: !num3,
+      fechaResolucion: !fechaResolucion,
+      fechaVigencia: !fechaVigencia,
+      descripcion: !descripcion,
+    };
+    setErrores(nuevoError);
 
-        const esValido = !Object.values(nuevoError).some(Boolean);
-        return {
-        valido: esValido,
-        data: esValido
-            ? {
-                numero: `${num1}-${num2}-${num3}`,
-                fechaResolucion,
-                fechaVigencia,
-                descripcion,
-            }
-            : null,
-        };
-    },
-    }));
+    const esValido = !Object.values(nuevoError).some(Boolean);
+    return {
+      valido: esValido,
+      data: esValido
+        ? {
+            numero: `${num1}-${num2}-${num3}`,
+            fechaResolucion,
+            fechaVigencia,
+            descripcion,
+          }
+        : null,
+    };
+  },
+
+  /* 👇 NUEVO: devuelve los valores actuales sin validar */
+  getRaw() {
+    const partes = [num1, num2, num3].filter(Boolean);
+    const numeroParcial = partes.length ? partes.join('-') : '—';
+    return {
+      numero: numeroParcial,
+      fechaResolucion: fechaResolucion || null,
+      fechaVigencia:   fechaVigencia   || null,
+      descripcion:     descripcion     || '—',
+    };
+  },
+}));
+
 
   return (
     <div className="formulario">
@@ -50,7 +63,7 @@ const Formulario = forwardRef(({ shakeError }, ref) => {
         <p className="subtitulo-form">Complete la información sobre la resolución establecida.</p>
       </div>
       <div className='form-fieldsets'>
-        <div className={`form-card ${shakeError ? 'error shake' : ''}`}>
+        <div className={`form-card ${shakeError ? 'error shake' : ''} resolucion-card`}>
           <h2 className="form-card-header">Información básica</h2>
           <div className="input-row">
             <label className="num-resolucion">

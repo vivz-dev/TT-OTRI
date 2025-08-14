@@ -1,58 +1,246 @@
 /* src/pages/Resoluciones/components/Cotitularidad.css */
 
-/* contenedor scroll para mantener la tabla dentro de la card */
-.tabla-cotitular-scroll {
-  overflow-x: auto;     /* scroll solo si lo necesita */
+/* -------- Layout general -------- */
+.coti-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.coti-header {
+  text-align: center;
+  margin-bottom: .25rem;
+}
+
+.coti-title {
+  margin: 0 0 .25rem 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a; /* azul muy oscuro */
+}
+
+.coti-subtitle {
+  margin: 0;
+  color: #475569; /* gris azulado */
+  font-size: .95rem;
+}
+
+/* -------- Cards -------- */
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;       /* gris suave */
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 0 rgba(16,24,40,.02);
+}
+
+.coti-card { padding: 16px 16px 20px; }
+.attach-card { padding: 20px; }
+
+/* -------- Tabla -------- */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.coti-table {
+  /* width: 100%; */
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.95rem;
+  color: #0f172a;
+  table-layout: fixed; /* 🔹 clave: asegura ancho fijo */
+}
+
+/* 🔒 Anchos fijos/proporcionales por columna (100% total) */
+.coti-table th:nth-child(1),
+.coti-table td:nth-child(1) { width: 16%; } /* Nombre institución */
+.coti-table th:nth-child(2),
+.coti-table td:nth-child(2) { width: 10%; } /* RUC */
+.coti-table th:nth-child(3),
+.coti-table td:nth-child(3) { width: 15%; } /* Correo */
+.coti-table th:nth-child(4),
+.coti-table td:nth-child(4) { width: 15%; } /* Nombre representante */
+.coti-table th:nth-child(5),
+.coti-table td:nth-child(5) { width: 16%; } /* Correo inst. */
+.coti-table th:nth-child(6),
+.coti-table td:nth-child(6) { width: 12%; } /* Teléfono */
+.coti-table th:nth-child(7),
+.coti-table td:nth-child(7) { width: 11%; text-align: center; } /* % titularidad */
+
+/* 🧹 Columna icono: muy angosta y sin relleno lateral */
+.coti-table th:nth-child(8),
+.coti-table td:nth-child(8) {
+  width: 5%;
+  max-width: 48px;
+  min-width: 44px;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Evitar que el contenido empuje columnas */
+.coti-table th, .coti-table td { overflow: hidden; }
+.coti-table input, .coti-table textarea { max-width: 100%; }
+
+/* Encabezados */
+.coti-table thead th {
+  font-weight: 700;
+  background: #f3f4f6; /* encabezado gris claro */
+  color: #111827;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 14px 12px;
+}
+
+.coti-table thead .th-group th {
+  text-align: left;
+  font-size: .95rem;
+  background: #eef2ff; /* leve tono azulado para la fila de grupo */
+  color: #1e3a8a;
+}
+
+/* Celdas */
+.coti-table tbody td {
+  border-bottom: 1px solid #eef2f7;
+  padding: 12px 10px;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.coti-table tbody tr:nth-child(odd) td {
+  background: #fafafa; /* zebra */
+}
+
+.coti-table tfoot td {
+  padding: 14px 12px;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+/* Bordes redondeados externos */
+.coti-table thead tr:first-child th:first-child { border-top-left-radius: 8px; }
+.coti-table thead tr:first-child th:last-child  { border-top-right-radius: 8px; }
+.coti-table tfoot tr:last-child td:first-child  { border-bottom-left-radius: 8px; }
+.coti-table tfoot tr:last-child td:last-child   { border-bottom-right-radius: 8px; }
+
+/* Inputs dentro de la tabla (no rompen) */
+.coti-table input,
+.coti-table textarea {
   width: 100%;
   box-sizing: border-box;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
 }
 
-/* tabla con ancho mínimo razonable */
-.cotitular-table {
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 0.95rem;
+.coti-table input:focus,
+.coti-table textarea:focus {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30,58,138,.12);
 }
 
-/* celdas */
-.cotitular-table th,
-.cotitular-table td {
-  border: 1px solid #ccc;
-  padding: 8px 6px;
+/* Correo institucional (usuario + dominio fijo) */
+.correo-institucional-wrapper {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+.correo-dominio {
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #475569;
+  white-space: nowrap;
+}
+
+/* Columna % */
+.input-porcentaje {
+  width: 88px;
   text-align: center;
 }
 
-/* inputs → que no rompan la fila */
-.cotitular-table input {
-  width: 100%;
-  box-sizing: border-box;
+/* Tfoot */
+.tfoot-label {
+  text-align: right;
+  font-weight: 700;
+  color: #111827;
+}
+.tfoot-badge {
+  text-align: left;
 }
 
-/* mensaje de error */
-.error-msg {
-  color: var(--error-msg);
+.badge-total {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.badge-total.ok {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+.badge-total.warn {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+/* Botón añadir */
+.btn-outline {
+  margin-top: 14px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  border-radius: 10px;
+  padding: 10px 14px;
   font-weight: 600;
-  margin: 0.5rem 0;
-}
-
-/* ancho fijo de la columna ícono */
-.cotitular-table th:last-child,
-.cotitular-table td:last-child {
-  width: 38px;
-}
-
-/* botón eliminar */
-.delete-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  line-height: 0;
-  color: #dc2626;              /* rojo suave */
   cursor: pointer;
-  transition: transform .15s ease;
+  transition: border-color .15s, box-shadow .15s;
+}
+.btn-outline:hover {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30,58,138,.12);
+}
+.btn-outline .plus {
+  font-weight: 700;
+  margin-right: 6px;
 }
 
+/* Eliminar fila: botón compacto */
+.delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+  transition: background .15s, transform .1s, box-shadow .15s;
+}
 .delete-btn:hover {
-  transform: scale(1.15);
+  background: #fef2f2;
+  transform: scale(1.03);
 }
 
+/* Mensajes */
+.coti-error {
+  color: #b91c1c;
+  font-weight: 700;
+  margin: 10px 0 0 2px;
+}
+.coti-hint {
+  margin-top: 8px;
+  color: #475569;
+  font-size: .92rem;
+}

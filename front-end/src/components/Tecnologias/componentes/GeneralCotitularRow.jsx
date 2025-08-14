@@ -1,6 +1,7 @@
 // src/pages/Resoluciones/components/GeneralCotitularRow.jsx
 import React from 'react';
 import { Trash2 } from 'lucide-react';
+import * as Components from '../../layouts/components';
 
 const GeneralCotitularRow = ({
   fila,
@@ -11,66 +12,111 @@ const GeneralCotitularRow = ({
 }) => (
   <tr>
     <td>
-      <input
-        type="text"
+      <Components.GrowTextArea
+        id={`inst-${index}`}
+        name="Institución"
+        placeholder="Institución"
         value={fila.institucion}
         onChange={e => onChange('institucion', e.target.value)}
+        maxLength={50}
+        rows={1}
+        kind="text"
+        required
       />
     </td>
 
     <td>
-      <input
-        type="text"
+      {/* RUC: string pero solo dígitos, validación de RUC EC */}
+      <Components.GrowTextArea
+        id={`ruc-${index}`}
+        name="RUC"
+        placeholder="RUC"
         value={fila.ruc}
         onChange={e => onChange('ruc', e.target.value)}
+        maxLength={13}
+        rows={1}
+        kind="ruc"
+        required
       />
     </td>
 
     <td>
-      <input
-        type="text"
+      {/* Correo: formato email */}
+      <Components.GrowTextArea
+        id={`correo-${index}`}
+        name="Correo"
+        placeholder="correo@dominio.com"
         value={fila.correo}
         onChange={e => onChange('correo', e.target.value)}
+        maxLength={100}
+        rows={1}
+        kind="email"
+        required
       />
     </td>
 
     <td>
-      <input
-        type="text"
+      <Components.GrowTextArea
+        id={`rep-nombre-${index}`}
+        name="Representante"
+        placeholder="Representante"
         value={fila.representante.nombre}
         onChange={e => onChange('representante.nombre', e.target.value)}
+        maxLength={50}
+        rows={1}
+        kind="text"
+        required
       />
     </td>
 
     <td>
-      <input
-        type="text"
+      <Components.GrowTextArea
+        id={`rep-correo-${index}`}
+        name="RepresentanteCorreo"
+        placeholder="correo@dominio.com"
         value={fila.representante.correo}
         onChange={e => onChange('representante.correo', e.target.value)}
+        maxLength={100}
+        rows={1}
+        kind="email"
       />
     </td>
 
     <td>
-      <input
-        type="text"
+      {/* Teléfono: sólo dígitos, 7–10 */}
+      <Components.GrowTextArea
+        id={`rep-tel-${index}`}
+        name="RepresentanteTelefono"
+        placeholder="Teléfono"
         value={fila.representante.telefono}
         onChange={e => onChange('representante.telefono', e.target.value)}
+        maxLength={10}
+        rows={1}
+        kind="phone"
       />
     </td>
 
     <td>
       <input
-        type="text"
+        type="number"
+        min={0}
+        max={100}
+        step="1"
         inputMode="numeric"
-        pattern="[0-9]*"
         value={fila.representante.porcentaje}
-        onChange={e => onPorcentajeChange(index, e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          // permite vacío para que el usuario escriba cómodo
+          if (v === '' || (/^\d{1,3}$/.test(v) && Number(v) <= 100)) {
+            onPorcentajeChange(index, v);
+          }
+        }}
         placeholder="Ej: 50"
         className="input-porcentaje"
+        aria-label="Porcentaje del representante"
       />
     </td>
 
-    {/* Icono eliminar */}
     <td>
       <button
         type="button"

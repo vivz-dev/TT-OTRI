@@ -1,91 +1,102 @@
-/* contenedor principal */
+/* ─────────────────────────────
+   CONTENEDOR PRINCIPAL DEL STEP-SCROLL
+─────────────────────────────*/
+/* Caja blanca con bordes redondeados y padding interno */
 .step-scroll {
-  background: #fff;
-  border-radius: 8px;
-  padding: 2rem;
+  background: #fff;        /* Fondo blanco */
+  border-radius: 8px;      /* Bordes redondeados */
+  padding: 2rem;           /* Espaciado interno amplio */
 }
 
-/* botón siguiente */
+/* ─────────────────────────────
+   BOTONES DE NAVEGACIÓN
+─────────────────────────────*/
+/* Contenedor horizontal de botones "Anterior" y "Siguiente" */
 .step-actions {
-  margin-top: 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-top: 2rem;                /* Separación desde el contenido */
+  display: flex;                   /* Coloca botones en fila */
+  justify-content: space-between;  /* Extremos opuestos */
+  align-items: center;             /* Centrado vertical */
 }
 
-/* deja que el botón de la izquierda se quede a la izquierda */
+/* Alinea el botón izquierdo estrictamente a la izquierda */
 .step-actions .left .register-button {
-  margin-left: 0 !important;   /* anula el auto */
+  margin-left: 0 !important;
   margin-right: auto !important;
 }
 
-/* el de la derecha conserva el comportamiento original */
+/* Alinea el botón derecho estrictamente a la derecha */
 .step-actions .right .register-button {
   margin-left: auto !important;
-  margin-right: 10px !important; /* ya era así, por claridad */
+  margin-right: 10px !important;
 }
 
-
+/* Estilo genérico para botón "Siguiente" */
 .btn-next {
-  background: #1e2a5a;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1.8rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
+  background: #1e2a5a;       /* Azul oscuro institucional */
+  color: #fff;               /* Texto blanco */
+  border: none;              /* Sin borde */
+  border-radius: 6px;        /* Bordes redondeados */
+  padding: 0.6rem 1.8rem;    /* Espaciado interno */
+  font-size: 1rem;           /* Tamaño del texto */
+  cursor: pointer;           /* Manito al pasar */
+  transition: background 0.2s; /* Suavizado al cambiar color */
 }
 
+/* Cambio de color al pasar el mouse */
 .btn-next:hover {
-  background: #0f172a;
+  background: #0f172a;       /* Azul más oscuro */
 }
 
-/* ---------- STEP BAR ---------- */
+/* ─────────────────────────────
+   BARRA DE PASOS (STEPPER)
+─────────────────────────────*/
+/* Contenedor de círculos y líneas de progreso */
 .stepper {
-  display: flex;
-  align-items: center;
-  margin-bottom: 2rem;
+  display: flex;             /* Distribuye los pasos en fila */
+  align-items: center;       /* Centrado vertical */
+  margin-bottom: 2rem;       /* Separación inferior */
 }
 
-/* cada celda flex ocupa el mismo espacio */
+/* Cada paso ocupa espacio proporcional */
 .step {
-  flex: 1;
-  position: relative;
-  display: flex;
+  flex: 1;                   /* Igual ancho para cada paso */
+  position: relative;        /* Para posicionar la línea */
+  display: flex;             /* Centrar círculo */
   justify-content: center;
 }
 
-/* círculo */
+/* Círculo base del paso */
 .step::before {
-  content: '';
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #d1d5db;              /* gris */
+  content: '';               /* Necesario para pseudo-elemento */
+  width: 24px;               /* Ancho círculo */
+  height: 24px;              /* Alto círculo */
+  border-radius: 50%;        /* Forma circular */
+  background: #d1d5db;       /* Gris por defecto */
   position: relative;
-  z-index: 2;
+  z-index: 2;                /* Encima de la línea */
 }
 
-/* conector entre círculos */
+/* Línea que conecta círculos (excepto el último) */
 .step:not(:last-child)::after {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;                        /* desde el centro del círculo */
-  width: calc(100% - 24px);         /* hasta centro del siguiente */
-  height: 2px;
-  background: #d1d5db;              /* gris */
+  top: 50%;                   /* Centrado vertical */
+  left: 50%;                  /* Desde centro del círculo */
+  width: calc(100% - 24px);   /* Hasta el centro del siguiente */
+  height: 2px;                /* Grosor línea */
+  background: #d1d5db;        /* Gris por defecto */
   transform: translateY(-50%);
-  z-index: 1;
+  z-index: 1;                 /* Detrás del círculo */
 }
 
-/* estados — azul institucional */
+/* Estado activo o completado: círculo azul */
 .step.active::before,
 .step.completed::before {
-  background: #1e3a8a;
+  background: #1e3a8a;        /* Azul institucional */
 }
 
+/* Línea azul entre pasos completados */
 .step.completed:not(:last-child)::after {
   background: #1e3a8a;
 }

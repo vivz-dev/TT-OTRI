@@ -21,5 +21,26 @@
 }
 
 .boton-section{
-  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+}
+
+.boton-dist{
+    background-color: var(--esp-azul-institucional); /* azul oscuro */
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 10px;
+    /* margin-left: auto; */
+    margin-right: 10px;
+}
+
+.boton-dist:hover{
+    color: var(--esp-azul-institucional);
+    background-color: var(--button-page-hover);
 }

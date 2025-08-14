@@ -9,10 +9,11 @@ return (
   <section className="action-bar">
     {/* Campo de búsqueda */}
     <SearchInput
-        placeholder="Buscar resoluciones..."
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
-      />
+      placeholder="Buscar tecnologías..."
+      value={searchText}
+      onChange={(e) => setSearchText(e.target.value)}
+    />
+
 
     {/* Filtros */}
     <div className='button-section'>

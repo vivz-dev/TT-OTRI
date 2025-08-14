@@ -13,7 +13,7 @@ namespace TT_OTRI.Application.DTOs;
 public class DistributionCreateDto
 {
     /// <summary>
-    /// Id de la resolución (FK) a la que pertenece esta distribución.
+    /// Id de la resolucaión (FK) a la que pertenece esta distribución.
     /// </summary>
     public int     ResolutionId         { get; set; }
 

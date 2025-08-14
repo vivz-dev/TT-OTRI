@@ -224,7 +224,7 @@
           }
         }
       },
-      "Net.IBM.Data.Db2-osx/8.0.0.500": {
+      "Net.IBM.Data.Db2-lnx/8.0.0.500": {
         "type": "package",
         "dependencies": {
           "System.Runtime.Loader": "4.3.0"
@@ -236,7 +236,7 @@
           "lib/net8.0/IBM.Data.Db2.dll": {}
         },
         "build": {
-          "buildTransitive/Net.IBM.Data.Db2-osx.targets": {}
+          "buildTransitive/Net.IBM.Data.Db2-lnx.targets": {}
         }
       },
       "Scrutor/6.1.0": {
@@ -437,7 +437,7 @@
         }
       }
     },
-    "net8.0/osx-x64": {
+    "net8.0/linux-x64": {
       "Microsoft.AspNetCore.Authentication.JwtBearer/8.0.19": {
         "type": "package",
         "dependencies": {
@@ -660,7 +660,7 @@
           }
         }
       },
-      "Net.IBM.Data.Db2-osx/8.0.0.500": {
+      "Net.IBM.Data.Db2-lnx/8.0.0.500": {
         "type": "package",
         "dependencies": {
           "System.Runtime.Loader": "4.3.0"
@@ -672,7 +672,7 @@
           "lib/net8.0/IBM.Data.Db2.dll": {}
         },
         "build": {
-          "buildTransitive/Net.IBM.Data.Db2-osx.targets": {}
+          "buildTransitive/Net.IBM.Data.Db2-lnx.targets": {}
         }
       },
       "runtime.any.System.IO/4.3.0": {
@@ -1565,17 +1565,18 @@
         "microsoft.openapi.nuspec"
       ]
     },
-    "Net.IBM.Data.Db2-osx/8.0.0.500": {
-      "sha512": "mQRlzT3R+j0r2msscYWZFYv4ZwjLVeUC1fOgJ7MTmNErU0jndp4B6CWhPaarWmY9LeUMcjlGQnxl2cyqPGUyoQ==",
+    "Net.IBM.Data.Db2-lnx/8.0.0.500": {
+      "sha512": "hHYxZAvO7sQw1KJq4oiQcGYEzmPIZd/Gds4iPGmcfpP/WcxIzKiZJraQcie+Rl+pvCMWIKzJ4qYSTnQl4bHMIQ==",
       "type": "package",
-      "path": "net.ibm.data.db2-osx/8.0.0.500",
+      "path": "net.ibm.data.db2-lnx/8.0.0.500",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Lic_en.txt",
         "REDIST.txt",
         "Readme.md",
-        "buildTransitive/Net.IBM.Data.Db2-osx.targets",
+        "buildTransitive/Net.IBM.Data.Db2-lnx.targets",
+        "buildTransitive/clidriver/Readme.txt",
         "buildTransitive/clidriver/adm/db2trc",
         "buildTransitive/clidriver/bin/db2cli",
         "buildTransitive/clidriver/bin/db2level",
@@ -1623,24 +1624,31 @@
         "buildTransitive/clidriver/conv/ms/1399ucs2.cnv",
         "buildTransitive/clidriver/conv/ms/5039ucs2.cnv",
         "buildTransitive/clidriver/conv/ms/ucs20943.cnv",
+        "buildTransitive/clidriver/db2dump/.keep.odbc_cli",
+        "buildTransitive/clidriver/lib/icc/C/icc/ReadMe.txt",
+        "buildTransitive/clidriver/lib/icc/C/icc/icclib/ICCSIG.txt",
+        "buildTransitive/clidriver/lib/icc/C/icc/icclib/libicclib084.so",
+        "buildTransitive/clidriver/lib/icc/N/icc/ReadMe.txt",
         "buildTransitive/clidriver/lib/icc/N/icc/icclib/ICCSIG.txt",
-        "buildTransitive/clidriver/lib/icc/N/icc/icclib/libicclib085.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8acmeidup.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8cms.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8dbfl.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8drld.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8iccs.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8kicc.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8km.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8km2.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8ldap.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8p11.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8ssl.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8sys.dylib",
-        "buildTransitive/clidriver/lib/icc/libgsk8valn.dylib",
-        "buildTransitive/clidriver/lib/libDB2xml4c.58.0.dylib",
-        "buildTransitive/clidriver/lib/libdb2.dylib",
-        "buildTransitive/clidriver/lib/libdb2clixml4c.dylib",
+        "buildTransitive/clidriver/lib/icc/N/icc/icclib/libicclib085.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8acmeidup_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8cms_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8dbfl_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8drld_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8iccs_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8kicc_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8km2_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8km_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8ldap_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8p11_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8ssl_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8sys_64.so",
+        "buildTransitive/clidriver/lib/icc/libgsk8valn_64.so",
+        "buildTransitive/clidriver/lib/libDB2xml4c.so",
+        "buildTransitive/clidriver/lib/libDB2xml4c.so.58",
+        "buildTransitive/clidriver/lib/libdb2.so",
+        "buildTransitive/clidriver/lib/libdb2.so.1",
+        "buildTransitive/clidriver/lib/libdb2clixml4c.so",
         "buildTransitive/clidriver/license/UNIX/odbc_LI_en",
         "buildTransitive/clidriver/license/dsdriver_fixlist.html",
         "buildTransitive/clidriver/license/odbc_REDIST.txt",
@@ -1660,10 +1668,13 @@
         "buildTransitive/clidriver/msg/en_US.iso88591/db2sqlh.mo",
         "buildTransitive/clidriver/msg/en_US.iso88591/db2stt.mo",
         "buildTransitive/clidriver/msg/en_US.iso88591/db2supp.mo",
-        "buildTransitive/clidriver/security64/plugin/IBM/client/IBMIAMauth.dylib",
+        "buildTransitive/clidriver/properties/version/ibm.com_IBM_Data_Server_Driver_for_ODBC_and_CLI-12.1.2.swidtag",
+        "buildTransitive/clidriver/security64/plugin/IBM/client/IBMIAMauth.so",
+        "buildTransitive/clidriver/security64/plugin/IBM/client/IBMkrb5.so",
+        "buildTransitive/clidriver/security64/plugin/IBM/client/IBMkrb5.so.1",
         "lib/net8.0/IBM.Data.Db2.dll",
-        "net.ibm.data.db2-osx.8.0.0.500.nupkg.sha512",
-        "net.ibm.data.db2-osx.nuspec"
+        "net.ibm.data.db2-lnx.8.0.0.500.nupkg.sha512",
+        "net.ibm.data.db2-lnx.nuspec"
       ]
     },
     "runtime.any.System.IO/4.3.0": {
@@ -2475,7 +2486,7 @@
   "projectFileDependencyGroups": {
     "net8.0": [
       "Microsoft.AspNetCore.Authentication.JwtBearer >= 8.0.*",
-      "Net.IBM.Data.Db2-osx >= 8.0.0.500",
+      "Net.IBM.Data.Db2-lnx >= 8.0.0.500",
       "Scrutor >= 6.1.0",
       "Swashbuckle.AspNetCore >= 8.1.2",
       "System.IdentityModel.Tokens.Jwt >= 8.13.1"
@@ -2527,7 +2538,7 @@
             "target": "Package",
             "version": "[8.0.*, )"
           },
-          "Net.IBM.Data.Db2-osx": {
+          "Net.IBM.Data.Db2-lnx": {
             "target": "Package",
             "version": "[8.0.0.500, )"
           },
@@ -2555,6 +2566,20 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Runtime.linux-x64",
+            "version": "[8.0.18, 8.0.18]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.linux-x64",
+            "version": "[8.0.18, 8.0.18]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Runtime.linux-x64",
+            "version": "[8.0.18, 8.0.18]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.AspNetCore.App": {
             "privateAssets": "none"
@@ -2567,7 +2592,7 @@
       }
     },
     "runtimes": {
-      "osx-x64": {
+      "linux-x64": {
         "#import": []
       }
     }

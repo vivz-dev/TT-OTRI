@@ -3,6 +3,6 @@
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <Import Project="$(NuGetPackageRoot)microsoft.extensions.logging.abstractions/8.0.0/buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.extensions.logging.abstractions/8.0.0/buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets')" />
     <Import Project="$(NuGetPackageRoot)microsoft.extensions.apidescription.server/6.0.5/build/Microsoft.Extensions.ApiDescription.Server.targets" Condition="Exists('$(NuGetPackageRoot)microsoft.extensions.apidescription.server/6.0.5/build/Microsoft.Extensions.ApiDescription.Server.targets')" />
-    <Import Project="$(NuGetPackageRoot)net.ibm.data.db2-osx/8.0.0.500/buildTransitive/Net.IBM.Data.Db2-osx.targets" Condition="Exists('$(NuGetPackageRoot)net.ibm.data.db2-osx/8.0.0.500/buildTransitive/Net.IBM.Data.Db2-osx.targets')" />
+    <Import Project="$(NuGetPackageRoot)net.ibm.data.db2-lnx/8.0.0.500/buildTransitive/Net.IBM.Data.Db2-lnx.targets" Condition="Exists('$(NuGetPackageRoot)net.ibm.data.db2-lnx/8.0.0.500/buildTransitive/Net.IBM.Data.Db2-lnx.targets')" />
   </ImportGroup>
 </Project>

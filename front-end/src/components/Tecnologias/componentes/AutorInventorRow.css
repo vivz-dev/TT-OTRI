@@ -1,0 +1,20 @@
+/* Dropdown del correo */
+.autor-row .correo-cell { position: relative; }
+.autocomplete .sug-list {
+  position: absolute;
+  z-index: 50;            /* ⬅️ que quede por encima */
+  left: 0; right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15,23,42,.08);
+  max-height: 260px;
+  overflow: auto;
+}
+.sug-list li { padding: 10px 12px; cursor: pointer; }
+.sug-list li + li { border-top: 1px solid #f1f5f9; }
+.sug-list li:hover,
+.sug-list li.active { background: #eef2ff; }
+.sug-top { font-weight: 700; color: #0f172a; }
+.sug-sub { font-size: .86rem; color: #475569; }
