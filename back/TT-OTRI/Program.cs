@@ -16,6 +16,7 @@ using Microsoft.OpenApi.Models;
 using TT_OTRI.Application.Interfaces;
 using TT_OTRI.Application.Services;
 using TT_OTRI.Infrastructure.Repositories;
+using TT_OTRI.Infrastructure.Db2;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -81,6 +82,8 @@ var provider = cfg.GetValue<string>("Data:Provider") ?? "InMemory";
 if (provider.Equals("Db2", StringComparison.OrdinalIgnoreCase))
 {
     services.AddScoped<IResolutionRepository, ResolutionRepositoryDb2>();
+    services.AddScoped<IEspolUserRepository, EspolUserRepositoryDb2>();
+
 }
 else
 {
@@ -88,10 +91,12 @@ else
     // services.AddScoped<IResolutionRepository, ResolutionRepositoryInMemory>();
     // Si NO tienes aún uno en memoria, deja por ahora el de Db2 para evitar nulls:
     services.AddScoped<IResolutionRepository, ResolutionRepositoryDb2>();
+    services.AddScoped<IEspolUserRepository, EspolUserRepositoryDb2>();
 }
 
 
 services.AddScoped<ResolutionService>();
+services.AddScoped<IEspolUserService, EspolUserService>();
 
 
 var app = builder.Build();
