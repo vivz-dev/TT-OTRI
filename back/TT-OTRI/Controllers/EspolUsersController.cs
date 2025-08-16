@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using TT_OTRI.Application.Interfaces;
+using TT_OTRI.Application.Services;
 
 namespace TT_OTRI.Controllers;
 
@@ -7,16 +7,16 @@ namespace TT_OTRI.Controllers;
 [Route("api/espol-users")]
 public sealed class EspolUsersController : ControllerBase
 {
-    private readonly IEspolUserService _service;
+    private readonly EspolUserService _service;
 
-    public EspolUsersController(IEspolUserService service)
+    public EspolUsersController(EspolUserService service)
     {
         _service = service;
     }
 
     /// <summary>
-    /// Obtiene un usuario de ESPOL.TBL_PERSONA por IDPERSONA.
-    /// Devuelve: IdPersona, NumeroIdentifica, Apellidos, Nombres, Email, RidBitHex
+    /// Obtiene un usuario por IDPERSONA desde ESPOL.TBL_PERSONA
+    /// (IdPersona, NumeroIdentifica, Apellidos, Nombres, Email, RidBitHex)
     /// </summary>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
@@ -24,5 +24,21 @@ public sealed class EspolUsersController : ControllerBase
         var dto = await _service.GetByIdAsync(id, ct);
         if (dto is null) return NotFound();
         return Ok(dto);
+    }
+
+    /// <summary>
+    /// Búsqueda typeahead por prefijo de EMAIL (case-insensitive, sin índices).
+    /// GET /api/espol-users/search?q=vi&limit=8
+    /// Devuelve lista corta de (IdPersona, Email, Apellidos, Nombres).
+    /// </summary>
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] int limit = 8, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(q) || q.Trim().Length < 2)
+            return Ok(new { items = Array.Empty<object>() });
+
+        limit = Math.Clamp(limit, 1, 25);
+        var items = await _service.SearchByEmailPrefixAsync(q.Trim(), limit, ct);
+        return Ok(new { items });
     }
 }

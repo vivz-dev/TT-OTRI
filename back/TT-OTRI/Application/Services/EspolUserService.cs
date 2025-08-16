@@ -1,10 +1,9 @@
-using System.Text;
 using TT_OTRI.Application.DTOs;
 using TT_OTRI.Application.Interfaces;
 
 namespace TT_OTRI.Application.Services;
 
-public sealed class EspolUserService : IEspolUserService
+public sealed class EspolUserService
 {
     private readonly IEspolUserRepository _repo;
 
@@ -28,15 +27,28 @@ public sealed class EspolUserService : IEspolUserService
         };
     }
 
+    public async Task<IReadOnlyList<EspolUserListItemDto>> SearchByEmailPrefixAsync(string q, int limit, CancellationToken ct = default)
+    {
+        var list = await _repo.SearchByEmailPrefixAsync(q, limit, ct);
+        return list
+            .Select(u => new EspolUserListItemDto
+            {
+                IdPersona = u.IdPersona,
+                Email     = u.Email,
+                Apellidos = u.Apellidos,
+                Nombres   = u.Nombres
+            })
+            .ToList();
+    }
+
     private static string BytesToHex(byte[] bytes)
     {
         if (bytes == null || bytes.Length == 0) return "";
-        var c = new char[bytes.Length * 2];
+        char[] c = new char[bytes.Length * 2];
         int i = 0;
         foreach (var b in bytes)
         {
-            var hi = (b >> 4) & 0xF;
-            var lo = b & 0xF;
+            int hi = (b >> 4) & 0xF, lo = b & 0xF;
             c[i++] = (char)(hi < 10 ? '0' + hi : 'A' + (hi - 10));
             c[i++] = (char)(lo < 10 ? '0' + lo : 'A' + (lo - 10));
         }

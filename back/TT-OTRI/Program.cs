@@ -96,7 +96,7 @@ else
 
 
 services.AddScoped<ResolutionService>();
-services.AddScoped<IEspolUserService, EspolUserService>();
+services.AddScoped<EspolUserService>();
 
 
 var app = builder.Build();
