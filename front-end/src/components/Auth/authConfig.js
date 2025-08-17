@@ -1,66 +1,38 @@
-/*
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License.
- */
-
 import { LogLevel } from "@azure/msal-browser";
 
-/**
- * Configuration object to be passed to MSAL instance on creation. 
- * For a full list of MSAL.js configuration parameters, visit:
- * https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-browser/docs/configuration.md 
- */
+// ⚠️ Reemplaza estos valores por los reales
+const SPA_CLIENT_ID  = "8dd6b24d-8e9b-4597-993e-4718fba81300"; // App Registration (SPA)
+const TENANT_ID      = "b7af8caf-83d8-4644-85ae-317c545223c1";
+const API_CLIENT_ID  = "8dd6b24d-8e9b-4597-993e-4718fba81300"; // App Registration (API)
+const API_SCOPE_NAME = "access_as_user"; // el que expusiste en la API
+
 export const msalConfig = {
-    auth: {
-        clientId: "8dd6b24d-8e9b-4597-993e-4718fba81300",
-        authority: "https://login.microsoftonline.com/b7af8caf-83d8-4644-85ae-317c545223c1",
-        redirectUri: "http://localhost:3000/"
+  auth: {
+    clientId: SPA_CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+    redirectUri: "http://localhost:3000/",
+  },
+  cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false },
+  system: {
+    loggerOptions: {
+      loggerCallback: (level, message, containsPii) => {
+        if (containsPii) return;
+        if (level === LogLevel.Error) console.error(message);
+        else if (level === LogLevel.Warning) console.warn(message);
+        else if (level === LogLevel.Info) console.info(message);
+        else console.debug(message);
+      },
     },
-    cache: {
-        cacheLocation: "sessionStorage", // This configures where your cache will be stored
-        storeAuthStateInCookie: false, // Set this to "true" if you are having issues on IE11 or Edge
-    },
-    system: {	
-        loggerOptions: {	
-            loggerCallback: (level, message, containsPii) => {	
-                if (containsPii) {		
-                    return;		
-                }		
-                switch (level) {
-                    case LogLevel.Error:
-                        console.error(message);
-                        return;
-                    case LogLevel.Info:
-                        console.info(message);
-                        return;
-                    case LogLevel.Verbose:
-                        console.debug(message);
-                        return;
-                    case LogLevel.Warning:
-                        console.warn(message);
-                        return;
-                    default:
-                        return;
-                }	
-            }	
-        }	
-    }
+  },
 };
 
-/**
- * Scopes you add here will be prompted for user consent during sign-in.
- * By default, MSAL.js will add OIDC scopes (openid, profile, email) to any login request.
- * For more information about OIDC scopes, visit: 
- * https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent#openid-connect-scopes
- */
+// ✅ Scope de TU API (NO Graph, NO SPA)
+const API_SCOPE = `api://${API_CLIENT_ID}/${API_SCOPE_NAME}`;
+
 export const loginRequest = {
-    scopes: ["User.Read"]
+  scopes: [API_SCOPE], // MSAL añadirá openid/profile/email automáticamente
 };
 
-/**
- * Add here the scopes to request when obtaining an access token for MS Graph API. For more information, see:
- * https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/dev/lib/msal-browser/docs/resources-and-scopes.md
- */
-export const graphConfig = {
-    graphMeEndpoint: "https://graph.microsoft.com/v1.0/me" //e.g. https://graph.microsoft.com/v1.0/me
-};
+// (Opcional) Graph si algún día lo usas
+export const graphRequest = { scopes: ["User.Read"] };
+export const graphConfig  = { graphMeEndpoint: "https://graph.microsoft.com/v1.0/me" };

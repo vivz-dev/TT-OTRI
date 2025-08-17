@@ -6,6 +6,7 @@
         "@azure/msal-browser": "^2.30.0",
         "@azure/msal-react": "^1.4.9",
         "@reduxjs/toolkit": "^2.8.2",
+        "axios": "^1.11.0",
         "bootstrap": "^5.2.1",
         "clsx": "^2.1.1",
         "embla-carousel-react": "^8.6.0",

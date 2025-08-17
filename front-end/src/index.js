@@ -1,3 +1,4 @@
+// src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -9,70 +10,40 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import { msalConfig, loginRequest } from './components/Auth/authConfig';
 import './index.css';
+import { ensureAppJwt, decodeAppJwt, getAppUser } from './services/api'; // <-- añade helpers
 
-/**
- * Initialize a PublicClientApplication instance which is provided to the MsalProvider component
- * We recommend initializing this outside of your root component to ensure it is not re-initialized on re-renders
- */
 const msalInstance = new PublicClientApplication(msalConfig);
-const rootEl = document.getElementById("root")
-// const root = ReactDOM.createRoot(document.getElementById('root'));
+const ROOT_EL = document.getElementById("root");
 
-/**
- * We recommend wrapping most or all of your components in the MsalProvider component. It's best to render the MsalProvider as close to the root as possible.
- */
 async function bootstrap() {
-    //
-    const authResult = await msalInstance.handleRedirectPromise();
-    console.log(authResult)
+  const authResult = await msalInstance.handleRedirectPromise().catch(() => null);
+  if (authResult?.account) msalInstance.setActiveAccount(authResult.account);
 
-    if(authResult){
-        msalInstance.setActiveAccount(authResult.account);
-    }
+  let account = msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
+  if (!account) {
+    await msalInstance.loginRedirect(loginRequest);
+    return;
+  }
+  msalInstance.setActiveAccount(account);
 
-    let account = msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
+  try {
+    const appJwt = await ensureAppJwt();              // ⬅️ ahora capturamos el token
+    const user = getAppUser(appJwt);                  // ⬅️ y sacamos usuario/roles
+    console.log("%c[App User]", "color:#06c;font-weight:bold", user);
+  } catch (e) {
+    if (e instanceof InteractionRequiredAuthError) return; // redirige
+    console.error(e);
+  }
 
-    if(!account){
-        msalInstance.loginRedirect(loginRequest);
-        return
-        // const all = msalInstance.getAllAccounts();
-        // console.log(all)
-        // if (all.length){
-        //     account = all[0];
-        //     msalInstance.setActiveAccount(account);
-        // }
-    }
-
-    await msalInstance.acquireTokenSilent({...loginRequest, account })
-    try {
-        const tokenResponse = await msalInstance.acquireTokenSilent(loginRequest);
-        const aadAccessToken = tokenResponse.accessToken;
-        await fetch("http://localhost:5196/api/auth/exchange", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${aadAccessToken}`
-            }
-        });
-
-        // await msalInstance.acquireTokenSilent(loginRequest);
-    } catch (err) {
-        if( err instanceof InteractionRequiredAuthError){
-            msalInstance.loginRedirect(loginRequest);
-            return;
-        }
-        console.error(err);
-    }
-
-    ReactDOM.createRoot(rootEl).render(
+  ReactDOM.createRoot(ROOT_EL).render(
     <React.StrictMode>
-        <Provider store={store}>
+      <Provider store={store}>
         <MsalProvider instance={msalInstance}>
-            <App />
+          <App />
         </MsalProvider>
-        </Provider>
+      </Provider>
     </React.StrictMode>
-    );
-    
+  );
 }
 
 bootstrap();

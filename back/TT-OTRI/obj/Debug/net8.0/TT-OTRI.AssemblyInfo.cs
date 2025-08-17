@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TT-OTRI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+372c332dc76fef5e1a2a3e0eed863f6ff1f3aea8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+de13dab3d88a41c3d8bd4092fcade8a527c9884c")]
 [assembly: System.Reflection.AssemblyProductAttribute("TT-OTRI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TT-OTRI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
