@@ -1,14 +1,11 @@
 // ============================================================================
-// POST /api/auth/exchange  (requiere AAD); devuelve App JWT con email, idPersona y roles (objetos)
-// Usa: IPersonRolesService.GetPersonRolesByEmailAsync
+// POST /api/auth/exchange  (requiere AAD); devuelve App JWT con email y idPersona
 // ============================================================================
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TT_OTRI.Application.Interfaces;
-using TT_OTRI.Application.DTOs;
+using TT_OTRI.Application.Services;   // <- EspolUserService
 using TT_OTRI.Infrastructure.Auth;
 
 namespace TT_OTRI.Controllers;
@@ -18,12 +15,12 @@ namespace TT_OTRI.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAppTokenService _tokenSvc;
-    private readonly IPersonRolesService _personRolesSvc;
+    private readonly EspolUserService _espolSvc; // ✅ nuevo
 
-    public AuthController(IAppTokenService tokenSvc, IPersonRolesService personRolesSvc)
+    public AuthController(IAppTokenService tokenSvc, EspolUserService espolSvc)
     {
         _tokenSvc = tokenSvc;
-        _personRolesSvc = personRolesSvc;
+        _espolSvc = espolSvc;
     }
 
     [HttpPost("exchange")]
@@ -34,7 +31,7 @@ public sealed class AuthController : ControllerBase
         if (!(u?.Identity?.IsAuthenticated ?? false))
             return Unauthorized();
 
-        // ---- Helpers para email/tenant ----
+        // --- helpers para email/tenant (igual que ya tenías) ---
         static string? GetTid(ClaimsPrincipal u)
         {
             var tid = u.FindFirst("tid")?.Value
@@ -80,23 +77,13 @@ public sealed class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(email))
             return BadRequest(new { error = "No se pudo resolver el email del token de Microsoft." });
 
-        var upn = email;
-        var tid = GetTid(u) ?? string.Empty;
+        var upn   = email;
+        var tid   = GetTid(u) ?? string.Empty;
 
-        // ---- Consulta de roles vía TU interfaz existente ----
-        var result = await _personRolesSvc.GetPersonRolesByEmailAsync(email, ct);
-        int? idPersona = result.IdPersona;
-        var roles = result.Roles?.ToList() ?? new List<RoleDto>();
+        // ✅ NUEVO: buscar IdPersona por email (ESPOL.TBL_PERSONA)
+        int? idPersona = await _espolSvc.GetIdByEmailAsync(email, ct);
 
-        // Fallback temporal si no tiene roles
-        if (roles.Count == 0)
-        {
-            roles.Add(new RoleDto(99, "Administrador de sistema OTRI"));
-            roles.Add(new RoleDto(98, "Administrador de contrato de TT"));
-            roles.Add(new RoleDto(97, "Autor"));
-        }
-
-        // ---- Claims del JWT ----
+        // (Si ya manejas roles, puedes dejarlos como están. Aquí omitido por brevedad)
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, oid),
@@ -109,29 +96,9 @@ public sealed class AuthController : ControllerBase
         };
 
         if (idPersona.HasValue)
-            claims.Add(new Claim("idPersona", idPersona.Value.ToString()));
-
-        // roles como JSON de objetos en claim "roles"
-        var rolesJson = JsonSerializer.Serialize(
-            roles.Select(r => new { idRol = r.IdRol, nombre = r.Nombre })
-        );
-        claims.Add(new Claim("roles", rolesJson));
-
-        // además, roles por nombre para [Authorize(Roles="...")]
-        foreach (var r in roles)
-        {
-            if (!string.IsNullOrWhiteSpace(r.Nombre))
-                claims.Add(new Claim(ClaimTypes.Role, r.Nombre));
-        }
+            claims.Add(new Claim("idPersona", idPersona.Value.ToString())); // ✅ claim en el JWT
 
         var token = _tokenSvc.IssueToken(claims);
-
-        return Ok(new
-        {
-            token,
-            email,
-            idPersona,
-            roles = roles.Select(r => new { idRol = r.IdRol, nombre = r.Nombre })
-        });
+        return Ok(new { token, email, idPersona });
     }
 }

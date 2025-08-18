@@ -41,6 +41,11 @@ public sealed class EspolUserService
             .ToList();
     }
 
+    public async Task<int?> GetIdByEmailAsync(string email, CancellationToken ct = default)
+    {
+        return await _repo.GetIdPersonaByEmailAsync(email, ct);
+    }
+
     private static string BytesToHex(byte[] bytes)
     {
         if (bytes == null || bytes.Length == 0) return "";

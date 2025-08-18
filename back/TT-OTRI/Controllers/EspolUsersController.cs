@@ -41,4 +41,20 @@ public sealed class EspolUsersController : ControllerBase
         var items = await _service.SearchByEmailPrefixAsync(q.Trim(), limit, ct);
         return Ok(new { items });
     }
+    /// <summary>
+    /// Resuelve el IDPERSONA por email exacto (case-insensitive).
+    /// GET /api/espol-users/id?email=usuario@espol.edu.ec
+    /// </summary>
+    [HttpGet("id")]
+    public async Task<IActionResult> GetIdByEmail([FromQuery] string email, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest(new { error = "email requerido" });
+
+        var id = await _service.GetIdByEmailAsync(email.Trim(), ct);
+        if (id is null)
+            return NotFound(new { email, message = "Persona no encontrada" });
+
+        return Ok(new { email, idPersona = id.Value });
+    }
 }

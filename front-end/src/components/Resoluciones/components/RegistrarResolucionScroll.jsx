@@ -6,7 +6,6 @@
  */
 import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import './RegistrarResolucionScroll.css';
-import * as Buttons from '../../layouts/buttons/buttons_index';
 import Distribucion from './Distribucion';
 import Formulario from './Formulario';
 

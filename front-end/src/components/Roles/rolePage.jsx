@@ -1,7 +1,7 @@
 // src/components/Roles/rolePage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, Network, Scale, BookType, CircleDollarSign, Lightbulb, School } from 'lucide-react';
+import { User, Settings, Scale, BookType, CircleDollarSign, Lightbulb, School } from 'lucide-react';
 
 import './RoleSelection.css';
 

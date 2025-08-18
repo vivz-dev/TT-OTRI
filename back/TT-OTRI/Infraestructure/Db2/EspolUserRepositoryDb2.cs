@@ -88,6 +88,36 @@ FETCH FIRST {limit} ROWS ONLY";
         return list;
     }
 
+    public async Task<int?> GetIdPersonaByEmailAsync(string email, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return null;
+    
+        using var conn = new DB2Connection(_connString);
+        await conn.OpenAsync(ct);
+    
+        var sql = $@"
+    SELECT p.IDPERSONA
+    FROM {FQN} p
+    WHERE UPPER(p.EMAIL) = @email
+    FETCH FIRST 1 ROWS ONLY";
+    
+        using var cmd = new DB2Command(sql, conn);
+        cmd.Parameters.Add(new DB2Parameter("@email", DB2Type.VarChar)
+        {
+            Value = email.Trim().ToUpperInvariant()
+        });
+    
+        var result = await cmd.ExecuteScalarAsync(ct);
+        if (result is int id) return id;
+        if (result is long l) return unchecked((int)l);
+        if (result is decimal d) return (int)d;
+        if (result is null || result == DBNull.Value) return null;
+    
+        // fallback genérico
+        return Convert.ToInt32(result);
+    }
+
+    
     /* --------------------------- Mappers --------------------------- */
 
     private static EspolUser MapWithRid(IDataRecord rec)
