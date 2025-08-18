@@ -37,12 +37,12 @@ public class ResolutionCreateDto
     /// <summary>
     /// Fecha de emisión o aprobación.
     /// </summary>
-    public DateTime FechaResolucion { get; set; }
+    public DateTime? FechaResolucion { get; set; }
 
     /// <summary>
     /// Fecha de vigencia (hasta cuándo aplica).
     /// </summary>
-    public DateTime FechaVigencia   { get; set; }
+    public DateTime? FechaVigencia   { get; set; }
 
     /// <summary>
     /// Indicador de completitud de datos asociados (por defecto false).

@@ -12,6 +12,7 @@ namespace TT_OTRI.Api.Controllers;
 
 [ApiController]
 [Route("api/resoluciones")]
+[Authorize(AuthenticationSchemes = "AppJwt")]
 public class ResolucionesController : ControllerBase
 {
     private readonly IResolutionService _svc;
@@ -19,17 +20,14 @@ public class ResolucionesController : ControllerBase
     public ResolucionesController(IResolutionService svc) => _svc = svc;
 
     [HttpGet]
-    // [Authorize(AuthenticationSchemes = "AppJwt", Roles = "AdminSistema,AdminContrato")]
     public async Task<ActionResult<IEnumerable<Resolution>>> GetAll()
         => Ok(await _svc.ListAsync());
 
     [HttpGet("{id:int}")]
-    // [Authorize(AuthenticationSchemes = "AppJwt", Roles = "AdminSistema,AdminContrato")]
     public async Task<IActionResult> GetById(int id)
         => await _svc.GetAsync(id) is { } res ? Ok(res) : NotFound();
 
     [HttpPost]
-    // [Authorize(AuthenticationSchemes = "AppJwt", Roles = "AdminSistema,AdminContrato")]
     public async Task<IActionResult> Create([FromBody] ResolutionCreateDto dto)
     {
         if (dto is null) return BadRequest();
@@ -38,7 +36,6 @@ public class ResolucionesController : ControllerBase
     }
 
     [HttpPatch("{id:int}")]
-    // [Authorize(AuthenticationSchemes = "AppJwt", Roles = "AdminSistema,AdminContrato")]
     public async Task<IActionResult> Patch(int id, [FromBody] ResolutionPatchDto dto)
         => (dto is null)
             ? BadRequest()

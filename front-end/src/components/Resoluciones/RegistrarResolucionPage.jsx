@@ -16,8 +16,10 @@ import './RegistrarResolucionPage.css';
 import { getIdPersonaFromAppJwt } from '../../services/api';
 
 /* ---------------- helpers comunes ---------------- */
-const toIsoOrToday = (d) => {
-  const dt = d ? new Date(d) : new Date();
+const toIsoOrNull = (d) => {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt)) return null;
   return new Date(Date.UTC(
     dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0
   )).toISOString();
@@ -27,15 +29,15 @@ const buildResolutionPayload = (resData, isFinal) => {
   const codigo      = resData?.numero?.trim() || '—';
   const descripcion = (resData?.descripcion ?? '').trim() || '—';
 
-  const idUsuario = getIdPersonaFromAppJwt() ?? 0; 
+  const idUsuario = getIdPersonaFromAppJwt() ?? 0;
 
   return {
     IdUsuario: idUsuario,
     Codigo: codigo,
     Titulo: codigo,
     Descripcion: descripcion,
-    FechaResolucion: toIsoOrToday(resData?.fechaResolucion),
-    FechaVigencia:   toIsoOrToday(resData?.fechaVigencia || resData?.fechaResolucion),
+    FechaResolucion: toIsoOrNull(resData?.fechaResolucion),
+    FechaVigencia:   toIsoOrNull(resData?.fechaVigencia),
     Completed: !!isFinal,
   };
 };

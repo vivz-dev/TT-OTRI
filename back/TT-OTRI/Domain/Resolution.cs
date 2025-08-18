@@ -72,12 +72,12 @@ public class Resolution
     /// <summary>
     /// Fecha de emisión o aprobación de la resolución.
     /// </summary>
-    public DateTime FechaResolucion { get; set; }
+    public DateTime? FechaResolucion { get; set; }
 
     /// <summary>
     /// Fecha hasta la cual la resolución se considera vigente (si aplica).
     /// </summary>
-    public DateTime FechaVigencia { get; set; }
+    public DateTime? FechaVigencia { get; set; }
 
     // ───────────────────────────────── Metadatos ─────────────────────────────────
 

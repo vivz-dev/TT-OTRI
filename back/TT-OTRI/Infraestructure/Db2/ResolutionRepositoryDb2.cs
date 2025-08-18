@@ -90,8 +90,14 @@ VALUES
                 cmd.Parameters.Add(new DB2Parameter("@titulo",     DB2Type.VarChar)  { Value = (object)r.Titulo ?? string.Empty });
                 cmd.Parameters.Add(new DB2Parameter("@descripcion",DB2Type.VarChar)  { Value = (object)r.Descripcion ?? string.Empty });
                 cmd.Parameters.Add(new DB2Parameter("@estado",     DB2Type.Char)     { Value = (char)r.Estado });
-                cmd.Parameters.Add(new DB2Parameter("@fresol",     DB2Type.Date)     { Value = r.FechaResolucion.Date });
-                cmd.Parameters.Add(new DB2Parameter("@fvig",       DB2Type.Date)     { Value = r.FechaVigencia.Date });
+                cmd.Parameters.Add(new DB2Parameter("@fresol", DB2Type.Date)
+                {
+                    Value = r.FechaResolucion.HasValue ? r.FechaResolucion.Value.Date : DBNull.Value
+                });
+                cmd.Parameters.Add(new DB2Parameter("@fvig", DB2Type.Date)
+                {
+                    Value = r.FechaVigencia.HasValue ? r.FechaVigencia.Value.Date : DBNull.Value
+                });
                 await cmd.ExecuteNonQueryAsync(ct);
             }
 
@@ -150,8 +156,14 @@ WHERE IDOTRITTRESOLUCION = @id";
         cmd.Parameters.Add(new DB2Parameter("@titulo",     DB2Type.VarChar)  { Value = (object)r.Titulo ?? string.Empty });
         cmd.Parameters.Add(new DB2Parameter("@descripcion",DB2Type.VarChar)  { Value = (object)r.Descripcion ?? string.Empty });
         cmd.Parameters.Add(new DB2Parameter("@estado",     DB2Type.Char)     { Value = (char)r.Estado });
-        cmd.Parameters.Add(new DB2Parameter("@fresol",     DB2Type.Date)     { Value = r.FechaResolucion.Date });
-        cmd.Parameters.Add(new DB2Parameter("@fvig",       DB2Type.Date)     { Value = r.FechaVigencia.Date });
+        cmd.Parameters.Add(new DB2Parameter("@fresol", DB2Type.Date)
+        {
+            Value = r.FechaResolucion.HasValue ? r.FechaResolucion.Value.Date : DBNull.Value
+        });
+        cmd.Parameters.Add(new DB2Parameter("@fvig", DB2Type.Date)
+        {
+            Value = r.FechaVigencia.HasValue ? r.FechaVigencia.Value.Date : DBNull.Value
+        });
         cmd.Parameters.Add(new DB2Parameter("@id",         DB2Type.Integer)  { Value = r.Id });
 
         var rows = await cmd.ExecuteNonQueryAsync(ct);
