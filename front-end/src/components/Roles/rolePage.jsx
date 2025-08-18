@@ -17,14 +17,14 @@ import {
 const ROLE_CARD_MAP = {
   "Administrador de sistema OTRI": {
     id: 'admin-sistema-otri',
-    title: 'Admin de',
-    subtitle: 'Sistema OTRI',
+    title: 'Administrador de',
+    subtitle: 'sistema',
     icon: Settings,
   },
   "Administrador de contrato de TT": {
     id: 'admin-contrato-tt',
-    title: 'Admin de',
-    subtitle: 'Contrato de TT',
+    title: 'Administrador contrato',
+    subtitle: 'Transferencia Tecnológica',
     icon: User,
   },
   "Autor": {
@@ -36,7 +36,7 @@ const ROLE_CARD_MAP = {
   "Autoridad OTRI": {
     id: 'autoridad-otri',
     title: 'Autoridad',
-    subtitle: 'OTRI',
+    subtitle: '',
     icon: BookType,
   },
   "Director de la OTRI": {

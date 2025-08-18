@@ -14,4 +14,5 @@ export {
   setSelectedRole,
   getIdPersonaFromAppJwt,
   SYSTEM_ROLES,
+  clearSelectedRole,
 } from "./auth/auth";

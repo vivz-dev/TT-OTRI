@@ -5,6 +5,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TT_OTRI.Application.DTOs;
+using TT_OTRI.Application.Interfaces;
 using TT_OTRI.Application.Services;   // <- EspolUserService
 using TT_OTRI.Infrastructure.Auth;
 
@@ -16,11 +18,14 @@ public sealed class AuthController : ControllerBase
 {
     private readonly IAppTokenService _tokenSvc;
     private readonly EspolUserService _espolSvc; // ✅ nuevo
+    private readonly IPersonRolesService _rolesSvc;
 
-    public AuthController(IAppTokenService tokenSvc, EspolUserService espolSvc)
+
+    public AuthController(IAppTokenService tokenSvc, EspolUserService espolSvc, IPersonRolesService rolesSvc)
     {
         _tokenSvc = tokenSvc;
         _espolSvc = espolSvc;
+        _rolesSvc = rolesSvc;
     }
 
     [HttpPost("exchange")]
@@ -82,6 +87,45 @@ public sealed class AuthController : ControllerBase
 
         // ✅ NUEVO: buscar IdPersona por email (ESPOL.TBL_PERSONA)
         int? idPersona = await _espolSvc.GetIdByEmailAsync(email, ct);
+        
+        // ---------- roles ----------//
+        List<int> roleIds;
+        List<string> roleNames;
+
+        // PersonRolesDto dto;
+        if (idPersona.HasValue)
+        {
+            var pr = await _rolesSvc.GetPersonRolesByEmailAsync(email, ct);
+    
+            // Si el servicio pudo resolver IdPersona, úsalo como “fuente de verdad”.
+            if (pr.IdPersona.HasValue) idPersona = pr.IdPersona;
+
+            roleIds = pr.RoleIds?.ToList() ?? new List<int>();
+            roleNames = pr.Roles?.Select(r => r.Nombre).ToList() ?? new List<string>();
+        }
+        else
+        {
+            roleIds = new List<int>();
+            roleNames = new List<string>();
+        }
+
+        // Fallback si no hay roles
+        if (roleNames.Count == 0)
+        {
+            // Cambia "Usuario" por el nombre que usabas antes (p.ej. "Invitado" / "Solicitante")
+            roleNames = new List<string> { "Administrador de sistema OTRI" };
+            roleNames.Add("Administrador de contrato de TT");
+            roleNames.Add("Autor");
+            // Si quieres también un IdRol simbólico:
+            // roleIds = new List<int> { 0 };
+        }
+        
+        // dto.Roles.Add(new RoleItemDto { IdRol = 99, Nombre = "Administrador de sistema OTRI" });
+        // dto.Roles.Add(new RoleItemDto { IdRol = 100, Nombre = "Administrador de contrato de TT" });
+        // dto.Roles.Add(new RoleItemDto { IdRol = 101, Nombre = "Autor" });
+
+        // var roleIds = dto.Roles.Select(r => r.IdRol).ToList();
+        // var roleNames = dto.Roles.Select(r => r.Nombre).ToList();
 
         // (Si ya manejas roles, puedes dejarlos como están. Aquí omitido por brevedad)
         var claims = new List<Claim>
@@ -97,8 +141,23 @@ public sealed class AuthController : ControllerBase
 
         if (idPersona.HasValue)
             claims.Add(new Claim("idPersona", idPersona.Value.ToString())); // ✅ claim en el JWT
+        
+        claims.Add(new Claim("roleIds", string.Join(",", roleIds)));
+
+        foreach (var r in roleNames.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            claims.Add(new Claim(ClaimTypes.Role, r)); // para backend
+            claims.Add(new Claim("roles", r));         // para frontend
+        }
 
         var token = _tokenSvc.IssueToken(claims);
-        return Ok(new { token, email, idPersona });
+        return Ok(new
+        {
+            token,
+            email,
+            idPersona,
+            roles = roleNames,
+            roleIds
+        });
     }
 }

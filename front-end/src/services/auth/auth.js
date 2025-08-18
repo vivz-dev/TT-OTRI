@@ -192,6 +192,9 @@ async function doExchange(aadAccessToken) {
 export async function ensureAppJwt() {
   let t = getAppJwt();
   if (!isValid(t)) {
+    // ❗ Sesión “nueva” o token inválido → limpiar rol seleccionado
+    clearSelectedRole();
+
     const aad = await acquireApiAccessToken();
     t = await doExchange(aad);
   }
@@ -212,8 +215,29 @@ export function getIdPersonaFromAppJwt() {
 /* -------------------- Rol elegido (UI) -------------------- */
 export function setSelectedRole(roleName) {
   if (!roleName) return;
-  localStorage.setItem(SELECTED_ROLE_KEY, roleName);
+  sessionStorage.setItem(SELECTED_ROLE_KEY, roleName);
 }
+
 export function getSelectedRole() {
-  return localStorage.getItem(SELECTED_ROLE_KEY) || null;
+  return sessionStorage.getItem(SELECTED_ROLE_KEY) || null;
+}
+
+export function clearSelectedRole() {
+  sessionStorage.removeItem(SELECTED_ROLE_KEY);
+}
+
+
+
+// en auth.js
+export async function signOut() {
+  try {
+    clearAppJwt();
+    clearSelectedRole();
+    await msalInstance.logoutRedirect({ postLogoutRedirectUri: "/" });
+  } catch {
+    // en caso de error, al menos limpiamos estado local y recargamos
+    clearAppJwt();
+    clearSelectedRole();
+    window.location.href = "/";
+  }
 }
