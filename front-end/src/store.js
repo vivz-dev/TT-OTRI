@@ -6,6 +6,7 @@ import { tiposProteccionApi } from './services/tiposProteccionApi';
 import { cotitularidadesApi } from './services/cotitularidadesApi';
 import { cotitularesApi } from './services/cotitularesApi';
 import { cotitularInstitApi } from './services/cotitularInstitApi';
+import { benefInstitucionesApi } from './services/benefInstitucionesApi';
 
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
     [cotitularidadesApi.reducerPath]: cotitularidadesApi.reducer,
     [cotitularesApi.reducerPath]: cotitularesApi.reducer,
     [cotitularInstitApi.reducerPath]: cotitularInstitApi.reducer,
+    [benefInstitucionesApi.reducerPath]: benefInstitucionesApi.reducer,
 
   },
   middleware: (getDefaultMiddleware) =>
@@ -26,6 +28,6 @@ export const store = configureStore({
       .concat(resolutionsApi.middleware)
       .concat(cotitularidadesApi.middleware)
       .concat(cotitularesApi.middleware)
-      .concat(cotitularInstitApi.middleware),
-
+      .concat(cotitularInstitApi.middleware)
+      .concat(benefInstitucionesApi.middleware),
 });

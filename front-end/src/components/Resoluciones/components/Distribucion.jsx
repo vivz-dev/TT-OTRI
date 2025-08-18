@@ -14,21 +14,14 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import { Trash2, MinusCircle } from 'lucide-react';
+import { useGetBenefInstitucionesQuery } from '../../../services/benefInstitucionesApi';
 import './Distribucion.css';
-
-const INSTITUCIONES = [
-  { value: 'Unidades/Centros', label: 'Unidades/Centros' },
-  { value: 'ESPOL (institución)', label: 'ESPOL (institución)' },
-  {
-    value: 'Oficina de Transferencia de Resultados de Investigación (OTRI)',
-    label: 'Oficina de Transferencia de Resultados de Investigación (OTRI)',
-  },
-];
 
 const Distribucion = forwardRef(({ onDelete }, ref) => {
   /* ---------------- estado ---------------- */
   const [pctAutores, setPctAutores] = useState('');
-  const [centros, setCentros] = useState([{ institucion: '', porcentaje: '' }]);
+  // Ahora guardamos el ID de la institución (number | '')
+  const [centros, setCentros] = useState([{ institucionId: '', porcentaje: '' }]);
 
   // 💰 Monto mínimo/máximo
   const [noLimit, setNoLimit] = useState(false);
@@ -36,6 +29,24 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   const [montoMax, setMontoMax] = useState('');
 
   const [showErrors, setShowErrors] = useState(false);
+
+  /* --------- API: beneficiarios institucionales --------- */
+  const {
+    data: institRaw = [],
+    isLoading: institLoading,
+    isError: institError,
+    refetch: refetchInstit,
+  } = useGetBenefInstitucionesQuery();
+
+  // Normaliza a { id:number, label:string }
+  const INSTITUCIONES = useMemo(
+    () =>
+      (Array.isArray(institRaw) ? institRaw : []).map((x) => ({
+        id: Number(x?.id),
+        label: String(x?.nombre ?? ''),
+      })),
+    [institRaw]
+  );
 
   /* ---------------- helpers ---------------- */
   const clamp = (v) => {
@@ -46,7 +57,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   };
 
   const addCentro = () =>
-    setCentros((p) => [...p, { institucion: '', porcentaje: '' }]);
+    setCentros((p) => [...p, { institucionId: '', porcentaje: '' }]);
 
   const removeCentro = (idx) =>
     setCentros((p) => p.filter((_, i) => i !== idx));
@@ -55,7 +66,15 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
     setCentros((p) =>
       p.map((c, i) =>
         i === idx
-          ? { ...c, [field]: field === 'porcentaje' ? clamp(value) : value }
+          ? {
+              ...c,
+              [field]:
+                field === 'porcentaje'
+                  ? clamp(value)
+                  : field === 'institucionId'
+                  ? value === '' ? '' : Number(value)
+                  : value,
+            }
           : c
       )
     );
@@ -79,9 +98,9 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   const total = subtotalAutores + subtotalCentros;
   const totalClass = total === 100 ? 'total-ok' : 'total-error';
 
-  // 🔒 valores seleccionados (excluye vacíos)
-  const selectedValues = useMemo(
-    () => centros.map((c) => c.institucion).filter(Boolean),
+  // 🔒 seleccionados (IDs, excluye vacíos)
+  const selectedIds = useMemo(
+    () => centros.map((c) => c.institucionId).filter((x) => x !== '' && x != null),
     [centros]
   );
 
@@ -89,14 +108,14 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   //   - todas las NO usadas por otras filas
   //   - + la que ya tenga la fila actual (para que no desaparezca)
   const availableFor = (idx) => {
-    const current = centros[idx]?.institucion;
+    const currentId = centros[idx]?.institucionId;
     return INSTITUCIONES.filter(
-      (opt) => opt.value === current || !selectedValues.includes(opt.value)
+      (opt) => opt.id === currentId || !selectedIds.includes(opt.id)
     );
   };
 
   // ¿Quedan opciones libres para añadir otra fila?
-  const canAddMore = selectedValues.length < INSTITUCIONES.length;
+  const canAddMore = selectedIds.length < INSTITUCIONES.length;
 
   const montosValidos = () => {
     const min = parseMoney(montoMin);
@@ -114,14 +133,20 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   const isValid = () => {
     const autoresOk = pctAutores !== '';
     const centrosOk = centros.every(
-      (c) => c.institucion !== '' && c.porcentaje !== ''
+      (c) => c.institucionId !== '' && c.porcentaje !== ''
     );
 
-    // (Opcional extra) asegurar unicidad:
-    const uniqueCount = new Set(selectedValues).size;
-    const sinDuplicados = uniqueCount === selectedValues.length;
+    // Unicidad:
+    const uniqueCount = new Set(selectedIds).size;
+    const sinDuplicados = uniqueCount === selectedIds.length;
 
-    return autoresOk && centrosOk && sinDuplicados && total === 100 && montosValidos();
+    return (
+      autoresOk &&
+      centrosOk &&
+      sinDuplicados &&
+      total === 100 &&
+      montosValidos()
+    );
   };
 
   /* expone al padre */
@@ -139,9 +164,8 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
         montoMaximo: max, // null si no aplica límite
         porcSubtotalAutores: subtotalAutores / 100,
         porcSubtotalInstitut: subtotalCentros / 100,
-        // Tip: si necesitas mandar el detalle:
         beneficiariosInstitucionales: centros.map((c) => ({
-          institucion: c.institucion,
+          idBeneficioInstitucional: c.institucionId, // 👈 ID al payload
           porcentaje: Number(c.porcentaje) / 100,
         })),
       };
@@ -154,7 +178,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
     if (showErrors) setShowErrors(!isValid());
   };
   const handleCentroSelect = (idx, v) => {
-    updateCentro(idx, 'institucion', v);
+    updateCentro(idx, 'institucionId', v === '' ? '' : Number(v));
     if (showErrors) setShowErrors(!isValid());
   };
   const handleCentroPct = (idx, v) => {
@@ -183,13 +207,27 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   /* ---------------- UI ---------------- */
   return (
     <div className="form-card">
-      {/* botón eliminar card */}
       <h2 className="form-card-header">Tabla de porcentaje de distribución</h2>
       <div className="distribucion-delete-top">
         <button className="btn-delete-top" onClick={onDelete}>
           <MinusCircle size={18} />
         </button>
       </div>
+
+      {/* Estado de carga/errores para el combo de instituciones */}
+      {institLoading && (
+        <div className="hint" style={{ marginBottom: 8 }}>
+          Cargando beneficiarios institucionales…
+        </div>
+      )}
+      {institError && (
+        <div className="monto-error" style={{ marginBottom: 8 }}>
+          Error al cargar beneficiarios institucionales.{' '}
+          <button className="btn-link" onClick={refetchInstit}>
+            Reintentar
+          </button>
+        </div>
+      )}
 
       {/* 💰 Sección de montos */}
       <div className="monto-section">
@@ -293,15 +331,22 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
             <tr key={idx}>
               <td className="input-select">
                 <select
-                  value={c.institucion}
-                  className={showErrors && c.institucion === '' ? 'field-error' : ''}
+                  value={c.institucionId === '' ? '' : String(c.institucionId)}
+                  className={
+                    showErrors && c.institucionId === '' ? 'field-error' : ''
+                  }
                   onChange={(e) => handleCentroSelect(idx, e.target.value)}
+                  disabled={institLoading || institError || INSTITUCIONES.length === 0}
                 >
                   <option value="" disabled>
-                    Seleccionar beneficiario institucional...
+                    {institLoading
+                      ? 'Cargando...'
+                      : institError
+                      ? 'Error al cargar'
+                      : 'Seleccionar beneficiario institucional...'}
                   </option>
                   {availableFor(idx).map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.id} value={opt.id}>
                       {opt.label}
                     </option>
                   ))}
@@ -352,11 +397,14 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
         <p className="subtotales-error">¡Los subtotales deben sumar 100 %!</p>
       )}
 
-      <button className="btn-add" onClick={addCentro} disabled={!canAddMore}>
+      <button className="btn-add" onClick={addCentro} disabled={!canAddMore || institLoading || institError || INSTITUCIONES.length === 0}>
         Añadir beneficiario institucional
       </button>
-      {!canAddMore && (
+      {!canAddMore && INSTITUCIONES.length > 0 && (
         <p className="hint">No hay más beneficiarios institucionales disponibles para agregar.</p>
+      )}
+      {INSTITUCIONES.length === 0 && !institLoading && !institError && (
+        <p className="hint">No hay beneficiarios institucionales registrados.</p>
       )}
     </div>
   );

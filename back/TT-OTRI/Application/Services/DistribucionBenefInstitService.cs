@@ -11,12 +11,12 @@ namespace TT_OTRI.Application.Services;
 public class DistribucionBenefInstitService
 {
     private readonly IDistribucionBenefInstitRepository _repo;
-    private readonly IDistributionResolutionRepository  _distRepo;
+    private readonly IDistribucionResolucionRepository  _distRepo;
     private readonly IBeneficiarioInstitucionRepository _benefRepo;
 
     public DistribucionBenefInstitService(
         IDistribucionBenefInstitRepository repo,
-        IDistributionResolutionRepository  distRepo,
+        IDistribucionResolucionRepository  distRepo,
         IBeneficiarioInstitucionRepository benefRepo)
     {
         _repo     = repo;
