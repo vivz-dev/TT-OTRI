@@ -22,7 +22,7 @@ import { ensureAppJwt } from './api'; // <- reutiliza MSAL + exchange centraliza
 /* ==============================
    Config base
    ============================== */
-const API_BASE_URL = 'http://localhost:8080/api'; // ← ajusta si tu API usa otro host/puerto
+   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 
 /* ==============================
    Base query con App JWT en headers
@@ -31,6 +31,7 @@ const API_BASE_URL = 'http://localhost:8080/api'; // ← ajusta si tu API usa ot
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: async (headers) => {
+    console.log(API_BASE_URL, "color:#06c;font-weight:bold");
     const appToken = await ensureAppJwt(); // obtiene/renueva tu JWT interno
     headers.set('Authorization', `Bearer ${appToken}`);
     if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');

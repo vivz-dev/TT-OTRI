@@ -35,15 +35,17 @@ app.UseCors(CorsSetup.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 
+// ✅ Permite preflight sin auth (evita 401/403 en OPTIONS)
+app.MapMethods("{*any}", new[] { "OPTIONS" }, () => Results.Ok())
+    .AllowAnonymous();
+
+// ✅ No fuerces auth aquí; deja que la política por defecto lo haga
+app.MapControllers();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-// (Opción B) Forzar que TODOS los controladores requieran AppJwt
-// Si usas Opción A (política por defecto), puedes dejar solo app.MapControllers();
-// y controlar con [Authorize] por endpoint/controlador.
-app.MapControllers().RequireAuthorization(AuthSetup.AppPolicy);
 
 app.Run();

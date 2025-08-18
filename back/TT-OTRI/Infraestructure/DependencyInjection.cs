@@ -1,22 +1,25 @@
 // ============================================================================
-// File: Infrastructure/DependencyInjection.cs  (PATCH)
+// File: Infrastructure/DependencyInjection.cs  (FIXED)
+// Registro por convención + binds explícitos cuando provider = db2
 // ============================================================================
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions; // <-- para TryAdd*
+using Microsoft.Extensions.DependencyInjection.Extensions; // TryAdd*
 using Scrutor;
-using TT_OTRI.Application.Services;
-using TT_OTRI.Infrastructure.InMemory;
-using TT_OTRI.Infrastructure.Db2;
-
+using TT_OTRI.Application.Services;                 // ancla Services
+using TT_OTRI.Infrastructure.InMemory;              // ancla InMemory repos
+using TT_OTRI.Infrastructure.Db2;                   // ancla otros Db2 repos (si los tienes)
+using TT_OTRI.Application.Interfaces;
+using TT_OTRI.Infrastructure.Repositories;          // <-- ancla para ResolutionRepositoryDb2
 
 namespace TT_OTRI.Infrastructure;
 
 public static class DependencyInjection
 {
-    private const string ServicesNs = "TT_OTRI.Application.Services";
-    private const string InMemoryNs = "TT_OTRI.Infrastructure.InMemory";
-    private const string Db2Ns      = "TT_OTRI.Infrastructure.Db2";
+    private const string ServicesNs   = "TT_OTRI.Application.Services";
+    private const string InMemoryNs   = "TT_OTRI.Infrastructure.InMemory";
+    private const string Db2Ns        = "TT_OTRI.Infrastructure.Db2";
+    private const string ReposDb2Ns   = "TT_OTRI.Infrastructure.Repositories"; // <-- NUEVO
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration cfg)
     {
@@ -38,33 +41,43 @@ public static class DependencyInjection
                 .WithScopedLifetime()
         );
 
-        // 🔧 Fallback explícito (arreglo inmediato)
-        // Si PersonRolesService implementa IPersonRolesService, quedará registrado aunque el escaneo falle.
-        services.TryAddScoped<TT_OTRI.Application.Interfaces.IPersonRolesService,
-                              TT_OTRI.Application.Services.PersonRolesService>();
+        // Fallbacks explícitos (si algún escaneo fallara)
+        services.TryAddScoped<IPersonRolesService, PersonRolesService>();
 
         // ---------------- Repos por provider -----------------
         if (provider == "db2")
         {
+            // 1) Escanear repos DB2 (dos namespaces posibles)
             services.Scan(scan => scan
-                .FromAssemblyOf<TestDb2RepositoryDb2>() // ancla DB2
+                .FromAssemblyOf<ResolutionRepositoryDb2>() // ancla en el assembly correcto
                     .AddClasses(c => c
                         .Where(t =>
                             t.IsClass &&
                             !t.IsAbstract &&
-                            t.Name.EndsWith("RepositoryDb2") &&
+                            // aceptamos sufijos RepositoryDb2 ó Repository (por si mix)
+                            (t.Name.EndsWith("RepositoryDb2") || t.Name.EndsWith("Repository")) &&
                             t.Namespace is not null &&
-                            (t.Namespace == Db2Ns || t.Namespace.StartsWith(Db2Ns + "."))
+                            (
+                                t.Namespace == Db2Ns ||
+                                t.Namespace.StartsWith(Db2Ns + ".") ||
+                                t.Namespace == ReposDb2Ns ||
+                                t.Namespace.StartsWith(ReposDb2Ns + ".")
+                            )
                         )
                     )
                     .AsImplementedInterfaces()
                     .WithScopedLifetime()
             );
 
-            services.AddScoped<TestDb2RepositoryDb2>();
+            // 2) Bind explícito crítico para resoluciones
+            services.AddScoped<IResolutionRepository, ResolutionRepositoryDb2>();
+
+            // (opcional) otros repos explícitos aquí si los necesitas
+            // services.AddScoped<IOtroRepo, OtroRepoDb2>();
         }
         else
         {
+            // Proveedor InMemory
             services.Scan(scan => scan
                 .FromAssemblyOf<ResolutionRepository>() // ancla InMemory
                     .AddClasses(c => c

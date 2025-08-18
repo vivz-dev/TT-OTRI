@@ -1,123 +1,191 @@
-import React, { useState } from 'react';
+// src/components/Roles/rolePage.jsx
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, Network, Scale, BookType, CircleDollarSign, Lightbulb, School } from 'lucide-react';
 
-import './RoleSelection.css'; // Importamos el CSS
+import './RoleSelection.css';
 
-const roles = [
-  {
-    id: 'admin-sistema',
+import {
+  ensureAppJwt,
+  getAppUser,
+  getSystemRolesFromJwt,
+  setSelectedRole,
+  SYSTEM_ROLES
+} from '../../services/api';
+
+// Mapa de "nombre de rol del sistema" -> metadatos de tarjeta
+const ROLE_CARD_MAP = {
+  "Administrador de sistema OTRI": {
+    id: 'admin-sistema-otri',
     title: 'Admin de',
-    subtitle: 'Sistema',
+    subtitle: 'Sistema OTRI',
     icon: Settings,
   },
-  {
-    id: 'admin-contrato',
+  "Administrador de contrato de TT": {
+    id: 'admin-contrato-tt',
     title: 'Admin de',
-    subtitle: 'Contrato',
+    subtitle: 'Contrato de TT',
     icon: User,
   },
-  {
-    id: 'gestor-otri',
-    title: 'Gestores de',
-    subtitle: 'la OTRI',
-    icon: Network,
-  },
-  {
+  "Autor": {
     id: 'autor-inventor',
     title: 'Autor(a)/',
     subtitle: 'Inventor(a)',
     icon: Lightbulb,
   },
-  {
-    id: 'autoridad',
+  "Autoridad OTRI": {
+    id: 'autoridad-otri',
     title: 'Autoridad',
-    subtitle: '',
+    subtitle: 'OTRI',
     icon: BookType,
   },
-  {
-    id: 'direct-otri',
+  "Director de la OTRI": {
+    id: 'director-otri',
     title: 'Director(a)',
     subtitle: 'de la OTRI',
     icon: School,
   },
-  {
-    id: 'juridico',
+  "Gerencia Jurídica": {
+    id: 'gerencia-juridica',
     title: 'Gerencia',
     subtitle: 'Jurídica',
     icon: Scale,
   },
-  {
+  "Financiero": {
     id: 'financiero',
     title: 'Financiero',
     subtitle: '',
     icon: CircleDollarSign,
   },
-];
+};
 
 const RoleSelection = () => {
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [hoveredRole, setHoveredRole] = useState(null);
+  const [cards, setCards] = useState([]);
+  const [selectedRoleId, setSelectedRoleId] = useState(null);
+  const [hoveredRoleId, setHoveredRoleId] = useState(null);
+  const [userName, setUserName] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const allowedNames = useMemo(() => new Set(SYSTEM_ROLES), []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await ensureAppJwt();
+        const appUser = getAppUser();
+        setUserName(appUser?.name || "");
+
+        // Roles del JWT filtrados solo a los de tu sistema
+        const rolesInSystem = getSystemRolesFromJwt();
+
+        // Construye tarjetas solo para los roles presentes
+        const cardsToShow = rolesInSystem
+          .filter(r => allowedNames.has(r)) // seguridad extra
+          .map(r => {
+            const meta = ROLE_CARD_MAP[r];
+            if (!meta) return null;
+            return {
+              ...meta,
+              displayName: r, // nombre canónico exacto que guardarás
+            };
+          })
+          .filter(Boolean);
+
+        setCards(cardsToShow);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [allowedNames]);
+
   const handleRoleSelect = (roleId) => {
-    setSelectedRole(roleId);
-    console.log(`Selected role: ${roleId}`);
-    
-    // Navegar a inicio después de un pequeño delay para mostrar la selección
+    setSelectedRoleId(roleId);
+    const role = cards.find(c => c.id === roleId);
+    if (!role) return;
+
+    // Guarda el nombre canónico del rol elegido
+    setSelectedRole(role.displayName);
+
+    // Navega a /inicio tras un breve feedback
     setTimeout(() => {
-      // Si usas React Router
-      // navigate('/inicio');
-      
-      // Si no usas React Router, puedes usar:
-      window.location.href = '/inicio';
-    }, 300);
+      navigate('/inicio');
+    }, 250);
   };
+
+  if (loading) {
+    return (
+      <div className="role-selection-container">
+        <div className="content-wrapper">
+          <div className="header">
+            <h1>Cargando opciones de rol…</h1>
+            <p>Estamos leyendo tu token y preparando tus permisos.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const empty = !cards || cards.length === 0;
 
   return (
     <div className="role-selection-container">
       <div className="content-wrapper">
         <div className="header">
-          <h1>Por favor, elija su rol</h1>
-          <p>Elija el rol con el que navegará dentro del sistema.</p>
+          <h1>Hola{userName ? `, ${userName}` : ""} 👋</h1>
+          {!empty ? (
+            <>
+              <h1>Por favor, elija su rol</h1>
+              <p>Elija el rol con el que navegará dentro del sistema.</p>
+            </>
+          ) : (
+            <>
+              <h2>No tienes roles de OTRI asignados</h2>
+              <p>Contacta al administrador.</p>
+            </>
+          )}
         </div>
 
-        <div className="roles-grid">
-          {roles.map((role) => {
-            const IconComponent = role.icon;
-            const isSelected = selectedRole === role.id;
-            const isHovered = hoveredRole === role.id;
+        {!empty && (
+          <div className="roles-grid">
+            {cards.map((card) => {
+              const IconComponent = card.icon;
+              const isSelected = selectedRoleId === card.id;
+              const isHovered = hoveredRoleId === card.id;
 
-            return (
-              <div
-                key={role.id}
-                className={`role-card ${isSelected ? 'selected' : ''} ${isHovered ? 'hovered' : ''}`}
-                onClick={() => handleRoleSelect(role.id)}
-                onMouseEnter={() => setHoveredRole(role.id)}
-                onMouseLeave={() => setHoveredRole(null)}
-              >
-                <div className="card-content">
-                  <div className={`icon-wrapper ${isSelected || isHovered ? 'active' : ''}`}>
-                    <IconComponent size={24} />
+              return (
+                <div
+                  key={card.id}
+                  className={`role-card ${isSelected ? 'selected' : ''} ${isHovered ? 'hovered' : ''}`}
+                  onClick={() => handleRoleSelect(card.id)}
+                  onMouseEnter={() => setHoveredRoleId(card.id)}
+                  onMouseLeave={() => setHoveredRoleId(null)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="card-content">
+                    <div className={`icon-wrapper ${isSelected || isHovered ? 'active' : ''}`}>
+                      <IconComponent size={24} />
+                    </div>
+
+                    <div className="role-text">
+                      <div className="role-title">{card.title}</div>
+                      {card.subtitle && (
+                        <div className="role-subtitle">{card.subtitle}</div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="role-text">
-                    <div className="role-title">{role.title}</div>
-                    {role.subtitle && (
-                      <div className="role-subtitle">{role.subtitle}</div>
-                    )}
-                  </div>
+                  {(isSelected || isHovered) && (
+                    <div className="selected-indicator">
+                      <div className="indicator-dot"></div>
+                    </div>
+                  )}
                 </div>
-
-                {(isSelected || isHovered) && (
-                  <div className="selected-indicator">
-                    <div className="indicator-dot"></div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

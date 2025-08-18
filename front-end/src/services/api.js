@@ -3,8 +3,9 @@ import axios from "axios";
 import { PublicClientApplication, InteractionRequiredAuthError } from "@azure/msal-browser";
 import { msalConfig, loginRequest } from "../components/Auth/authConfig";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
 const APP_JWT_KEY = "app_jwt";
+export const SELECTED_ROLE_KEY = "selectedRole";
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
@@ -40,34 +41,165 @@ export function decodeAppJwt(token) {
 export function getAppUser(token = getAppJwt()) {
   const p = decodeAppJwt(token);
 
-  // roles: soporta 'roles', 'role' y el claim con URI de .NET
-  const roleUri = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-  const roles =
-    Array.isArray(p.roles) ? p.roles
-    : p.roles ? [p.roles]
-    : Array.isArray(p.role) ? p.role
-    : p.role ? [p.role]
-    : p[roleUri] ? (Array.isArray(p[roleUri]) ? p[roleUri] : [p[roleUri]])
-    : [];
+  const roles = extractRoleNamesFromPayload(p);
 
-  // email: varios orígenes posibles (servidor emite 'email' y 'unique_name')
-  const email =
-    p.email
+  // Normaliza email: si viene como array, toma el primero
+  let email = p.email;
+  if (Array.isArray(email)) {
+    email = email.find(e => typeof e === 'string' && e.includes('@')) || email[0];
+  }
+  email = email
     || (p.unique_name && p.unique_name.includes("@") ? p.unique_name : null)
     || p.upn
-    || (p.emails && Array.isArray(p.emails) ? p.emails[0] : null);
+    || (p.emails && Array.isArray(p.emails) ? p.emails[0] : null)
+    || "";
 
   return {
-    name: p.name || p.unique_name || p.upn || p.email || "",
-    upn: p.unique_name || p.upn || p.email || "",
-    email: email || "",
-    roles,
+    name: p.name || p.unique_name || p.upn || (typeof email === 'string' ? email : "") || "",
+    upn: p.unique_name || p.upn || (typeof email === 'string' ? email : "") || "",
+    email: typeof email === 'string' ? email : "",
+    roles,              // <-- ahora son strings "bonitos"
     sub: p.sub,
     iss: p.iss,
     aud: p.aud,
     expIso: p?.exp ? new Date(p.exp * 1000).toISOString() : null,
     raw: p,
   };
+}
+
+/* ---------- Catálogo: Roles válidos SOLO de tu sistema ---------- */
+/** Nombres exactos (case-insensitive) permitidos para renderizar en UI */
+export const SYSTEM_ROLES = [
+  "Administrador de sistema OTRI",
+  "Administrador de contrato de TT",
+  "Autor",
+  "Autoridad OTRI",
+  "Director de la OTRI",
+  "Gerencia Jurídica",
+  "Financiero",
+];
+
+/** Alias opcionales -> nombre canónico (por si tu backend emite variantes) */
+const ROLE_ALIASES = {
+  "admin sistema otri": "Administrador de sistema OTRI",
+  "administrador de sistema": "Administrador de sistema OTRI",
+  "admin contrato tt": "Administrador de contrato de TT",
+  "administrador de contrato tt": "Administrador de contrato de TT",
+  "autor(a)": "Autor",
+  "autor/inventor": "Autor",
+  "autoridad": "Autoridad OTRI",
+  "director otri": "Director de la OTRI",
+  "dirección otri": "Director de la OTRI",
+  "jurídico": "Gerencia Jurídica",
+  "gerencia juridica": "Gerencia Jurídica",
+  "finanzas": "Financiero",
+};
+
+// --- util: ¿parece JSON? ---
+function looksLikeJson(s) {
+  return typeof s === 'string' && /^[\[{].*[\]}]$/.test(s.trim());
+}
+
+// --- util: convierte a array de strings ---
+function toStringArray(x) {
+  if (!x) return [];
+  if (Array.isArray(x)) return x.map(String);
+  return [String(x)];
+}
+
+// --- EXTRAER ROLES desde payload, robusto a variantes ---
+function extractRoleNamesFromPayload(p) {
+  const roleUri  =process.env.REACT_APP_API_BASE_URI;
+
+  // 1) candidatos crudos
+  let rawRoles = [];
+  if (Array.isArray(p.roles)) rawRoles = p.roles;
+  else if (p.roles) rawRoles = [p.roles];
+  else if (Array.isArray(p.role)) rawRoles = p.role;
+  else if (p.role) rawRoles = [p.role];
+  else if (p[roleUri]) rawRoles = Array.isArray(p[roleUri]) ? p[roleUri] : [p[roleUri]];
+
+  // 2) expandir posibles JSON stringificados
+  const expanded = [];
+  for (const item of rawRoles) {
+    if (typeof item === 'string' && looksLikeJson(item)) {
+      try {
+        const parsed = JSON.parse(item);
+        if (Array.isArray(parsed)) {
+          // puede ser array de strings u objetos { idRol, nombre }
+          for (const el of parsed) {
+            if (typeof el === 'string') expanded.push(el);
+            else if (el && typeof el === 'object') {
+              if (el.nombre) expanded.push(String(el.nombre));
+              else if (el.Name) expanded.push(String(el.Name));
+              else if (el.rol) expanded.push(String(el.rol));
+            }
+          }
+          continue;
+        } else if (parsed && typeof parsed === 'object') {
+          if (parsed.nombre) { expanded.push(String(parsed.nombre)); continue; }
+          if (parsed.Name)   { expanded.push(String(parsed.Name));   continue; }
+          if (parsed.rol)    { expanded.push(String(parsed.rol));    continue; }
+        }
+      } catch {
+        // si falla el parse, cae al push normal
+      }
+    }
+    // fallback: tratar como string plano
+    expanded.push(String(item));
+  }
+
+  // 3) limpiar duplicados y vacíos
+  return Array.from(new Set(expanded.map(s => s.trim()).filter(Boolean)));
+}
+
+
+/** Normaliza un rol a su forma canónica si aplica */
+function normalizeRoleName(name) {
+  if (!name) return null;
+  const clean = String(name).trim();
+  const lower = clean.toLowerCase();
+
+  // catálogo oficial
+  const SYSTEM_ROLES = [
+    "Administrador de sistema OTRI",
+    "Administrador de contrato de TT",
+    "Autor",
+    "Autoridad OTRI",
+    "Director de la OTRI",
+    "Gerencia Jurídica",
+    "Financiero",
+  ];
+
+  const ROLE_ALIASES = {
+    "admin sistema otri": "Administrador de sistema OTRI",
+    "administrador de sistema": "Administrador de sistema OTRI",
+    "admin contrato tt": "Administrador de contrato de TT",
+    "administrador de contrato tt": "Administrador de contrato de TT",
+    "autor(a)": "Autor",
+    "autor/inventor": "Autor",
+    "autoridad": "Autoridad OTRI",
+    "director otri": "Director de la OTRI",
+    "dirección otri": "Director de la OTRI",
+    "jurídico": "Gerencia Jurídica",
+    "gerencia juridica": "Gerencia Jurídica",
+    "finanzas": "Financiero",
+  };
+
+  if (ROLE_ALIASES[lower]) return ROLE_ALIASES[lower];
+  const exact = SYSTEM_ROLES.find(r => r.toLowerCase() === lower);
+  return exact ?? null;
+}
+
+/** Reemplaza getSystemRolesFromJwt por esta versión */
+export function getSystemRolesFromJwt(token = getAppJwt()) {
+  const { roles } = getAppUser(token);
+  const set = new Set();
+  roles.forEach(r => {
+    const norm = normalizeRoleName(r);
+    if (norm) set.add(norm);
+  });
+  return Array.from(set);
 }
 
 /* ---------- MSAL access token + exchange ---------- */
@@ -108,18 +240,10 @@ async function doExchange(aadAccessToken) {
     { name: payload.name, email: payload.email, roles: payload.roles, exp: payload.expIso, iss: payload.iss, aud: payload.aud }
   );
 
-  // (Opcional) acceso rápido por consola
-  // window.__APP_JWT__ = token;
-  // window.__APP_CLAIMS__ = payload;
-
   return token;
 }
 
-/**
- * Asegura que existe un App JWT válido en sessionStorage.
- * - Si no está o expiró: MSAL → /auth/exchange → guarda App JWT
- * - Devuelve el App JWT listo para usar
- */
+/** Asegura que existe un App JWT válido en sessionStorage. */
 export async function ensureAppJwt() {
   let t = getAppJwt();
   if (!isValid(t)) {
@@ -127,6 +251,15 @@ export async function ensureAppJwt() {
     t = await doExchange(aad);
   }
   return t;
+}
+
+/* ---------- Persistencia del rol elegido ---------- */
+export function setSelectedRole(roleName) {
+  if (!roleName) return;
+  localStorage.setItem(SELECTED_ROLE_KEY, roleName);
+}
+export function getSelectedRole() {
+  return localStorage.getItem(SELECTED_ROLE_KEY) || null;
 }
 
 /* ---------- cliente Axios con interceptor ---------- */

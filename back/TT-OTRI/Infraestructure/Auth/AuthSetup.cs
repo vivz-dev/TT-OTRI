@@ -35,6 +35,7 @@
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -106,7 +107,7 @@ public static class AuthSetup
             // 2.2) Esquema de JWT interno (AppJwt)
             .AddJwtBearer(AppScheme, options =>
             {
-                options.RequireHttpsMetadata = true;
+                options.RequireHttpsMetadata = false; // ← SOLO desarrollo si usas HTTP
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -125,7 +126,14 @@ public static class AuthSetup
         // 3) Autorización → se define política por defecto que requiere AppJwt
         services.AddAuthorization(o =>
         {
+            // Política nombrada (si la quieres usar explícita)
             o.AddPolicy(AppPolicy, p => p.AddAuthenticationSchemes(AppScheme).RequireAuthenticatedUser());
+
+            // ✅ Política por defecto para endpoints sin metadata: usa AppJwt
+            o.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .AddAuthenticationSchemes(AppScheme)
+                .RequireAuthenticatedUser()
+                .Build();
         });
 
         return services;

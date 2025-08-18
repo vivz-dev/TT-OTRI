@@ -1,10 +1,10 @@
 import { LogLevel } from "@azure/msal-browser";
 
 // ⚠️ Reemplaza estos valores por los reales
-const SPA_CLIENT_ID  = "8dd6b24d-8e9b-4597-993e-4718fba81300"; // App Registration (SPA)
-const TENANT_ID      = "b7af8caf-83d8-4644-85ae-317c545223c1";
-const API_CLIENT_ID  = "8dd6b24d-8e9b-4597-993e-4718fba81300"; // App Registration (API)
-const API_SCOPE_NAME = "access_as_user"; // el que expusiste en la API
+const SPA_CLIENT_ID  = process.env.REACT_APP_SPA_CLIENT_ID; // App Registration (SPA)
+const TENANT_ID      = process.env.REACT_APP_TENANT_ID;
+const API_CLIENT_ID  = process.env.REACT_APP_API_CLIENT_ID; // App Registration (API)
+const API_SCOPE_NAME =  process.env.REACT_APP_API_SCOPE_NAME; // el que expusiste en la API
 
 export const msalConfig = {
   auth: {
