@@ -1,28 +1,62 @@
-// RTK Query para /api/cotitularidades/{cotId}/cotitulares
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+// RTK Query – Cotitulares
+// Endpoints backend: /api/cotitulares
+
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from './baseQuery';
 
 export const cotitularesApi = createApi({
   reducerPath: 'cotitularesApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:8080/api' }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ['Cotitular'],
   endpoints: (builder) => ({
-    listByCotitularidad: builder.query({
-      query: (cotId) => `cotitularidades/${cotId}/cotitulares`,
-      providesTags: (result, err, cotId) => [{ type: 'Cotitular', id: `COT_${cotId}` }],
+    getCotitulares: builder.query({
+      query: () => ({ url: 'cotitulares', method: 'GET' }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((x) => ({ type: 'Cotitular', id: x.id })),
+              { type: 'Cotitular', id: 'LIST' },
+            ]
+          : [{ type: 'Cotitular', id: 'LIST' }],
     }),
-    createUnderCotitularidad: builder.mutation({
-      // body: { cotitularidadId, cotitularInstitId, idUsuario, porcCotitularidad }
-      query: ({ cotId, ...body }) => ({
-        url: `cotitularidades/${cotId}/cotitulares`,
-        method: 'POST',
+    getCotitularById: builder.query({
+      query: (id) => ({ url: `cotitulares/${id}`, method: 'GET' }),
+      providesTags: (_res, _err, id) => [{ type: 'Cotitular', id }],
+    }),
+    createCotitular: builder.mutation({
+      query: (body) => ({ url: 'cotitulares', method: 'POST', body }),
+      invalidatesTags: [{ type: 'Cotitular', id: 'LIST' }],
+    }),
+    // El backend ofrece un PUT completo además del PATCH
+    updateCotitular: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `cotitulares/${id}`,
+        method: 'PUT',
         body,
       }),
-      invalidatesTags: (result, err, { cotId }) => [{ type: 'Cotitular', id: `COT_${cotId}` }],
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: 'Cotitular', id },
+        { type: 'Cotitular', id: 'LIST' },
+      ],
+    }),
+    patchCotitular: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `cotitulares/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_res, _err, { id }) => [
+        { type: 'Cotitular', id },
+        { type: 'Cotitular', id: 'LIST' },
+      ],
     }),
   }),
 });
 
 export const {
-  useListByCotitularidadQuery,
-  useCreateUnderCotitularidadMutation,
+  useGetCotitularesQuery,
+  useGetCotitularByIdQuery,
+  useCreateCotitularMutation,
+  useUpdateCotitularMutation,
+  usePatchCotitularMutation,
 } = cotitularesApi;

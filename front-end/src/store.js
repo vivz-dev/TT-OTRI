@@ -1,49 +1,66 @@
 import { configureStore } from '@reduxjs/toolkit';
 
+/** Existentes (tuyos) */
 import { resolutionsApi } from './services/resolutionsApi';
-import { transfersApi }   from './services/transfersApi';
+import { transfersApi } from './services/transfersApi';
 import { technologiesApi } from './services/technologiesApi';
 import { tiposProteccionApi } from './services/tiposProteccionApi';
-import { cotitularidadesApi } from './services/cotitularidadesApi';
 import { cotitularesApi } from './services/cotitularesApi';
-import { cotitularInstitApi } from './services/cotitularInstitApi';
 import { benefInstitucionesApi } from './services/benefInstitucionesApi';
 import { resolucionOrchestratorApi } from './services/resolucionOrchestratorApi';
-
-
-// ✅ nuevos
 import { archivosApi } from './services/archivosApi';
 import { distribBenefInstitucionesApi } from './services/distribBenefInstitucionesApi';
-// (Si estuvieras usando un servicio separado para distribuciones, impórtalo también)
+
+/** Nuevos (generados en la respuesta anterior) */
+import { acuerdosDistribAutoresApi } from './services/acuerdosDistribAutoresApi';
+import { proteccionesApi } from './services/proteccionesApi';
+import { cotitularidadInstApi } from './services/cotitularidadInstApi';
+import { cotitularidadTecnoApi } from './services/cotitularidadTecnoApi';
+
+import { technologyOrchestratorApi } from './services/technologyOrchestratorApi';
+import { tecnologiaProteccionesApi } from './services/tecnologiaProteccionesApi';
+
 
 export const store = configureStore({
   reducer: {
+    // ---- Existentes
     [technologiesApi.reducerPath]: technologiesApi.reducer,
     [resolutionsApi.reducerPath]: resolutionsApi.reducer,
-    [transfersApi.reducerPath]  : transfersApi.reducer,
+    [transfersApi.reducerPath]: transfersApi.reducer,
     [tiposProteccionApi.reducerPath]: tiposProteccionApi.reducer,
-    [cotitularidadesApi.reducerPath]: cotitularidadesApi.reducer,
     [cotitularesApi.reducerPath]: cotitularesApi.reducer,
-    [cotitularInstitApi.reducerPath]: cotitularInstitApi.reducer,
     [benefInstitucionesApi.reducerPath]: benefInstitucionesApi.reducer,
-
-    // ✅ nuevos
     [archivosApi.reducerPath]: archivosApi.reducer,
     [distribBenefInstitucionesApi.reducerPath]: distribBenefInstitucionesApi.reducer,
     [resolucionOrchestratorApi.reducerPath]: resolucionOrchestratorApi.reducer,
+
+    // ---- Nuevos
+    [acuerdosDistribAutoresApi.reducerPath]: acuerdosDistribAutoresApi.reducer,
+    [proteccionesApi.reducerPath]: proteccionesApi.reducer,
+    [cotitularidadInstApi.reducerPath]: cotitularidadInstApi.reducer,
+    [cotitularidadTecnoApi.reducerPath]: cotitularidadTecnoApi.reducer,
+    [technologyOrchestratorApi.reducerPath]: technologyOrchestratorApi.reducer,
+    [tecnologiaProteccionesApi.reducerPath]: tecnologiaProteccionesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
+      // ---- Existentes
       .concat(technologiesApi.middleware)
-      .concat(tiposProteccionApi.middleware)
       .concat(resolutionsApi.middleware)
-      .concat(cotitularidadesApi.middleware)
+      .concat(transfersApi.middleware)
+      .concat(tiposProteccionApi.middleware)
       .concat(cotitularesApi.middleware)
-      .concat(cotitularInstitApi.middleware)
       .concat(benefInstitucionesApi.middleware)
-
-      // ✅ nuevos
       .concat(archivosApi.middleware)
       .concat(distribBenefInstitucionesApi.middleware)
-      .concat(resolucionOrchestratorApi.middleware),
+      .concat(resolucionOrchestratorApi.middleware)
+
+      // ---- Nuevos
+      .concat(acuerdosDistribAutoresApi.middleware)
+      .concat(proteccionesApi.middleware)
+      .concat(cotitularidadInstApi.middleware)
+      .concat(cotitularidadTecnoApi.middleware)
+
+      .concat(technologyOrchestratorApi.middleware)
+      .concat(tecnologiaProteccionesApi.middleware)
 });

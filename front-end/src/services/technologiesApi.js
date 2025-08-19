@@ -1,30 +1,30 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQuery';
 
+/* ---------------- helpers de mapeo ---------------- */
+
 // Mapea el char Estado del backend a texto de UI:
 const mapEstado = (c) => {
-  // Ajusta si tus códigos difieren. Ejemplos:
-  // 'D' -> Disponible, 'N' -> No Disponible
   if (c === 'D') return 'Disponible';
   if (c === 'N') return 'No Disponible';
-  // fallback: muestra el char tal cual
   return String(c ?? '');
 };
 
-// Normaliza un registro del backend al shape que usa CardScroll
+// Normaliza un registro del backend (TecnologiaReadDto) al shape que usa CardScroll
 const toCardItem = (t) => ({
-  id:          t.id,
-  estado:      mapEstado(t.estado),
-  completed:   !!t.completado,
-  titulo:      t.titulo,
-  descripcion: t.descripcion,
-  // CardScroll espera texto/fecha. Puedes dejar ISO o formatear en el componente.
-  fecha:       t.fechaCreacion,
-  // Si luego quieres mostrar nombre, aquí hoy solo tenemos el IdPersona:
-  usuario:     t.idPersona,
+  id:            t.id,
+  estado:        mapEstado(t.estado),
+  completed:     !!t.completado,
+  cotitularidad: !!t.cotitularidad,
+  titulo:        t.titulo,
+  descripcion:   t.descripcion,
+  fecha:         t.fechaCreacion,   // ISO string
+  ultimoCambio:  t.ultimoCambio,    // ISO string
+  usuario:       t.idPersona,       // IdPersona (puedes resolver nombre en otro servicio)
 });
 
 
+/* ---------------- RTK Query API ---------------- */
 
 export const technologiesApi = createApi({
   reducerPath: 'technologiesApi',
@@ -56,18 +56,17 @@ export const technologiesApi = createApi({
       query: (body) => ({
         url: 'tecnologias',
         method: 'POST',
-        body,
+        body, // body debe seguir el shape de TecnologiaCreateDto
       }),
       invalidatesTags: [{ type: 'Technology', id: 'LIST' }],
     }),
 
     // PATCH /api/tecnologias/{id}
     updateTechnology: builder.mutation({
-      // acepta { id, data } o { id, ...campos }
       query: ({ id, data, ...rest }) => ({
         url: `tecnologias/${id}`,
         method: 'PATCH',
-        body: data ?? rest,
+        body: data ?? rest, // body debe seguir el shape de TecnologiaPatchDto
       }),
       invalidatesTags: (_res, _err, { id }) => [
         { type: 'Technology', id },
