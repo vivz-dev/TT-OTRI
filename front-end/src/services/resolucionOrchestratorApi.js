@@ -6,48 +6,15 @@
  *   - Siempre enviar IdUsuarioCrea en /distrib-benef-instituciones (requerido por DB)
  */
 
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { ensureAppJwt, getIdPersonaFromAppJwt } from "./api";
-import { removeNullish, coalesceZero } from "./_utils";
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth, normalizeId } from './baseQuery';
+import { getIdPersonaFromAppJwt } from './api';
+import { removeNullish, coalesceZero } from './_utils';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-const rawBaseQuery = fetchBaseQuery({
-  baseUrl: API_BASE_URL,
-  prepareHeaders: async (headers) => {
-    const appToken = await ensureAppJwt();
-    headers.set("Authorization", `Bearer ${appToken}`);
-    if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-    return headers;
-  },
-});
-
-const reauthWrapper = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
-  if (result?.error && [401, 403].includes(result.error.status)) {
-    try {
-      await ensureAppJwt();
-      result = await rawBaseQuery(args, api, extraOptions);
-    } catch {
-      return result;
-    }
-  }
-  return result;
-};
-
-const normalizeId = (resp) => {
-  if (resp == null) return null;
-  if (typeof resp === "number") return resp;
-  if (typeof resp === "string") {
-    const n = Number(resp);
-    return Number.isFinite(n) ? n : null;
-  }
-  return resp.id ?? resp.Id ?? resp.idResolucion ?? resp.IdResolucion ?? null;
-};
 
 export const resolucionOrchestratorApi = createApi({
   reducerPath: "resolucionOrchestratorApi",
-  baseQuery: reauthWrapper,
+  baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     createResolucionCompleta: builder.mutation({
       async queryFn(payload, api, _extra, baseQuery) {

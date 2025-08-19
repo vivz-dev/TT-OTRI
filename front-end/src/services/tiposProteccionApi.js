@@ -1,11 +1,11 @@
 // src/services/tiposProteccionApi.js
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi} from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from './baseQuery';
+
 
 export const tiposProteccionApi = createApi({
   reducerPath: 'tiposProteccionApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env?.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:5196/api',
-  }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ['TipoProteccion'],
   endpoints: (builder) => ({
     getTipos: builder.query({
@@ -16,3 +16,6 @@ export const tiposProteccionApi = createApi({
 });
 
 export const { useGetTiposQuery } = tiposProteccionApi;
+
+
+

@@ -1,4 +1,3 @@
-// import './TecnologiasPage.css'; // ya lo tienes
 import React, { useState, useMemo } from 'react';
 import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetTechnologiesQuery } from '../../services/technologiesApi';
@@ -13,11 +12,10 @@ const TecnologiasPage = ({ onRegister }) => {
     { label: 'No Disponibles', value: 'No Disponible' },
   ];
 
-  // 1) Trae datos desde la API
-  const { data: apiData = [], isLoading, error } = useGetTechnologiesQuery();
+  const { data = [], isLoading, error } = useGetTechnologiesQuery();
 
-  // 2) (opcional) normaliza aquí si necesitas mapear campos
-  const data = useMemo(() => apiData ?? [], [apiData]);
+  // Si quisieras re-mapear o formatear fechas aquí, puedes:
+  const mapped = useMemo(() => data, [data]);
 
   return (
     <main className="page-container">
@@ -35,7 +33,6 @@ const TecnologiasPage = ({ onRegister }) => {
         onRegister={onRegister}
       />
 
-      {/* Estados de carga/errores simples */}
       {isLoading && (
         <div className="card-scroll empty">
           <p className="empty-msg">Cargando tecnologías…</p>
@@ -52,7 +49,7 @@ const TecnologiasPage = ({ onRegister }) => {
         <CardScroll
           filter={filter}
           searchText={searchText}
-          dummyData={data}    // ahora viene de la API
+          dummyData={mapped}
         />
       )}
     </main>

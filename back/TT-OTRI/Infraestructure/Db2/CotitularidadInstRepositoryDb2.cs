@@ -1,5 +1,5 @@
 // // ============================================================================
-// // File: Infrastructure/Db2/CotitularInstitRepositoryDb2.cs
+// // File: Infrastructure/Db2/CotitularidadInstRepositoryDb2.cs
 // // Repositorio DB2 para SOTRI.T_OTRI_TT_COTITULARINSTIT usando IBM.Data.Db2.
 // // ============================================================================
 // using IBM.Data.Db2;

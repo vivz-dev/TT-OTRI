@@ -180,19 +180,50 @@ WHERE IDOTRITTRESOLUCION = @id";
     {
         int Ord(string name) => rec.GetOrdinal(name);
 
+        static int GetInt32Safe(IDataRecord r, int ord) =>
+            r.IsDBNull(ord) ? 0 : Convert.ToInt32(r.GetValue(ord));
+
+        static bool GetBoolFromSmallInt(IDataRecord r, int ord)
+        {
+            if (r.IsDBNull(ord)) return false;
+            var v = r.GetValue(ord);
+            return Convert.ToInt32(v) != 0;
+        }
+
+        static char GetCharSafe(IDataRecord r, int ord, char fallback = 'V')
+        {
+            if (r.IsDBNull(ord)) return fallback;
+            var v = r.GetValue(ord);
+            return Convert.ToChar(v);
+        }
+
+        static DateTime? GetNullableDate(IDataRecord r, int ord) =>
+            r.IsDBNull(ord) ? (DateTime?)null : Convert.ToDateTime(r.GetValue(ord));
+
+        static DateTime GetDateTimeSafe(IDataRecord r, int ord, DateTime fallbackUtcNow)
+        {
+            if (r.IsDBNull(ord)) return fallbackUtcNow;
+            return Convert.ToDateTime(r.GetValue(ord));
+        }
+
+        static string GetStringSafe(IDataRecord r, int ord) =>
+            r.IsDBNull(ord) ? string.Empty : Convert.ToString(r.GetValue(ord)) ?? string.Empty;
+
+        var nowUtc = DateTime.UtcNow;
+
         return new Resolution
         {
-            Id              = rec.GetInt32 (Ord("IDOTRITTRESOLUCION")),
-            IdUsuario       = rec.GetInt32 (Ord("IDUSUARIO")),
-            Completed       = Convert.ToInt16(rec.GetValue(Ord("COMPLETADO"))) != 0,
-            Codigo          = rec["CODIGO"]       as string ?? string.Empty,
-            Titulo          = rec["TITULO"]       as string ?? string.Empty,
-            Descripcion     = rec["DESCRIPCION"]  as string ?? string.Empty,
-            Estado          = (ResolutionStatus) Convert.ToChar(rec["ESTADO"]),
-            FechaResolucion = (DateTime) rec["FECHARESOLUCION"],
-            FechaVigencia   = (DateTime) rec["FECHAVIGENCIA"],
-            CreatedAt       = (DateTime) rec["FECHACREACION"],
-            UpdatedAt       = (DateTime) rec["ULTIMO_CAMBIO"]
+            Id              = GetInt32Safe(rec, Ord("IDOTRITTRESOLUCION")),
+            IdUsuario       = GetInt32Safe(rec, Ord("IDUSUARIO")),
+            Completed       = GetBoolFromSmallInt(rec, Ord("COMPLETADO")),
+            Codigo          = GetStringSafe(rec, Ord("CODIGO")),
+            Titulo          = GetStringSafe(rec, Ord("TITULO")),
+            Descripcion     = GetStringSafe(rec, Ord("DESCRIPCION")),
+            Estado          = (ResolutionStatus) GetCharSafe(rec, Ord("ESTADO"), 'V'),
+            FechaResolucion = GetNullableDate(rec, Ord("FECHARESOLUCION")),
+            FechaVigencia   = GetNullableDate(rec, Ord("FECHAVIGENCIA")),
+            CreatedAt       = GetDateTimeSafe(rec, Ord("FECHACREACION"), nowUtc),
+            UpdatedAt       = GetDateTimeSafe(rec, Ord("ULTIMO_CAMBIO"), nowUtc)
         };
     }
 

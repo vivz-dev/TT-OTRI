@@ -1,99 +1,70 @@
-// ============================================================================
-// File: Application/Services/CotitularService.cs
-// Lógica de negocio: valida FKs y evita duplicados del par (cotitularidad, instit).
-// ============================================================================
 using TT_OTRI.Application.DTOs;
 using TT_OTRI.Application.Interfaces;
 using TT_OTRI.Domain;
 
 namespace TT_OTRI.Application.Services;
 
-public class CotitularService
+public sealed class CotitularService
 {
-    private readonly ICotitularRepository       _repo;
-    private readonly ICotitularidadRepository   _cotRepo;
-    private readonly ICotitularInstitRepository _instRepo;
-    private readonly IUserRepository            _userRepo;
+    private readonly ICotitularRepository _repository;
 
-    public CotitularService(
-        ICotitularRepository       repo,
-        ICotitularidadRepository   cotRepo,
-        ICotitularInstitRepository instRepo,
-        IUserRepository            userRepo)
+    public CotitularService(ICotitularRepository repository)
     {
-        _repo     = repo;
-        _cotRepo  = cotRepo;
-        _instRepo = instRepo;
-        _userRepo = userRepo;
+        _repository = repository;
     }
 
-    /*--------------------- Lectura ---------------------*/
-    public Task<IEnumerable<Cotitular>> ListAsync()
-        => _repo.GetAllAsync();
-
-    public Task<Cotitular?> GetAsync(int id)
-        => _repo.GetByIdAsync(id);
-
-    public Task<IEnumerable<Cotitular>> ListByCotitularidadAsync(int cotitularidadId)
-        => _repo.GetByCotitularidadAsync(cotitularidadId);
-
-    /*--------------------- Creación --------------------*/
-    /// <summary>
-    /// Crea un cotitular validando FKs y que no exista el par (cotitularidad, instit).
-    /// Devuelve el Id creado o <c>null</c> si falla validación.
-    /// </summary>
-    public async Task<int?> CreateAsync(CotitularCreateDto dto)
+    public async Task<IEnumerable<CotitularReadDto>> GetAllAsync(CancellationToken ct)
     {
-        if (await _cotRepo .GetByIdAsync(dto.CotitularidadId)   is null) return null;
-        if (await _instRepo.GetByIdAsync(dto.CotitularInstitId) is null) return null;
-        if (await _userRepo.GetByIdAsync(dto.IdUsuario)         is null) return null;
+        var cotitulares = await _repository.GetAllAsync(ct);
+        return cotitulares.Select(MapToDto);
+    }
 
-        if (await _repo.GetByPairAsync(dto.CotitularidadId, dto.CotitularInstitId) is not null)
-            return null; // duplicado
+    public async Task<CotitularReadDto?> GetByIdAsync(int id, CancellationToken ct)
+    {
+        var cotitular = await _repository.GetByIdAsync(id, ct);
+        return cotitular != null ? MapToDto(cotitular) : null;
+    }
 
-        var e = new Cotitular
+    public async Task<int> CreateAsync(CotitularCreateDto dto, CancellationToken ct)
+    {
+        var cotitular = new Cotitular
         {
-            CotitularidadId    = dto.CotitularidadId,
-            CotitularInstitId  = dto.CotitularInstitId,
-            IdUsuario          = dto.IdUsuario,
-            PorcCotitularidad  = dto.PorcCotitularidad ?? 0m
+            IdCotitularidadTecno = dto.IdCotitularidadTecno,
+            IdCotitularidadInst = dto.IdCotitularidadInst,
+            IdPersona = dto.IdPersona,
+            Porcentaje = dto.Porcentaje
         };
-        await _repo.AddAsync(e);
-        return e.Id;
+
+        return await _repository.AddAsync(cotitular, ct);
     }
 
-    /*---------------------- Patch ----------------------*/
-    public async Task<bool> PatchAsync(int id, CotitularPatchDto dto)
+    public async Task UpdateAsync(int id, CotitularCreateDto dto, CancellationToken ct)
     {
-        var e = await _repo.GetByIdAsync(id);
-        if (e is null) return false;
-
-        var newCotId   = dto.CotitularidadId   ?? e.CotitularidadId;
-        var newInstId  = dto.CotitularInstitId ?? e.CotitularInstitId;
-        var newUserId  = dto.IdUsuario         ?? e.IdUsuario;
-
-        // Validar FKs si cambian
-        if (newCotId != e.CotitularidadId && await _cotRepo.GetByIdAsync(newCotId)   is null) return false;
-        if (newInstId!= e.CotitularInstitId && await _instRepo.GetByIdAsync(newInstId) is null) return false;
-        if (newUserId!= e.IdUsuario         && await _userRepo.GetByIdAsync(newUserId) is null) return false;
-
-        // Validar duplicado de par si cambió alguno
-        if (newCotId != e.CotitularidadId || newInstId != e.CotitularInstitId)
+        var cotitular = new Cotitular
         {
-            var dup = await _repo.GetByPairAsync(newCotId, newInstId);
-            if (dup is not null && dup.Id != e.Id) return false;
-        }
+            Id = id,
+            IdCotitularidadTecno = dto.IdCotitularidadTecno,
+            IdCotitularidadInst = dto.IdCotitularidadInst,
+            IdPersona = dto.IdPersona,
+            Porcentaje = dto.Porcentaje
+        };
 
-        e.CotitularidadId   = newCotId;
-        e.CotitularInstitId = newInstId;
-        e.IdUsuario         = newUserId;
-        if (dto.PorcCotitularidad.HasValue) e.PorcCotitularidad = dto.PorcCotitularidad.Value;
-
-        e.UpdatedAt = DateTime.UtcNow;
-        await _repo.UpdateAsync(e);
-        return true;
+        await _repository.UpdateAsync(cotitular, ct);
     }
 
-    /*--------------------- Delete ----------------------*/
-    public Task<bool> DeleteAsync(int id) => _repo.DeleteAsync(id);
+    public async Task<bool> PatchAsync(int id, CotitularPatchDto dto, CancellationToken ct)
+    {
+        return await _repository.PatchAsync(id, dto, ct);
+    }
+
+    private static CotitularReadDto MapToDto(Cotitular entity) => new()
+    {
+        Id = entity.Id,
+        IdCotitularidadTecno = entity.IdCotitularidadTecno,
+        IdCotitularidadInst = entity.IdCotitularidadInst,
+        IdPersona = entity.IdPersona,
+        Porcentaje = entity.Porcentaje,
+        FechaCreacion = entity.FechaCreacion,
+        UltimoCambio = entity.UltimoCambio
+    };
 }

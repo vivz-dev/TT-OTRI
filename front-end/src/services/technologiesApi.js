@@ -1,21 +1,40 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from './baseQuery';
+
+// Mapea el char Estado del backend a texto de UI:
+const mapEstado = (c) => {
+  // Ajusta si tus códigos difieren. Ejemplos:
+  // 'D' -> Disponible, 'N' -> No Disponible
+  if (c === 'D') return 'Disponible';
+  if (c === 'N') return 'No Disponible';
+  // fallback: muestra el char tal cual
+  return String(c ?? '');
+};
+
+// Normaliza un registro del backend al shape que usa CardScroll
+const toCardItem = (t) => ({
+  id:          t.id,
+  estado:      mapEstado(t.estado),
+  completed:   !!t.completado,
+  titulo:      t.titulo,
+  descripcion: t.descripcion,
+  // CardScroll espera texto/fecha. Puedes dejar ISO o formatear en el componente.
+  fecha:       t.fechaCreacion,
+  // Si luego quieres mostrar nombre, aquí hoy solo tenemos el IdPersona:
+  usuario:     t.idPersona,
+});
+
+
 
 export const technologiesApi = createApi({
   reducerPath: 'technologiesApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env?.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:5196/api',
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState()?.auth?.accessToken;
-      if (token) headers.set('Authorization', `Bearer ${token}`);
-      headers.set('Accept', 'application/json');
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ['Technology'],
   endpoints: (builder) => ({
     // GET /api/tecnologias
     getTechnologies: builder.query({
       query: () => 'tecnologias',
+      transformResponse: (res) => Array.isArray(res) ? res.map(toCardItem) : [],
       providesTags: (result) =>
         result
           ? [
@@ -25,9 +44,10 @@ export const technologiesApi = createApi({
           : [{ type: 'Technology', id: 'LIST' }],
     }),
 
-    // (Opcional) GET /api/tecnologias/{id}
+    // GET /api/tecnologias/{id}
     getTechnology: builder.query({
       query: (id) => `tecnologias/${id}`,
+      transformResponse: (t) => (t ? toCardItem(t) : null),
       providesTags: (_res, _err, id) => [{ type: 'Technology', id }],
     }),
 
@@ -41,13 +61,13 @@ export const technologiesApi = createApi({
       invalidatesTags: [{ type: 'Technology', id: 'LIST' }],
     }),
 
-    // PUT /api/tecnologias/{id}  (cambia a PATCH si tu backend así lo define)
+    // PATCH /api/tecnologias/{id}
     updateTechnology: builder.mutation({
-      // acepta { id, ...patch } o { id, data: {...} }
+      // acepta { id, data } o { id, ...campos }
       query: ({ id, data, ...rest }) => ({
         url: `tecnologias/${id}`,
-        method: 'PUT', // <-- usa 'PATCH' si corresponde
-        body: data ?? rest, // si pasas {id, ...campos}, usa esos campos; si pasas {id, data}, usa data
+        method: 'PATCH',
+        body: data ?? rest,
       }),
       invalidatesTags: (_res, _err, { id }) => [
         { type: 'Technology', id },
@@ -59,7 +79,7 @@ export const technologiesApi = createApi({
 
 export const {
   useGetTechnologiesQuery,
-  useGetTechnologyQuery,      // si no usas GET by id, puedes no importarlo
+  useGetTechnologyQuery,
   useCreateTechnologyMutation,
   useUpdateTechnologyMutation,
 } = technologiesApi;

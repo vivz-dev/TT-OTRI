@@ -12,55 +12,9 @@
  *  TagTypes: Resolution | Distribution
  */
 
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { ensureAppJwt } from './api';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth, normalizeId } from './baseQuery';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-/* ---------------- base query con App JWT + reauth ---------------- */
-const rawBaseQuery = fetchBaseQuery({
-  baseUrl: API_BASE_URL,
-  prepareHeaders: async (headers) => {
-    const appToken = await ensureAppJwt(); // obtiene/renueva tu JWT interno
-    headers.set('Authorization', `Bearer ${appToken}`);
-    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-    return headers;
-  },
-});
-
-const baseQueryWithReauth = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
-  if (result?.error && [401, 403].includes(result.error.status)) {
-    try {
-      await ensureAppJwt();
-      result = await rawBaseQuery(args, api, extraOptions);
-    } catch {
-      return result;
-    }
-  }
-  return result;
-};
-
-/* ---------------- helpers ---------------- */
-const normalizeId = (resp) => {
-  // Acepta varios formatos de respuesta desde el backend
-  // 1) objeto { id: 123 } o { Id: 123 } o { idResolucion: 123 }
-  // 2) entidad completa con propiedad Id/id
-  // 3) valor escalar: 123
-  if (resp == null) return null;
-  if (typeof resp === 'number') return resp;
-  if (typeof resp === 'string') {
-    const n = Number(resp);
-    return Number.isFinite(n) ? n : null;
-  }
-  return (
-    resp.id ??
-    resp.Id ??
-    resp.idResolucion ??
-    resp.IdResolucion ??
-    null
-  );
-};
 
 /* ---------------- API ---------------- */
 export const resolutionsApi = createApi({
