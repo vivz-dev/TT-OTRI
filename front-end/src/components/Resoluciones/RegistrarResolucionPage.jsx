@@ -25,19 +25,31 @@ const toIsoOrNull = (d) => {
   )).toISOString();
 };
 
+/**
+ * buildResolutionPayload
+ * Acepta ambos formatos:
+ *  - PascalCase: { Numero, Titulo, Descripcion, FechaResolucion, FechaVigencia }
+ *  - camelCase : { numero,  titulo,  descripcion,  fechaResolucion,  fechaVigencia }
+ */
 const buildResolutionPayload = (resData, isFinal) => {
-  const codigo      = resData?.numero?.trim() || '—';
-  const descripcion = (resData?.descripcion ?? '').trim() || '—';
+  // Toma el valor de Numero/numero; si no hay Titulo/titulo, usa el número.
+  const numero       = (resData?.Numero ?? resData?.numero ?? '—').toString().trim();
+  const titulo       = (resData?.Titulo ?? resData?.titulo ?? numero).toString().trim();
+  const descripcion  = (resData?.Descripcion ?? resData?.descripcion ?? '—').toString().trim();
+
+  // Fechas pueden venir ya en ISO o como 'YYYY-MM-DD'; normalizamos a ISO o null
+  const fechaResol   = resData?.FechaResolucion ?? resData?.fechaResolucion ?? null;
+  const fechaVig     = resData?.FechaVigencia   ?? resData?.fechaVigencia   ?? null;
 
   const idUsuario = getIdPersonaFromAppJwt() ?? 0;
 
   return {
     IdUsuario: idUsuario,
-    Codigo: codigo,
-    Titulo: codigo,
+    Codigo: numero,                 // backend usa Codigo/Titulo con el número
+    Titulo:  titulo,
     Descripcion: descripcion,
-    FechaResolucion: toIsoOrNull(resData?.fechaResolucion),
-    FechaVigencia:   toIsoOrNull(resData?.fechaVigencia),
+    FechaResolucion: toIsoOrNull(fechaResol),
+    FechaVigencia:   toIsoOrNull(fechaVig),
     Completed: !!isFinal,
   };
 };
@@ -59,8 +71,8 @@ const RegistrarResolucionPage = ({ onBack }) => {
   /* ---------------- save / finish --------------- */
   const persist = async (isFinal) => {
     if (isFinal) {
-      // 🔒 Validación fuerte
-      const { valido, data } = formRef.current.validate();
+      // 🔒 Validación fuerte (ahora esperamos payloadResolucion)
+      const { valido, payloadResolucion } = formRef.current.validate();
       const distribsOk = scrollRef.current.validate();
       const archivoOk  = !!file;
 
@@ -73,7 +85,7 @@ const RegistrarResolucionPage = ({ onBack }) => {
       }
 
       // ✅ Guardar en backend
-      const resolutionPayload = buildResolutionPayload(data, true);
+      const resolutionPayload = buildResolutionPayload(payloadResolucion, true);
       try {
         const resolution = await createResolution(resolutionPayload).unwrap();
         const resolutionId = resolution.id;
@@ -97,8 +109,13 @@ const RegistrarResolucionPage = ({ onBack }) => {
       return;
     }
 
-    // 📝 Guardar (borrador) → solo console.log
-    const raw = formRef.current.getRaw();
+    // 📝 Guardar (borrador) → solo console.log (sin validar)
+    // Intentamos usar getPayload(); si no existe, intentamos getRaw(); si no, caemos a un objeto vacío.
+    const raw =
+      (formRef.current.getPayload && formRef.current.getPayload()) ||
+      (formRef.current.getRaw && formRef.current.getRaw()) ||
+      {};
+
     const distribuciones = scrollRef.current.getDistribuciones();
     const resolutionPayload = buildResolutionPayload(raw, false);
 

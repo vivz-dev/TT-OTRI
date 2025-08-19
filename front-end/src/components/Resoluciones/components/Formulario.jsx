@@ -16,7 +16,16 @@ const Formulario = forwardRef(({ shakeError }, ref) => {
     fechaVigencia: false,
     descripcion: false,
   });
-  useImperativeHandle(ref, () => ({
+
+// 👇 helper local
+const toIsoOrNull = (d) => {
+  if (!d) return null;
+  const dt = new Date(d);
+  if (isNaN(dt)) return null;
+  return new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0)).toISOString();
+};
+
+useImperativeHandle(ref, () => ({
   validate() {
     const nuevoError = {
       num1: !num1,
@@ -29,31 +38,38 @@ const Formulario = forwardRef(({ shakeError }, ref) => {
     setErrores(nuevoError);
 
     const esValido = !Object.values(nuevoError).some(Boolean);
+
+    const numero = `${num1}-${num2}-${num3}`;
+    const payloadResolucion = {
+      Numero: numero.trim(),
+      Titulo: numero.trim(),
+      Descripcion: (descripcion ?? '').trim(),
+      FechaResolucion: toIsoOrNull(fechaResolucion), // ISO o null
+      FechaVigencia:   toIsoOrNull(fechaVigencia),   // ISO o null
+      // Estado: 'Vigente', // <- descomenta si tu API lo exige siempre
+    };
+
     return {
       valido: esValido,
-      data: esValido
-        ? {
-            numero: `${num1}-${num2}-${num3}`,
-            fechaResolucion,
-            fechaVigencia,
-            descripcion,
-          }
-        : null,
+      payloadResolucion: esValido ? payloadResolucion : null,
     };
   },
 
-  /* 👇 NUEVO: devuelve los valores actuales sin validar */
-  getRaw() {
+  // 👉 Obtener el mismo payload sin validar
+  getPayload() {
     const partes = [num1, num2, num3].filter(Boolean);
-    const numeroParcial = partes.length ? partes.join('-') : '—';
+    const numero = partes.length ? partes.join('-') : '—';
     return {
-      numero: numeroParcial,
-      fechaResolucion: fechaResolucion || null,
-      fechaVigencia:   fechaVigencia   || null,
-      descripcion:     descripcion     || '—',
+      Numero: numero.trim(),
+      Titulo: numero.trim(),
+      Descripcion: (descripcion ?? '').trim() || '—',
+      FechaResolucion: toIsoOrNull(fechaResolucion),
+      FechaVigencia:   toIsoOrNull(fechaVigencia),
+      // Estado: 'Vigente',
     };
   },
 }));
+
 
 
   return (

@@ -151,26 +151,30 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
 
   /* expone al padre */
   useImperativeHandle(ref, () => ({
-    validate() {
-      const valido = isValid();
-      setShowErrors(!valido);
-      return valido;
-    },
-    getData() {
-      const min = parseMoney(montoMin);
-      const max = noLimit ? null : parseMoney(montoMax);
-      return {
-        montoMinimo: min, // obligatorio
-        montoMaximo: max, // null si no aplica límite
-        porcSubtotalAutores: subtotalAutores / 100,
-        porcSubtotalInstitut: subtotalCentros / 100,
-        beneficiariosInstitucionales: centros.map((c) => ({
-          idBeneficioInstitucional: c.institucionId, // 👈 ID al payload
-          porcentaje: Number(c.porcentaje) / 100,
-        })),
-      };
-    },
-  }));
+  validate() {
+    const valido = isValid();
+    setShowErrors(!valido);
+    return valido;
+  },
+
+  // 👉 Devuelve el payload listo para API (nombres y formato finales)
+  getData() {
+    const min = parseMoney(montoMin);
+    const max = noLimit ? null : parseMoney(montoMax);
+
+    return {
+      MontoMinimo: min,                       // number | null
+      MontoMaximo: max,                       // number | null
+      PorcSubtotalAutores: subtotalAutores / 100,          // 0..1
+      PorcSubtotalInstituciones: subtotalCentros / 100,     // 0..1
+      BeneficiariosInstitucionales: centros.map((c) => ({
+        IdBenefInstitucion: Number(c.institucionId),        // int
+        Porcentaje: Number(c.porcentaje) / 100,             // 0..1
+      })),
+    };
+  },
+}));
+
 
   /* Si el usuario corrige campos, intentamos ocultar errores */
   const handleAutores = (v) => {
