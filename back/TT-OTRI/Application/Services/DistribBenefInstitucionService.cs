@@ -1,6 +1,4 @@
-// ============================================================================
 // Application/Services/DistribBenefInstitucionService.cs
-// ============================================================================
 using TT_OTRI.Application.DTOs;
 using TT_OTRI.Application.Interfaces;
 using TT_OTRI.Domain;
@@ -18,27 +16,25 @@ public sealed class DistribBenefInstitucionService
         => (await _repo.GetAllAsync(ct)).Select(MapToRead).ToList();
 
     public async Task<DistribBenefInstitucionReadDto?> GetByIdAsync(int id, CancellationToken ct = default)
-    {
-        var e = await _repo.GetByIdAsync(id, ct);
-        return e is null ? null : MapToRead(e);
-    }
+        => (await _repo.GetByIdAsync(id, ct)) is { } e ? MapToRead(e) : null;
 
     public async Task<int> CreateAsync(DistribBenefInstitucionCreateDto dto, CancellationToken ct = default)
     {
+        // repo necesita ambos NOT NULL (CREA y MOD). MOD = CREA en INSERT.
         var entity = new DistribBenefInstitucion
         {
-            IdDistribBenefInstitucion = dto.IdDistribBenefInstitucion ?? 0, // repo decidirá si calcula MAX+1
+            IdDistribBenefInstitucion = dto.IdDistribBenefInstitucion ?? 0,
             IdDistribucionResolucion  = dto.IdDistribucionResolucion,
             IdBenefInstitucion        = dto.IdBenefInstitucion,
             Porcentaje                = dto.Porcentaje,
-            IdUsuarioCrea             = dto.IdUsuarioCrea
+            IdUsuarioCrea             = dto.IdUsuarioCrea,
+            IdUsuarioMod              = dto.IdUsuarioCrea
         };
         return await _repo.CreateAsync(entity, ct);
     }
 
     public Task<bool> PatchAsync(int id, DistribBenefInstitucionPatchDto dto, CancellationToken ct = default)
-        => _repo.UpdatePartialAsync(id, dto.IdDistribucionResolucion, dto.IdBenefInstitucion,
-                                    dto.Porcentaje, dto.IdUsuarioMod, ct);
+        => _repo.UpdatePartialAsync(id, dto.IdDistribucionResolucion, dto.IdBenefInstitucion, dto.Porcentaje, dto.IdUsuarioMod, ct);
 
     public Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         => _repo.DeleteAsync(id, ct);

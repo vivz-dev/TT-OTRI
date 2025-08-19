@@ -1,55 +1,58 @@
-// ============================================================================
-// File: Application/Services/TipoProteccionService.cs
-// Lógica de negocio para listar, crear, actualizar y eliminar tipos de protección.
-// ============================================================================
 using TT_OTRI.Application.DTOs;
 using TT_OTRI.Application.Interfaces;
 using TT_OTRI.Domain;
 
 namespace TT_OTRI.Application.Services;
 
-public class TipoProteccionService
+public sealed class TipoProteccionService
 {
     private readonly ITipoProteccionRepository _repo;
-    public TipoProteccionService(ITipoProteccionRepository repo) => _repo = repo;
 
-    /*------------ Lectura ------------*/
-    public Task<IEnumerable<TipoProteccion>> ListAsync()       => _repo.GetAllAsync();
-    public Task<TipoProteccion?>             GetAsync (int id) => _repo.GetByIdAsync(id);
-
-    /*------------ Creación -----------*/
-    /// <summary>Crea validando que no exista otro con el mismo nombre (case-insensitive).</summary>
-    public async Task<TipoProteccion?> CreateAsync(TipoProteccionCreateDto dto)
+    public TipoProteccionService(ITipoProteccionRepository repo)
     {
-        if (dto is null || string.IsNullOrWhiteSpace(dto.Nombre)) return null;
-
-        var nombre = dto.Nombre.Trim();
-        if (await _repo.GetByNameAsync(nombre) is not null) return null; // evitar duplicados
-
-        var e = new TipoProteccion { Nombre = nombre };
-        await _repo.AddAsync(e);
-        return e;
+        _repo = repo;
     }
 
-    /*------------ Patch --------------*/
-    public async Task<bool> PatchAsync(int id, TipoProteccionPatchDto dto)
+    public async Task<IEnumerable<TipoProteccionReadDto>> GetAllAsync(CancellationToken ct)
     {
-        var e = await _repo.GetByIdAsync(id);
-        if (e is null) return false;
+        var tipos = await _repo.GetAllAsync(ct);
+        return tipos.Select(MapToReadDto);
+    }
+
+    public async Task<TipoProteccionReadDto?> GetByIdAsync(int id, CancellationToken ct)
+    {
+        var tipo = await _repo.GetByIdAsync(id, ct);
+        return tipo is null ? null : MapToReadDto(tipo);
+    }
+
+    public async Task<int> CreateAsync(TipoProteccionCreateDto dto, CancellationToken ct)
+    {
+        var tipo = new TipoProteccion { Nombre = dto.Nombre };
+        return await _repo.CreateAsync(tipo, ct);
+    }
+
+    public async Task UpdateAsync(int id, TipoProteccionPatchDto dto, CancellationToken ct)
+    {
+        var tipo = await _repo.GetByIdAsync(id, ct);
+        if (tipo is null) throw new KeyNotFoundException($"TipoProteccion {id} no encontrado.");
 
         if (!string.IsNullOrWhiteSpace(dto.Nombre))
-        {
-            var nombre = dto.Nombre.Trim();
-            var exists = await _repo.GetByNameAsync(nombre);
-            if (exists is not null && exists.Id != id) return false; // nombre ya en uso
-            e.Nombre = nombre;
-        }
+            tipo.Nombre = dto.Nombre;
 
-        e.UpdatedAt = DateTime.UtcNow;
-        await _repo.UpdateAsync(e);
-        return true;
+        await _repo.UpdateAsync(tipo, ct);
     }
 
-    /*------------ Delete -------------*/
-    public Task<bool> DeleteAsync(int id) => _repo.DeleteAsync(id);
+    public Task<bool> DeleteAsync(int id, CancellationToken ct)
+        => _repo.DeleteAsync(id, ct);
+
+    private static TipoProteccionReadDto MapToReadDto(TipoProteccion tipo)
+    {
+        return new TipoProteccionReadDto
+        {
+            Id = tipo.Id,
+            Nombre = tipo.Nombre,
+            CreatedAt = tipo.CreatedAt,
+            UpdatedAt = tipo.UpdatedAt
+        };
+    }
 }

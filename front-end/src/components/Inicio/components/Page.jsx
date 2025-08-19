@@ -1,11 +1,11 @@
-import React from 'react';
-import './Page.css';
-import ResolucionesPage from '../../Resoluciones/ResolucionesPage'
-import RegistrarResolucionPage from '../../Resoluciones/RegistrarResolucionPage';
-import TecnologiasPage from '../../Tecnologias/TecnologiasPage'
-import RegistrarTecnologiasPage from '../../Tecnologias/RegistrarTecnologiasPage'
-import TransferenciaTecnologicaPage from '../../Transferencia/TransferenciaTecnologicaPage';
-import RegistrarTransferenciaPage from '../../Transferencia/RegistrarTransferenciaPage';
+import React from "react";
+import "./Page.css";
+import ResolucionesPage from "../../Resoluciones/ResolucionesPage";
+import RegistrarResolucionPage from "../../Resoluciones/RegistrarResolucionPage";
+import TecnologiasPage from "../../Tecnologias/TecnologiasPage";
+import RegistrarTecnologiasPage from "../../Tecnologias/RegistrarTecnologiasPage";
+import TransferenciaTecnologicaPage from "../../Transferencia/TransferenciaTecnologicaPage";
+import RegistrarTransferenciaPage from "../../Transferencia/RegistrarTransferenciaPage";
 
 const PagosPage = () => (
   <div className="page-content">
@@ -31,38 +31,56 @@ const AjustesPage = () => (
 const Page = ({ activeSection, setActiveSection }) => {
   const renderContent = () => {
     switch (activeSection) {
-      case 'registrar-resolucion':
-        return <RegistrarResolucionPage onBack={() => setActiveSection('resoluciones')} />;
-      case 'resoluciones':
-        return <ResolucionesPage onRegister={() => setActiveSection('registrar-resolucion')}/>;
-      case 'tecnologias':
-        return <TecnologiasPage onRegister={() => setActiveSection('registrar-tecnologia')}/>;
-      case 'registrar-tecnologia':
-        return <RegistrarTecnologiasPage onBack={() => setActiveSection('tecnologias')} />;
-      case 'transferencia-tecnologica':
+      case "registrar-resolucion":
         return (
-          <TransferenciaTecnologicaPage
-            onRegister={() => setActiveSection('registrar-transferencia')}
+          <RegistrarResolucionPage
+            onBack={() => setActiveSection("resoluciones")}
+            onSuccess={() => setActiveSection("resoluciones")} // 👈 redirección interna
           />
         );
-      case 'registrar-transferencia':
-        return <RegistrarTransferenciaPage onBack={() => setActiveSection('transferencia-tecnologica')} />;
-      case 'pagos':
+
+      case "resoluciones":
+        return (
+          <ResolucionesPage
+            onRegister={() => setActiveSection("registrar-resolucion")}
+          />
+        );
+      case "tecnologias":
+        return (
+          <TecnologiasPage
+            onRegister={() => setActiveSection("registrar-tecnologia")}
+          />
+        );
+      case "registrar-tecnologia":
+        return (
+          <RegistrarTecnologiasPage
+            onBack={() => setActiveSection("tecnologias")}
+          />
+        );
+      case "transferencia-tecnologica":
+        return (
+          <TransferenciaTecnologicaPage
+            onRegister={() => setActiveSection("registrar-transferencia")}
+          />
+        );
+      case "registrar-transferencia":
+        return (
+          <RegistrarTransferenciaPage
+            onBack={() => setActiveSection("transferencia-tecnologica")}
+          />
+        );
+      case "pagos":
         return <PagosPage />;
-      case 'roles-permisos':
+      case "roles-permisos":
         return <RolesPermisosPage />;
-      case 'ajustes':
+      case "ajustes":
         return <AjustesPage />;
       default:
         return <ResolucionesPage />;
     }
   };
 
-  return (
-    <main className="app-page">
-      {renderContent()}
-    </main>
-  );
+  return <main className="app-page">{renderContent()}</main>;
 };
 
 export default Page;

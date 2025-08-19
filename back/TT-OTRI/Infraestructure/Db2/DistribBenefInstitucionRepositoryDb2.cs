@@ -22,6 +22,9 @@ public sealed class DistribBenefInstitucionRepositoryDb2 : IDistribBenefInstituc
         _schema = cfg["Db2:Schema"] ?? "SOTRI";
     }
 
+    // ------------------------------------------------------------------------
+    // GET ALL
+    // ------------------------------------------------------------------------
     public async Task<IReadOnlyList<DistribBenefInstitucion>> GetAllAsync(CancellationToken ct = default)
     {
         using var conn = new DB2Connection(_connString);
@@ -52,6 +55,9 @@ ORDER BY IDOTRITTDISTRIBBENEFINSTITUCION";
         return list;
     }
 
+    // ------------------------------------------------------------------------
+    // GET BY ID
+    // ------------------------------------------------------------------------
     public async Task<DistribBenefInstitucion?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         using var conn = new DB2Connection(_connString);
@@ -81,33 +87,35 @@ WHERE IDOTRITTDISTRIBBENEFINSTITUCION = @id";
 
         return null;
     }
-    
+
+    // ------------------------------------------------------------------------
+    // CREATE
+    // ------------------------------------------------------------------------
     public async Task<int> CreateAsync(DistribBenefInstitucion e, CancellationToken ct = default)
-{
-    using var conn = new DB2Connection(_connString);
-    await conn.OpenAsync(ct);
-    using var tx = conn.BeginTransaction();
-
-    try
     {
-        // PK = MAX+1 si no vino
-        if (e.IdDistribBenefInstitucion <= 0)
+        if (e.IdDistribucionResolucion <= 0) throw new ArgumentException("IdDistribucionResolucion requerido");
+        if (e.IdBenefInstitucion <= 0)       throw new ArgumentException("IdBenefInstitucion requerido");
+        if (e.IdUsuarioCrea <= 0)            throw new ArgumentException("IdUsuarioCrea requerido");
+        if (e.IdUsuarioMod <= 0)             e.IdUsuarioMod = e.IdUsuarioCrea; // NOT NULL en tu DDL
+
+        using var conn = new DB2Connection(_connString);
+        await conn.OpenAsync(ct);
+        using var tx = conn.BeginTransaction();
+
+        try
         {
-            using var getId = conn.CreateCommand();
-            getId.Transaction = tx;
-            getId.CommandText = $@"SELECT COALESCE(MAX(IDOTRITTDISTRIBBENEFINSTITUCION),0)+1 FROM {Table}";
-            var obj = await getId.ExecuteScalarAsync(ct);
-            e.IdDistribBenefInstitucion = Convert.ToInt32(obj);
-        }
+            if (e.IdDistribBenefInstitucion <= 0)
+            {
+                using var getId = conn.CreateCommand();
+                getId.Transaction = tx;
+                getId.CommandText = $@"SELECT COALESCE(MAX(IDOTRITTDISTRIBBENEFINSTITUCION),0)+1 FROM {Table}";
+                var obj = await getId.ExecuteScalarAsync(ct);
+                e.IdDistribBenefInstitucion = Convert.ToInt32(obj);
+            }
 
-        // Si la tabla exige NOT NULL en IDUSUARIOMOD, usamos el mismo que crea si no viene
-        var idUsrModInsert = e.IdUsuarioMod ?? e.IdUsuarioCrea;
-        // (Opcional) si también es NOT NULL en DDL, valida aquí:
-        // if (idUsrModInsert == null) throw new InvalidOperationException("IDUSUARIOMOD requerido por la tabla.");
-
-        using var cmd = conn.CreateCommand();
-        cmd.Transaction = tx;
-        cmd.CommandText = $@"
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = $@"
 INSERT INTO {Table} (
   IDOTRITTDISTRIBBENEFINSTITUCION,
   IDOTRITTDISTRIBUCIONRESOLUCION,
@@ -130,35 +138,37 @@ INSERT INTO {Table} (
   CURRENT_TIMESTAMP
 )";
 
-        cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) { Value = e.IdDistribBenefInstitucion });
-        cmd.Parameters.Add(new DB2Parameter("@idDistResol", DB2Type.Integer) { Value = e.IdDistribucionResolucion });
-        cmd.Parameters.Add(new DB2Parameter("@idBenefInst", DB2Type.Integer) { Value = e.IdBenefInstitucion });
+            cmd.Parameters.Add(new DB2Parameter("@id",         DB2Type.Integer) { Value = e.IdDistribBenefInstitucion });
+            cmd.Parameters.Add(new DB2Parameter("@idDistResol",DB2Type.Integer) { Value = e.IdDistribucionResolucion });
+            cmd.Parameters.Add(new DB2Parameter("@idBenefInst",DB2Type.Integer) { Value = e.IdBenefInstitucion });
+            cmd.Parameters.Add(new DB2Parameter("@idUsrCrea",  DB2Type.Integer) { Value = e.IdUsuarioCrea });
+            cmd.Parameters.Add(new DB2Parameter("@idUsrMod",   DB2Type.Integer) { Value = e.IdUsuarioMod });
 
-        cmd.Parameters.Add(new DB2Parameter("@idUsrCrea", DB2Type.Integer) { Value = (object?)e.IdUsuarioCrea ?? DBNull.Value });
-        cmd.Parameters.Add(new DB2Parameter("@idUsrMod",  DB2Type.Integer) { Value = (object?)idUsrModInsert ?? DBNull.Value });
+            // PORCENTAJE DECIMAL(3,2)
+            var p = new DB2Parameter("@porc", DB2Type.Decimal)
+            {
+                Precision = 3,
+                Scale     = 2,
+                Value     = e.Porcentaje
+            };
+            cmd.Parameters.Add(p);
 
-        // 🔧 CLAVE: tipar el DECIMAL (evita SQL0418)
-        var p = new DB2Parameter("@porc", DB2Type.Decimal)
+            var n = await cmd.ExecuteNonQueryAsync(ct);
+            tx.Commit();
+
+            if (n <= 0) throw new Exception("No se insertó el registro");
+            return e.IdDistribBenefInstitucion;
+        }
+        catch
         {
-            Precision = 8,  // ajusta a tu DDL si es diferente
-            Scale     = 2,
-            Value     = e.Porcentaje
-        };
-        cmd.Parameters.Add(p);
-
-        var n = await cmd.ExecuteNonQueryAsync(ct);
-        tx.Commit();
-
-        if (n <= 0) throw new Exception("No se insertó el registro");
-        return e.IdDistribBenefInstitucion;
+            try { tx.Rollback(); } catch { /* ignore */ }
+            throw;
+        }
     }
-    catch
-    {
-        try { tx.Rollback(); } catch { /* ignore */ }
-        throw;
-    }
-}
 
+    // ------------------------------------------------------------------------
+    // UPDATE (PATCH)
+    // ------------------------------------------------------------------------
     public async Task<bool> UpdatePartialAsync(
         int id,
         int? idDistribucionResolucion,
@@ -170,7 +180,7 @@ INSERT INTO {Table} (
         using var conn = new DB2Connection(_connString);
         await conn.OpenAsync(ct);
 
-        var sets = new List<string>();
+        var sets  = new List<string>();
         var parms = new List<DB2Parameter>();
 
         if (idDistribucionResolucion.HasValue)
@@ -186,13 +196,7 @@ INSERT INTO {Table} (
         if (porcentaje.HasValue)
         {
             sets.Add("PORCENTAJE = @porc");
-            var p = new DB2Parameter("@porc", DB2Type.Decimal)
-            {
-                Precision = 8, // ajusta a tu DDL
-                Scale     = 2,
-                Value     = porcentaje.Value
-            };
-            parms.Add(p);
+            parms.Add(new DB2Parameter("@porc", DB2Type.Decimal) { Precision = 3, Scale = 2, Value = porcentaje.Value });
         }
         if (idUsuarioMod.HasValue)
         {
@@ -200,7 +204,6 @@ INSERT INTO {Table} (
             parms.Add(new DB2Parameter("@idUsrMod", DB2Type.Integer) { Value = idUsuarioMod.Value });
         }
 
-        // Siempre actualizar FECHAMODIFICA y ULTIMO_CAMBIO
         sets.Add("FECHAMODIFICA = CURRENT_TIMESTAMP");
         sets.Add("ULTIMO_CAMBIO = CURRENT_TIMESTAMP");
 
@@ -220,6 +223,9 @@ UPDATE {Table}
         return n > 0;
     }
 
+    // ------------------------------------------------------------------------
+    // DELETE
+    // ------------------------------------------------------------------------
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
         using var conn = new DB2Connection(_connString);
@@ -234,12 +240,12 @@ UPDATE {Table}
         return n > 0;
     }
 
-    // --------------------------- Helpers ---------------------------
-    
+    // ------------------------------------------------------------------------
+    // MAP
+    // ------------------------------------------------------------------------
     private static DistribBenefInstitucion Map(DbDataReader rd)
     {
         int i = 0;
-
         var entity = new DistribBenefInstitucion
         {
             IdDistribBenefInstitucion = rd.GetInt32(i++),
@@ -256,7 +262,4 @@ UPDATE {Table}
 
         return entity;
     }
-
-
-    
 }

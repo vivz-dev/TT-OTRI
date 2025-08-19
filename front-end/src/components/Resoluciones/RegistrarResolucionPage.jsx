@@ -1,20 +1,9 @@
-/**
- * RegistrarResolucionPage (con orquestador)
- * ----------------------------------------
- *  • Construye payload:
- *      resolucion {...}
- *      distribuciones: [{ MontoMinimo, MontoMaximo, PorcSubtotalAutores, PorcSubtotalInstitut, beneficiarios: [...] }]
- *  • Llama a useCreateResolucionCompletaMutation() y listo.
- *  • El archivo se maneja aparte por AdjuntarArchivo (ya lo tienes).
- */
-
 import { useRef, useState } from 'react';
 import RegistrarResolucionHeader  from './components/RegistrarResolucionHeader';
 import RegistrarResolucionScroll  from './components/RegistrarResolucionScroll';
 import RegistrarResolucionFooter  from './components/RegistrarResolucionFooter';
 import './RegistrarResolucionPage.css';
 import { getIdPersonaFromAppJwt } from '../../services/api';
-
 import { useCreateResolucionCompletaMutation } from '../../services/resolucionOrchestratorApi';
 
 /* helpers */
@@ -51,7 +40,7 @@ const buildResolutionPayload = (resData, isFinal) => {
   };
 };
 
-/* normalizador distribuciones desde child.getData() */
+/* normalizador distribuciones */
 const normalizeDistribuciones = (rawDistribs) => {
   const arr = Array.isArray(rawDistribs) ? rawDistribs : [];
   return arr.map((d) => {
@@ -74,7 +63,7 @@ const normalizeDistribuciones = (rawDistribs) => {
     const beneficiarios = beneficiariosSrc
       .map((b) => ({
         IdBenefInstitucion: Number(b?.IdBenefInstitucion ?? 0),
-        Porcentaje: normFrac(b?.Porcentaje ?? (b?.PorcentajePct ?? 0)), // 0..1
+        Porcentaje: normFrac(b?.Porcentaje ?? (b?.PorcentajePct ?? 0)),
       }))
       .filter((x) => Number.isFinite(x.IdBenefInstitucion) && x.IdBenefInstitucion > 0);
 
@@ -88,11 +77,11 @@ const normalizeDistribuciones = (rawDistribs) => {
   });
 };
 
-const RegistrarResolucionPage = ({ onBack }) => {
+const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
   const [formError, setErr]         = useState(false);
   const [shake, setShake]           = useState({ form: false });
   const [submitting, setSubmitting] = useState(false);
-  const [resolutionId, setResolutionId] = useState(null); // para AdjuntarArchivo
+  const [resolutionId, setResolutionId] = useState(null);
 
   const [createResolucionCompleta] = useCreateResolucionCompletaMutation();
 
@@ -112,7 +101,7 @@ const RegistrarResolucionPage = ({ onBack }) => {
     console.groupEnd();
   };
 
-  const handleFinish = async () => {
+    const handleFinish = async () => {
     setSubmitting(true);
     setErr(false);
     setShake({ form: false });
@@ -131,25 +120,16 @@ const RegistrarResolucionPage = ({ onBack }) => {
       const distribucionesRaw = scrollRef.current.getDistribuciones();
       const distribuciones = normalizeDistribuciones(distribucionesRaw);
 
-      const payload = {
-        resolucion: resolutionPayload,
-        distribuciones,
-      };
-
-      console.groupCollapsed('[FINALIZAR – ORQUESTADOR] Payload');
-      console.log(payload);
-      console.groupEnd();
+      const payload = { resolucion: resolutionPayload, distribuciones };
 
       const result = await createResolucionCompleta(payload).unwrap();
-      console.groupCollapsed('[FINALIZAR – RESULT]');
-      console.log(result);
-      console.groupEnd();
-
       const newResolutionId = result?.resolutionId ?? null;
       if (!newResolutionId) throw new Error('Orquestador no devolvió resolutionId');
       setResolutionId(newResolutionId);
 
-      alert('¡Resolución registrada con éxito! Puedes adjuntar el PDF en el pie.');
+      // ✅ Éxito: notifica y “redirige” a Resoluciones
+      alert('¡Resolución registrada con éxito!');
+      if (typeof onSuccess === 'function') onSuccess();  // 👈 vuelve a la lista
 
     } catch (err) {
       console.groupCollapsed('[FINALIZAR – ERROR]');

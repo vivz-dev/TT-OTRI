@@ -1,125 +1,128 @@
-// // ============================================================================
-// // File: Infrastructure/Db2/TipoProteccionRepositoryDb2.cs
-// // Repositorio DB2 para SOTRI.T_OTRI_TT_TIPOPROTECCION usando IBM.Data.Db2.
-// // ============================================================================
-// using IBM.Data.Db2;
-// using Microsoft.Extensions.Configuration;
-// using TT_OTRI.Application.Interfaces;
-// using TT_OTRI.Domain;
-//
-// namespace TT_OTRI.Infrastructure.Db2;
-//
-// public class TipoProteccionRepositoryDb2 : ITipoProteccionRepository
-// {
-//     private readonly string _cs;
-//     public TipoProteccionRepositoryDb2(IConfiguration cfg)
-//         => _cs = cfg.GetConnectionString("Db2")
-//            ?? throw new InvalidOperationException("ConnectionStrings:Db2 no configurada.");
-//
-//     public async Task<IEnumerable<TipoProteccion>> GetAllAsync(CancellationToken ct = default)
-//     {
-//         var list = new List<TipoProteccion>();
-//         await using var conn = new DB2Connection(_cs);
-//         await conn.OpenAsync(ct);
-//
-//         const string sql = @"
-//             SELECT IDOTRTTTIPOPROTECCION, NOMBRE, CREATED_AT, UPDATED_AT
-//             FROM SOTRI.T_OTRI_TT_TIPOPROTECCION
-//             ORDER BY IDOTRTTTIPOPROTECCION";
-//
-//         await using var cmd = new DB2Command(sql, conn);
-//         await using var rdr = await cmd.ExecuteReaderAsync(ct);
-//         while (await rdr.ReadAsync(ct)) list.Add(Map(rdr));
-//         return list;
-//     }
-//
-//     public async Task<TipoProteccion?> GetByIdAsync(int id, CancellationToken ct = default)
-//     {
-//         await using var conn = new DB2Connection(_cs);
-//         await conn.OpenAsync(ct);
-//
-//         const string sql = @"
-//             SELECT IDOTRTTTIPOPROTECCION, NOMBRE, CREATED_AT, UPDATED_AT
-//             FROM SOTRI.T_OTRI_TT_TIPOPROTECCION
-//             WHERE IDOTRTTTIPOPROTECCION = @id";
-//
-//         await using var cmd = new DB2Command(sql, conn);
-//         cmd.Parameters.Add(new DB2Parameter("@id", id));
-//         await using var rdr = await cmd.ExecuteReaderAsync(ct);
-//         return await rdr.ReadAsync(ct) ? Map(rdr) : null;
-//     }
-//
-//     public async Task<TipoProteccion?> GetByNameAsync(string nombre, CancellationToken ct = default)
-//     {
-//         await using var conn = new DB2Connection(_cs);
-//         await conn.OpenAsync(ct);
-//
-//         const string sql = @"
-//             SELECT IDOTRTTTIPOPROTECCION, NOMBRE, CREATED_AT, UPDATED_AT
-//             FROM SOTRI.T_OTRI_TT_TIPOPROTECCION
-//             WHERE UPPER(NOMBRE) = UPPER(@n)
-//             FETCH FIRST 1 ROW ONLY";
-//
-//         await using var cmd = new DB2Command(sql, conn);
-//         cmd.Parameters.Add(new DB2Parameter("@n", nombre));
-//         await using var rdr = await cmd.ExecuteReaderAsync(ct);
-//         return await rdr.ReadAsync(ct) ? Map(rdr) : null;
-//     }
-//
-//     public async Task AddAsync(TipoProteccion e, CancellationToken ct = default)
-//     {
-//         await using var conn = new DB2Connection(_cs);
-//         await conn.OpenAsync(ct);
-//
-//         const string sql = @"
-//             INSERT INTO SOTRI.T_OTRI_TT_TIPOPROTECCION
-//             (NOMBRE, CREATED_AT, UPDATED_AT)
-//             VALUES (@n, @ca, @ua);
-//             SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1";
-//
-//         await using var cmd = new DB2Command(sql, conn);
-//         cmd.Parameters.Add(new DB2Parameter("@n",  e.Nombre));
-//         cmd.Parameters.Add(new DB2Parameter("@ca", e.CreatedAt));
-//         cmd.Parameters.Add(new DB2Parameter("@ua", e.UpdatedAt));
-//
-//         var newId = (decimal)await cmd.ExecuteScalarAsync(ct);
-//         e.Id = (int)newId;
-//     }
-//
-//     public async Task UpdateAsync(TipoProteccion e, CancellationToken ct = default)
-//     {
-//         await using var conn = new DB2Connection(_cs);
-//         await conn.OpenAsync(ct);
-//
-//         const string sql = @"
-//             UPDATE SOTRI.T_OTRI_TT_TIPOPROTECCION
-//             SET NOMBRE=@n, UPDATED_AT=@ua
-//             WHERE IDOTRTTTIPOPROTECCION=@id";
-//
-//         await using var cmd = new DB2Command(sql, conn);
-//         cmd.Parameters.Add(new DB2Parameter("@n",  e.Nombre));
-//         cmd.Parameters.Add(new DB2Parameter("@ua", e.UpdatedAt));
-//         cmd.Parameters.Add(new DB2Parameter("@id", e.Id));
-//         await cmd.ExecuteNonQueryAsync(ct);
-//     }
-//
-//     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
-//     {
-//         await using var conn = new DB2Connection(_cs);
-//         await conn.OpenAsync(ct);
-//
-//         const string sql = @"DELETE FROM SOTRI.T_OTRI_TT_TIPOPROTECCION WHERE IDOTRTTTIPOPROTECCION=@id";
-//         await using var cmd = new DB2Command(sql, conn);
-//         cmd.Parameters.Add(new DB2Parameter("@id", id));
-//         var rows = await cmd.ExecuteNonQueryAsync(ct);
-//         return rows > 0;
-//     }
-//
-//     private static TipoProteccion Map(DB2DataReader r) => new()
-//     {
-//         Id        = Convert.ToInt32   (r["IDOTRTTTIPOPROTECCION"]),
-//         Nombre    = r["NOMBRE"]?.ToString() ?? "",
-//         CreatedAt = Convert.ToDateTime(r["CREATED_AT"]),
-//         UpdatedAt = Convert.ToDateTime(r["UPDATED_AT"])
-//     };
-// }
+using System.Data;
+using System.Data.Common;
+using IBM.Data.Db2;
+using Microsoft.Extensions.Configuration;
+using TT_OTRI.Application.Interfaces;
+using TT_OTRI.Domain;
+
+namespace TT_OTRI.Infrastructure.Repositories;
+
+public sealed class TipoProteccionRepositoryDb2 : ITipoProteccionRepository
+{
+    private readonly string _connString;
+    private const string Schema = "SOTRI";
+    private const string TableName = "T_OTRI_TT_TIPO_PROTECCION";
+    private string FQN => $"{Schema}.{TableName}";
+
+    public TipoProteccionRepositoryDb2(IConfiguration cfg)
+    {
+        _connString = "Server=192.168.254.53:50000;Database=SAAC;UserID=USROTRI;Password=wL8QUtS9FbprI;";
+    }
+
+    public async Task<IEnumerable<TipoProteccion>> GetAllAsync(CancellationToken ct = default)
+    {
+        using var conn = new DB2Connection(_connString);
+        await conn.OpenAsync(ct);
+
+        var sql = $"SELECT IDOTRITTTIPOPROTECCION, NOMBRE, FECHACREACION, ULTIMO_CAMBIO FROM {FQN}";
+        using var cmd = new DB2Command(sql, conn);
+        using var rdr = await cmd.ExecuteReaderAsync(ct) as DbDataReader;
+
+        var list = new List<TipoProteccion>();
+        while (await rdr.ReadAsync(ct))
+            list.Add(MapFromRecord(rdr));
+        return list;
+    }
+
+    public async Task<TipoProteccion?> GetByIdAsync(int id, CancellationToken ct = default)
+    {
+        using var conn = new DB2Connection(_connString);
+        await conn.OpenAsync(ct);
+
+        var sql = $"SELECT IDOTRITTTIPOPROTECCION, NOMBRE, FECHACREACION, ULTIMO_CAMBIO FROM {FQN} WHERE IDOTRITTTIPOPROTECCION = @id";
+        using var cmd = new DB2Command(sql, conn);
+        cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) { Value = id });
+
+        using var rdr = await cmd.ExecuteReaderAsync(ct) as DbDataReader;
+        return await rdr.ReadAsync(ct) ? MapFromRecord(rdr) : null;
+    }
+
+    public async Task<int> CreateAsync(TipoProteccion tipo, CancellationToken ct = default)
+    {
+        using var conn = new DB2Connection(_connString);
+        await conn.OpenAsync(ct);
+        await using var tx = await conn.BeginTransactionAsync(ct);
+
+        try
+        {
+            var sql = $@"
+INSERT INTO {FQN} (NOMBRE, FECHACREACION, ULTIMO_CAMBIO)
+VALUES (@nombre, CURRENT TIMESTAMP, CURRENT TIMESTAMP)";
+
+            using (var cmd = new DB2Command(sql, conn))
+            {
+                cmd.Transaction = tx as DB2Transaction;
+                cmd.Parameters.Add(new DB2Parameter("@nombre", DB2Type.VarChar) { Value = tipo.Nombre });
+                await cmd.ExecuteNonQueryAsync(ct);
+            }
+
+            // Obtener el ID generado
+            using (var idCmd = new DB2Command("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1", conn))
+            {
+                idCmd.Transaction = tx as DB2Transaction;
+                var obj = await idCmd.ExecuteScalarAsync(ct);
+                tipo.Id = Convert.ToInt32(obj);
+            }
+
+            await tx.CommitAsync(ct);
+            return tipo.Id;
+        }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
+    }
+
+    public async Task UpdateAsync(TipoProteccion tipo, CancellationToken ct = default)
+    {
+        using var conn = new DB2Connection(_connString);
+        await conn.OpenAsync(ct);
+
+        var sql = $@"
+UPDATE {FQN} 
+SET NOMBRE = @nombre, ULTIMO_CAMBIO = CURRENT TIMESTAMP 
+WHERE IDOTRITTTIPOPROTECCION = @id";
+
+        using var cmd = new DB2Command(sql, conn);
+        cmd.Parameters.Add(new DB2Parameter("@nombre", DB2Type.VarChar) { Value = tipo.Nombre });
+        cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) { Value = tipo.Id });
+
+        var rows = await cmd.ExecuteNonQueryAsync(ct);
+        if (rows == 0) throw new KeyNotFoundException($"TipoProteccion {tipo.Id} no encontrado.");
+    }
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
+    {
+        using var conn = new DB2Connection(_connString);
+        await conn.OpenAsync(ct);
+
+        var sql = $"DELETE FROM {FQN} WHERE IDOTRITTTIPOPROTECCION = @id";
+        using var cmd = new DB2Command(sql, conn);
+        cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) { Value = id });
+
+        var rows = await cmd.ExecuteNonQueryAsync(ct);
+        return rows > 0;
+    }
+
+    private static TipoProteccion MapFromRecord(IDataRecord rec)
+    {
+        return new TipoProteccion
+        {
+            Id = rec.GetInt32(rec.GetOrdinal("IDOTRITTTIPOPROTECCION")),
+            Nombre = rec["NOMBRE"] as string ?? string.Empty,
+            CreatedAt = (DateTime)rec["FECHACREACION"],
+            UpdatedAt = (DateTime)rec["ULTIMO_CAMBIO"]
+        };
+    }
+}

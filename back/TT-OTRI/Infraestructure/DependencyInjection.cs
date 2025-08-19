@@ -43,6 +43,7 @@ public static class DependencyInjection
 
         // Fallbacks explícitos (si algún escaneo fallara)
         services.TryAddScoped<IPersonRolesService, PersonRolesService>();
+        services.TryAddScoped<TipoProteccionService>();
 
         // ---------------- Repos por provider -----------------
         if (provider == "db2")
@@ -71,6 +72,7 @@ public static class DependencyInjection
 
             // 2) Bind explícito crítico para resoluciones
             services.AddScoped<IResolutionRepository, ResolutionRepositoryDb2>();
+            services.AddScoped<ITipoProteccionRepository, TipoProteccionRepositoryDb2>();
 
             // (opcional) otros repos explícitos aquí si los necesitas
             // services.AddScoped<IOtroRepo, OtroRepoDb2>();

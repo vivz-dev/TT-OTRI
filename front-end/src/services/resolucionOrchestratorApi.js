@@ -1,7 +1,9 @@
 // src/services/resolucionOrchestratorApi.js
 /**
  * Orquestador: crea resolución + distribuciones + beneficiarios
- * Regla pedida: si MontoMaximo viene null/undefined/'' => enviar 0
+ * Reglas:
+ *   - Si MontoMaximo viene null/undefined/'' => enviar 0
+ *   - Siempre enviar IdUsuarioCrea en /distrib-benef-instituciones (requerido por DB)
  */
 
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
@@ -10,14 +12,12 @@ import { removeNullish, coalesceZero } from "./_utils";
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-/* ------------------ baseQuery con JWT y reauth ------------------ */
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: async (headers) => {
     const appToken = await ensureAppJwt();
     headers.set("Authorization", `Bearer ${appToken}`);
-    if (!headers.has("Content-Type"))
-      headers.set("Content-Type", "application/json");
+    if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
     return headers;
   },
 });
@@ -35,7 +35,6 @@ const reauthWrapper = async (args, api, extraOptions) => {
   return result;
 };
 
-/* ---------------------- helpers internos ----------------------- */
 const normalizeId = (resp) => {
   if (resp == null) return null;
   if (typeof resp === "number") return resp;
@@ -46,7 +45,6 @@ const normalizeId = (resp) => {
   return resp.id ?? resp.Id ?? resp.idResolucion ?? resp.IdResolucion ?? null;
 };
 
-/* -------------------------- API ------------------------------- */
 export const resolucionOrchestratorApi = createApi({
   reducerPath: "resolucionOrchestratorApi",
   baseQuery: reauthWrapper,
@@ -55,44 +53,31 @@ export const resolucionOrchestratorApi = createApi({
       async queryFn(payload, api, _extra, baseQuery) {
         try {
           const { resolucion, distribuciones = [] } = payload ?? {};
-          if (!resolucion)
-            return {
-              error: { status: 400, data: "Falta resolucion en el payload." },
-            };
+          if (!resolucion) return { error: { status: 400, data: "Falta resolucion en el payload." } };
 
-          // 1) Crear resolución
-          const resRes = await baseQuery({
-            url: "/resoluciones",
-            method: "POST",
-            body: resolucion,
-          });
+          // 1) Resolución
+          const resRes = await baseQuery({ url: "/resoluciones", method: "POST", body: resolucion });
           if (resRes.error) return { error: resRes.error };
-
           const resolutionId = normalizeId(resRes.data);
-          if (!resolutionId)
-            return {
-              error: { status: 500, data: "No se obtuvo id de resolución." },
-            };
+          if (!resolutionId) return { error: { status: 500, data: "No se obtuvo id de resolución." } };
 
           // 2) Distribuciones
-          const IdUsuarioCrea = getIdPersonaFromAppJwt() ?? null;
+          const IdUsuarioCrea = getIdPersonaFromAppJwt() ?? 0;
           const distributions = [];
 
           for (let i = 0; i < distribuciones.length; i++) {
             const d = distribuciones[i];
 
-            const bodyDistRaw = {
+            const bodyDist = removeNullish({
               IdResolucion: resolutionId,
-              MontoMaximo: coalesceZero(d?.MontoMaximo),     // <<--- AQUÍ
+              MontoMaximo: coalesceZero(d?.MontoMaximo),
               MontoMinimo: Number(d?.MontoMinimo ?? 0),
               PorcSubtotalAutores: Number(d?.PorcSubtotalAutores ?? 0),
               PorcSubtotalInstitut: Number(d?.PorcSubtotalInstitut ?? 0),
               IdUsuarioCrea,
-            };
-            const bodyDist = removeNullish(bodyDistRaw);
+            });
 
             console.debug("[ORQ] POST /resoluciones/{id}/distribuciones body =", bodyDist);
-
             const resDist = await baseQuery({
               url: `/resoluciones/${resolutionId}/distribuciones`,
               method: "POST",
@@ -101,34 +86,23 @@ export const resolucionOrchestratorApi = createApi({
             if (resDist.error) return { error: resDist.error };
 
             const distributionId = normalizeId(resDist.data);
-            if (!distributionId)
-              return {
-                error: {
-                  status: 500,
-                  data: `No se obtuvo id de la distribución #${i + 1}.`,
-                },
-              };
+            if (!distributionId) return { error: { status: 500, data: `No se obtuvo id de la distribución #${i + 1}.` } };
 
-            // 3) Beneficiarios de esta distribución
-            const beneficiarios = Array.isArray(d?.beneficiarios) ? d.beneficiarios : [];
+            // 3) Beneficiarios institucionales (⚠️ ahora con IdUsuarioCrea)
             const biResults = [];
+            const beneficiarios = Array.isArray(d?.beneficiarios) ? d.beneficiarios : [];
 
             for (let j = 0; j < beneficiarios.length; j++) {
               const b = beneficiarios[j];
-
               const bodyBI = {
                 IdDistribucionResolucion: distributionId,
                 IdBenefInstitucion: Number(b?.IdBenefInstitucion),
-                Porcentaje: Number(b?.Porcentaje), // 0..1
+                Porcentaje: Number(b?.Porcentaje ?? 0), // 0..1
+                IdUsuarioCrea,                           // ← REQUERIDO POR DB (NOT NULL)
               };
 
               console.debug("[ORQ] POST /distrib-benef-instituciones body =", bodyBI);
-
-              const resBI = await baseQuery({
-                url: "/distrib-benef-instituciones",
-                method: "POST",
-                body: bodyBI,
-              });
+              const resBI = await baseQuery({ url: "/distrib-benef-instituciones", method: "POST", body: bodyBI });
               if (resBI.error) return { error: resBI.error };
 
               biResults.push({
@@ -137,24 +111,12 @@ export const resolucionOrchestratorApi = createApi({
               });
             }
 
-            distributions.push({
-              id: distributionId,
-              raw: resDist.data,
-              beneficiarios: biResults,
-            });
+            distributions.push({ id: distributionId, raw: resDist.data, beneficiarios: biResults });
           }
 
-          return {
-            data: {
-              resolutionId,
-              rawResolution: resRes.data,
-              distributions,
-            },
-          };
+          return { data: { resolutionId, rawResolution: resRes.data, distributions } };
         } catch (e) {
-          return {
-            error: { status: 500, data: e?.message ?? "Error en orquestador" },
-          };
+          return { error: { status: 500, data: e?.message ?? "Error en orquestador" } };
         }
       },
     }),
