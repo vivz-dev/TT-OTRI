@@ -48,5 +48,5 @@ public sealed class AppJwtOptions
     /// <summary>
     /// Tiempo de expiración del token (en minutos).
     /// </summary>
-    public int MinutesToExpire { get; set; } = 30;
+    public int MinutesToExpire { get; set; } = 300;
 }

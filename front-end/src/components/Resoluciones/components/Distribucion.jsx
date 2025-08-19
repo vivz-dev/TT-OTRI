@@ -1,4 +1,3 @@
-// src/pages/Resoluciones/components/Distribucion.jsx
 /**
  * Card Distribución
  * -----------------
@@ -20,10 +19,8 @@ import './Distribucion.css';
 const Distribucion = forwardRef(({ onDelete }, ref) => {
   /* ---------------- estado ---------------- */
   const [pctAutores, setPctAutores] = useState('');
-  // Ahora guardamos el ID de la institución (number | '')
   const [centros, setCentros] = useState([{ institucionId: '', porcentaje: '' }]);
 
-  // 💰 Monto mínimo/máximo
   const [noLimit, setNoLimit] = useState(false);
   const [montoMin, setMontoMin] = useState('');
   const [montoMax, setMontoMax] = useState('');
@@ -90,7 +87,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   const subtotalCentros = useMemo(
     () =>
       centros.reduce(
-        (acc, c) => acc + (c.porcentaje === '' ? 0 : Number(c.porcentaje)),
+        (acc, c) => acc + (c?.porcentaje === '' ? 0 : Number(c.porcentaje)),
         0
       ),
     [centros]
@@ -104,9 +101,6 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
     [centros]
   );
 
-  // 🎯 opciones disponibles para un índice concreto:
-  //   - todas las NO usadas por otras filas
-  //   - + la que ya tenga la fila actual (para que no desaparezca)
   const availableFor = (idx) => {
     const currentId = centros[idx]?.institucionId;
     return INSTITUCIONES.filter(
@@ -114,7 +108,6 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
     );
   };
 
-  // ¿Quedan opciones libres para añadir otra fila?
   const canAddMore = selectedIds.length < INSTITUCIONES.length;
 
   const montosValidos = () => {
@@ -136,7 +129,6 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
       (c) => c.institucionId !== '' && c.porcentaje !== ''
     );
 
-    // Unicidad:
     const uniqueCount = new Set(selectedIds).size;
     const sinDuplicados = uniqueCount === selectedIds.length;
 
@@ -151,30 +143,50 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
 
   /* expone al padre */
   useImperativeHandle(ref, () => ({
-  validate() {
-    const valido = isValid();
-    setShowErrors(!valido);
-    return valido;
-  },
+    validate() {
+      const valido = isValid();
+      setShowErrors(!valido);
+      return valido;
+    },
 
-  // 👉 Devuelve el payload listo para API (nombres y formato finales)
-  getData() {
-    const min = parseMoney(montoMin);
-    const max = noLimit ? null : parseMoney(montoMax);
+    // 👉 Devuelve el payload listo para API (nombres y formato finales)
+    getData() {
+      const min = parseMoney(montoMin);
+      const max = noLimit ? null : parseMoney(montoMax);
 
-    return {
-      MontoMinimo: min,                       // number | null
-      MontoMaximo: max,                       // number | null
-      PorcSubtotalAutores: subtotalAutores / 100,          // 0..1
-      PorcSubtotalInstituciones: subtotalCentros / 100,     // 0..1
-      BeneficiariosInstitucionales: centros.map((c) => ({
-        IdBenefInstitucion: Number(c.institucionId),        // int
-        Porcentaje: Number(c.porcentaje) / 100,             // 0..1
-      })),
-    };
-  },
-}));
+      // DEBUG detallado
+      console.groupCollapsed('[Distribucion.getData()]');
+      console.log('pctAutores (input %):', pctAutores);
+      console.log('subtotalAutores (input %):', subtotalAutores);
+      console.log('subtotalCentros (input %):', subtotalCentros);
+      console.table(
+        centros.map((c) => ({
+          institucionId: c.institucionId,
+          nombre: INSTITUCIONES.find((i) => i.id === c.institucionId)?.label ?? '(?)',
+          porcentaje_pct: c.porcentaje,
+          porcentaje_frac: c.porcentaje === '' ? null : Number(c.porcentaje) / 100,
+        }))
+      );
 
+      const payload = {
+        MontoMinimo: min,                         // number | null
+        MontoMaximo: max,                         // number | null
+        PorcSubtotalAutores: subtotalAutores / 100,          // 0..1
+        PorcSubtotalInstituciones: subtotalCentros / 100,     // 0..1
+        BeneficiariosInstitucionales: centros.map((c) => ({
+          IdBenefInstitucion: Number(c.institucionId),        // int
+          NombreBeneficiario:
+            INSTITUCIONES.find((i) => i.id === c.institucionId)?.label ?? '',
+          Porcentaje: Number(c.porcentaje) / 100,             // 0..1
+          PorcentajePct: Number(c.porcentaje),                 // 0..100 (solo debug)
+        })),
+      };
+      console.log('Payload (child.getData):', payload);
+      console.groupEnd();
+
+      return payload;
+    },
+  }));
 
   /* Si el usuario corrige campos, intentamos ocultar errores */
   const handleAutores = (v) => {
@@ -336,10 +348,8 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
               <td className="input-select">
                 <select
                   value={c.institucionId === '' ? '' : String(c.institucionId)}
-                  className={
-                    showErrors && c.institucionId === '' ? 'field-error' : ''
-                  }
-                  onChange={(e) => handleCentroSelect(idx, e.target.value)}
+                  className={showErrors && c.institucionId === '' ? 'field-error' : ''}
+                  onChange={(e) => updateCentro(idx, 'institucionId', e.target.value)}
                   disabled={institLoading || institError || INSTITUCIONES.length === 0}
                 >
                   <option value="" disabled>
@@ -365,7 +375,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
                   value={c.porcentaje}
                   placeholder="0"
                   className={showErrors && c.porcentaje === '' ? 'field-error' : ''}
-                  onChange={(e) => handleCentroPct(idx, e.target.value)}
+                  onChange={(e) => updateCentro(idx, 'porcentaje', e.target.value)}
                 />
               </td>
 
@@ -401,7 +411,11 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
         <p className="subtotales-error">¡Los subtotales deben sumar 100 %!</p>
       )}
 
-      <button className="btn-add" onClick={addCentro} disabled={!canAddMore || institLoading || institError || INSTITUCIONES.length === 0}>
+      <button
+        className="btn-add"
+        onClick={addCentro}
+        disabled={!canAddMore || institLoading || institError || INSTITUCIONES.length === 0}
+      >
         Añadir beneficiario institucional
       </button>
       {!canAddMore && INSTITUCIONES.length > 0 && (

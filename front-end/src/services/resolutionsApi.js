@@ -2,7 +2,7 @@
  * RTK Query – Resolutions / Distributions (con App JWT + reauth)
  * --------------------------------------------------------------
  *  • GET    /resoluciones
- *  • POST   /resoluciones
+ *  • POST   /resoluciones          -> transformResponse => { id }
  *  • PATCH  /resoluciones/:id
  *
  *  • GET    /resoluciones/:id/distribuciones
@@ -10,28 +10,17 @@
  *  • PATCH  /distribuciones/:id
  *
  *  TagTypes: Resolution | Distribution
- *
- *  Requisitos:
- *  - Haber creado src/services/api.js con ensureAppJwt() (MSAL + /auth/exchange).
- *  - Tu backend expone /api/** y /api/auth/exchange (devuelve { token }).
  */
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { ensureAppJwt } from './api'; // <- reutiliza MSAL + exchange centralizado
+import { ensureAppJwt } from './api';
 
-/* ==============================
-   Config base
-   ============================== */
-   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-/* ==============================
-   Base query con App JWT en headers
-   y retry automático ante 401/403
-   ============================== */
+/* ---------------- base query con App JWT + reauth ---------------- */
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
   prepareHeaders: async (headers) => {
-    console.log(API_BASE_URL, "color:#06c;font-weight:bold");
     const appToken = await ensureAppJwt(); // obtiene/renueva tu JWT interno
     headers.set('Authorization', `Bearer ${appToken}`);
     if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
@@ -41,23 +30,39 @@ const rawBaseQuery = fetchBaseQuery({
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
-
-  // Si expiró justo antes o se invalidó, reintenta una vez
   if (result?.error && [401, 403].includes(result.error.status)) {
     try {
-      await ensureAppJwt(); // fuerza renovación (MSAL → /auth/exchange)
+      await ensureAppJwt();
       result = await rawBaseQuery(args, api, extraOptions);
     } catch {
-      // Si no se pudo renovar, devuelve el error original
       return result;
     }
   }
   return result;
 };
 
-/* ==============================
-   API RTK Query
-   ============================== */
+/* ---------------- helpers ---------------- */
+const normalizeId = (resp) => {
+  // Acepta varios formatos de respuesta desde el backend
+  // 1) objeto { id: 123 } o { Id: 123 } o { idResolucion: 123 }
+  // 2) entidad completa con propiedad Id/id
+  // 3) valor escalar: 123
+  if (resp == null) return null;
+  if (typeof resp === 'number') return resp;
+  if (typeof resp === 'string') {
+    const n = Number(resp);
+    return Number.isFinite(n) ? n : null;
+  }
+  return (
+    resp.id ??
+    resp.Id ??
+    resp.idResolucion ??
+    resp.IdResolucion ??
+    null
+  );
+};
+
+/* ---------------- API ---------------- */
 export const resolutionsApi = createApi({
   reducerPath: 'resolutionsApi',
   baseQuery: baseQueryWithReauth,
@@ -70,7 +75,7 @@ export const resolutionsApi = createApi({
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: 'Resolution', id })),
+              ...result.map((x) => ({ type: 'Resolution', id: x.id ?? x.Id })),
               { type: 'Resolution', id: 'LIST' },
             ]
           : [{ type: 'Resolution', id: 'LIST' }],
@@ -82,6 +87,14 @@ export const resolutionsApi = createApi({
         method: 'POST',
         body,
       }),
+      // 🔴 CLAVE: normalizamos la respuesta a { id }
+      transformResponse: (response, meta) => {
+        // Si tu backend está devolviendo la entidad completa, toma el Id.
+        // Si devuelve { id }, se respeta.
+        // Si devuelve un escalar, lo convertimos.
+        const id = normalizeId(response);
+        return { id, raw: response, status: meta?.response?.status };
+      },
       invalidatesTags: [{ type: 'Resolution', id: 'LIST' }],
     }),
 
@@ -100,10 +113,10 @@ export const resolutionsApi = createApi({
     /* ---------- DISTRIBUCIONES ---------- */
     getDistributionsByResolution: builder.query({
       query: (resolutionId) => `/resoluciones/${resolutionId}/distribuciones`,
-      providesTags: (result, _, resolutionId) =>
+      providesTags: (result, _err, resolutionId) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: 'Distribution', id })),
+              ...result.map((x) => ({ type: 'Distribution', id: x.id ?? x.Id })),
               { type: 'Resolution', id: resolutionId },
             ]
           : [{ type: 'Resolution', id: resolutionId }],
@@ -115,7 +128,7 @@ export const resolutionsApi = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_, __, { resolutionId }) => [
+      invalidatesTags: (_res, _err, { resolutionId }) => [
         { type: 'Resolution', id: resolutionId },
       ],
     }),

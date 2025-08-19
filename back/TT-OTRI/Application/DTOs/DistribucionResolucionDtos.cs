@@ -9,7 +9,10 @@ public sealed class DistribucionResolucionDto
 {
     public int Id { get; set; }
     public int IdResolucion { get; set; }
-    public decimal MontoMaximo { get; set; }
+
+    // ✅ MontoMaximo ahora puede ser null
+    public decimal? MontoMaximo { get; set; }
+
     public decimal MontoMinimo { get; set; }
     public decimal PorcSubtotalAutores { get; set; }
     public decimal PorcSubtotalInstitut { get; set; }
@@ -26,7 +29,9 @@ public sealed class CreateDistribucionResolucionDto
     // Se toma de la ruta en el Controller; si lo envían en el body también lo validamos
     public int? IdResolucion { get; set; }
 
-    public decimal MontoMaximo { get; set; }
+    // ✅ MontoMaximo nullable
+    public decimal? MontoMaximo { get; set; }
+
     public decimal MontoMinimo { get; set; }
     public decimal PorcSubtotalAutores { get; set; }
     public decimal PorcSubtotalInstitut { get; set; }

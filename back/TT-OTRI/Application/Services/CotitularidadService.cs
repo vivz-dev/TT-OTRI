@@ -11,9 +11,9 @@ namespace TT_OTRI.Application.Services;
 public class CotitularidadService
 {
     private readonly ICotitularidadRepository _repo;
-    private readonly ITechnologyRepository    _techRepo;
+    private readonly ITecnologiaRepository    _techRepo;
 
-    public CotitularidadService(ICotitularidadRepository repo, ITechnologyRepository techRepo)
+    public CotitularidadService(ICotitularidadRepository repo, ITecnologiaRepository techRepo)
     {
         _repo    = repo;
         _techRepo= techRepo;

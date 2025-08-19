@@ -1,52 +1,49 @@
 /**
- * RegistrarResolucionPage
- * -----------------------
- * • Guardar -> NO valida, NO llama API, solo arma payload y lo imprime en console.log.
- * • Finalizar -> valida todo y guarda en backend (completed = true).
+ * RegistrarResolucionPage (con orquestador)
+ * ----------------------------------------
+ *  • Construye payload:
+ *      resolucion {...}
+ *      distribuciones: [{ MontoMinimo, MontoMaximo, PorcSubtotalAutores, PorcSubtotalInstitut, beneficiarios: [...] }]
+ *  • Llama a useCreateResolucionCompletaMutation() y listo.
+ *  • El archivo se maneja aparte por AdjuntarArchivo (ya lo tienes).
  */
+
 import { useRef, useState } from 'react';
 import RegistrarResolucionHeader  from './components/RegistrarResolucionHeader';
 import RegistrarResolucionScroll  from './components/RegistrarResolucionScroll';
 import RegistrarResolucionFooter  from './components/RegistrarResolucionFooter';
-import {
-  useCreateResolutionMutation,
-  useCreateDistributionMutation,
-} from '../../services/resolutionsApi';
 import './RegistrarResolucionPage.css';
 import { getIdPersonaFromAppJwt } from '../../services/api';
 
-/* ---------------- helpers comunes ---------------- */
+import { useCreateResolucionCompletaMutation } from '../../services/resolucionOrchestratorApi';
+
+/* helpers */
 const toIsoOrNull = (d) => {
   if (!d) return null;
   const dt = new Date(d);
   if (isNaN(dt)) return null;
-  return new Date(Date.UTC(
-    dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0
-  )).toISOString();
+  return new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate(), 0, 0, 0, 0)).toISOString();
 };
+const normFrac = (v) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return n > 1 ? n / 100 : n;
+};
+const numOrNull = (v) => (v === null || v === '' || v === undefined ? null : Number(v));
 
-/**
- * buildResolutionPayload
- * Acepta ambos formatos:
- *  - PascalCase: { Numero, Titulo, Descripcion, FechaResolucion, FechaVigencia }
- *  - camelCase : { numero,  titulo,  descripcion,  fechaResolucion,  fechaVigencia }
- */
+/* payload resolución */
 const buildResolutionPayload = (resData, isFinal) => {
-  // Toma el valor de Numero/numero; si no hay Titulo/titulo, usa el número.
   const numero       = (resData?.Numero ?? resData?.numero ?? '—').toString().trim();
   const titulo       = (resData?.Titulo ?? resData?.titulo ?? numero).toString().trim();
   const descripcion  = (resData?.Descripcion ?? resData?.descripcion ?? '—').toString().trim();
-
-  // Fechas pueden venir ya en ISO o como 'YYYY-MM-DD'; normalizamos a ISO o null
   const fechaResol   = resData?.FechaResolucion ?? resData?.fechaResolucion ?? null;
   const fechaVig     = resData?.FechaVigencia   ?? resData?.fechaVigencia   ?? null;
-
-  const idUsuario = getIdPersonaFromAppJwt() ?? 0;
+  const idUsuario    = getIdPersonaFromAppJwt() ?? 0;
 
   return {
     IdUsuario: idUsuario,
-    Codigo: numero,                 // backend usa Codigo/Titulo con el número
-    Titulo:  titulo,
+    Codigo: numero,
+    Titulo: titulo,
     Descripcion: descripcion,
     FechaResolucion: toIsoOrNull(fechaResol),
     FechaVigencia:   toIsoOrNull(fechaVig),
@@ -54,90 +51,116 @@ const buildResolutionPayload = (resData, isFinal) => {
   };
 };
 
-const RegistrarResolucionPage = ({ onBack }) => {
-  /* ---------------- estado local ---------------- */
-  const [file, setFile]         = useState(null);
-  const [formError, setErr]     = useState(false);
-  const [shake, setShake]       = useState({ form: false, file: false });
+/* normalizador distribuciones desde child.getData() */
+const normalizeDistribuciones = (rawDistribs) => {
+  const arr = Array.isArray(rawDistribs) ? rawDistribs : [];
+  return arr.map((d) => {
+    const rawAutores =
+      d?.PorcSubtotalAutores ?? d?.porcSubtotalAutores ?? 0;
+    const rawInstit =
+      d?.PorcSubtotalInstituciones ?? d?.porcSubtotalInstituciones ??
+      d?.PorcSubtotalInstitut ?? d?.porcSubtotalInstitut ?? 0;
 
-  /* ---------------- refs internos ---------------- */
+    const MontoMinimo = numOrNull(d?.MontoMinimo);
+    const MontoMaximo = numOrNull(d?.MontoMaximo);
+
+    const PorcSubtotalAutores  = normFrac(rawAutores);
+    const PorcSubtotalInstitut = normFrac(rawInstit);
+
+    const beneficiariosSrc = Array.isArray(d?.BeneficiariosInstitucionales)
+      ? d.BeneficiariosInstitucionales
+      : [];
+
+    const beneficiarios = beneficiariosSrc
+      .map((b) => ({
+        IdBenefInstitucion: Number(b?.IdBenefInstitucion ?? 0),
+        Porcentaje: normFrac(b?.Porcentaje ?? (b?.PorcentajePct ?? 0)), // 0..1
+      }))
+      .filter((x) => Number.isFinite(x.IdBenefInstitucion) && x.IdBenefInstitucion > 0);
+
+    return {
+      MontoMinimo,
+      MontoMaximo,
+      PorcSubtotalAutores,
+      PorcSubtotalInstitut,
+      beneficiarios,
+    };
+  });
+};
+
+const RegistrarResolucionPage = ({ onBack }) => {
+  const [formError, setErr]         = useState(false);
+  const [shake, setShake]           = useState({ form: false });
+  const [submitting, setSubmitting] = useState(false);
+  const [resolutionId, setResolutionId] = useState(null); // para AdjuntarArchivo
+
+  const [createResolucionCompleta] = useCreateResolucionCompletaMutation();
+
   const formRef   = useRef();
   const scrollRef = useRef();
 
-  /* ---------------- RTK-Query hooks -------------- */
-  const [createResolution]   = useCreateResolutionMutation();
-  const [createDistribution] = useCreateDistributionMutation();
-
-  /* ---------------- save / finish --------------- */
-  const persist = async (isFinal) => {
-    if (isFinal) {
-      // 🔒 Validación fuerte (ahora esperamos payloadResolucion)
-      const { valido, payloadResolucion } = formRef.current.validate();
-      const distribsOk = scrollRef.current.validate();
-      const archivoOk  = !!file;
-
-      const fullValid = valido && distribsOk && archivoOk;
-      if (!fullValid) {
-        setErr(true);
-        setShake({ form: !valido || !distribsOk, file: !archivoOk });
-        setTimeout(() => setShake({ form: false, file: false }), 500);
-        return;
-      }
-
-      // ✅ Guardar en backend
-      const resolutionPayload = buildResolutionPayload(payloadResolucion, true);
-      try {
-        const resolution = await createResolution(resolutionPayload).unwrap();
-        const resolutionId = resolution.id;
-
-        const distribuciones = scrollRef.current.getDistribuciones();
-        if (Array.isArray(distribuciones) && distribuciones.length > 0) {
-          await Promise.all(
-            distribuciones.map((d) =>
-              createDistribution({ resolutionId, body: d }).unwrap()
-            )
-          );
-        }
-
-        alert('¡Registro completado!');
-        onBack && onBack();
-      } catch (err) {
-        console.error('[ERROR]', err);
-        console.error('[ModelState]', err?.data);
-        alert('Error al guardar la información.');
-      }
-      return;
-    }
-
-    // 📝 Guardar (borrador) → solo console.log (sin validar)
-    // Intentamos usar getPayload(); si no existe, intentamos getRaw(); si no, caemos a un objeto vacío.
+  const handleSave = async () => {
     const raw =
       (formRef.current.getPayload && formRef.current.getPayload()) ||
       (formRef.current.getRaw && formRef.current.getRaw()) ||
       {};
+    const distribucionesRaw = scrollRef.current.getDistribuciones();
 
-    const distribuciones = scrollRef.current.getDistribuciones();
-    const resolutionPayload = buildResolutionPayload(raw, false);
-
-    const preview = {
-      endpoint: {
-        createResolution: 'POST /api/resoluciones',
-        createDistribution: 'POST /api/resoluciones/{resolutionId}/distribuciones',
-      },
-      resolutionPayload,
-      distribucionesPayload: distribuciones,
-      aviso: 'Solo previsualización. No se envió al backend.',
-    };
-
-    console.log('[BORRADOR PREVIEW]', preview);
+    console.groupCollapsed('[BORRADOR] PREVIEW');
+    console.log('form:', raw);
+    console.log('distribuciones:', distribucionesRaw);
+    console.groupEnd();
   };
 
-  /* ---------------- handlers UI ------------------ */
-  const handleSave   = () => persist(false);
-  const handleFinish = () => persist(true);
-  const handleFile   = (e) => setFile(e.target.files[0]);
+  const handleFinish = async () => {
+    setSubmitting(true);
+    setErr(false);
+    setShake({ form: false });
 
-  /* ---------------- render ----------------------- */
+    try {
+      const { valido, payloadResolucion } = formRef.current.validate();
+      const distribsOk = scrollRef.current.validate();
+      if (!(valido && distribsOk)) {
+        setErr(true);
+        setShake({ form: !(valido && distribsOk) });
+        console.warn('[VALIDACIÓN] Finalizar bloqueado:', { formValido: valido, distribucionesValidas: distribsOk });
+        return;
+      }
+
+      const resolutionPayload = buildResolutionPayload(payloadResolucion, true);
+      const distribucionesRaw = scrollRef.current.getDistribuciones();
+      const distribuciones = normalizeDistribuciones(distribucionesRaw);
+
+      const payload = {
+        resolucion: resolutionPayload,
+        distribuciones,
+      };
+
+      console.groupCollapsed('[FINALIZAR – ORQUESTADOR] Payload');
+      console.log(payload);
+      console.groupEnd();
+
+      const result = await createResolucionCompleta(payload).unwrap();
+      console.groupCollapsed('[FINALIZAR – RESULT]');
+      console.log(result);
+      console.groupEnd();
+
+      const newResolutionId = result?.resolutionId ?? null;
+      if (!newResolutionId) throw new Error('Orquestador no devolvió resolutionId');
+      setResolutionId(newResolutionId);
+
+      alert('¡Resolución registrada con éxito! Puedes adjuntar el PDF en el pie.');
+
+    } catch (err) {
+      console.groupCollapsed('[FINALIZAR – ERROR]');
+      console.error(err);
+      console.groupEnd();
+      alert(`Ocurrió un error al registrar. Revisa la consola.\n${String(err?.message || err)}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <main className="page-container">
       <RegistrarResolucionHeader onBack={onBack} />
@@ -150,15 +173,19 @@ const RegistrarResolucionPage = ({ onBack }) => {
         />
 
         <RegistrarResolucionFooter
-          file={file}
-          onFileChange={handleFile}
+          resolutionId={resolutionId}
           onSave={handleSave}
-          onFinish={handleFinish}
+          onFinish={submitting ? () => {} : handleFinish}
           formError={formError}
-          shakeError={formError && shake.file}
+          shakeError={formError && shake.form}
         />
 
-        {formError && <div className="warning-msg">Debe llenar todos los campos.</div>}
+        {submitting && <div className="warning-msg">Guardando… no cierres esta ventana.</div>}
+        {formError && (
+          <div className="warning-msg">
+            Debe llenar correctamente el formulario y las distribuciones.
+          </div>
+        )}
       </div>
     </main>
   );

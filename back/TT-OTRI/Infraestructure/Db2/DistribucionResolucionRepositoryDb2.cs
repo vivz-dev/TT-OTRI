@@ -44,7 +44,7 @@ ORDER BY IDOTRITTDISTRIBUCIONRESOLUCION";
         cmd.Parameters.Add(new DB2Parameter("@id", idResolucion));
 
         var list = new List<DistribucionResolucionDto>();
-        using var rd = await cmd.ExecuteReaderAsync(ct); // DbDataReader
+        using var rd = await cmd.ExecuteReaderAsync(ct);
         while (await rd.ReadAsync(ct))
         {
             list.Add(ReadDto(rd));
@@ -71,7 +71,7 @@ WHERE IDOTRITTDISTRIBUCIONRESOLUCION = @id";
         using var cmd = new DB2Command(sql, conn);
         cmd.Parameters.Add(new DB2Parameter("@id", id));
 
-        using var rd = await cmd.ExecuteReaderAsync(ct); // DbDataReader
+        using var rd = await cmd.ExecuteReaderAsync(ct);
         if (await rd.ReadAsync(ct))
             return ReadDto(rd);
 
@@ -94,12 +94,17 @@ VALUES
 
         using (var cmd = new DB2Command(sql, conn))
         {
-            cmd.Parameters.Add(new DB2Parameter("@idRes",   idResolucion));
-            cmd.Parameters.Add(new DB2Parameter("@max",     dto.MontoMaximo));
-            cmd.Parameters.Add(new DB2Parameter("@min",     dto.MontoMinimo));
+            cmd.Parameters.Add(new DB2Parameter("@idRes", idResolucion));
+
+            // ✅ Enviar NULL cuando no hay máximo
+            cmd.Parameters.Add(new DB2Parameter("@max", (object?)dto.MontoMaximo ?? DBNull.Value));
+
+            // MontoMinimo se mantiene requerido (decimal no nulo)
+            cmd.Parameters.Add(new DB2Parameter("@min", dto.MontoMinimo));
+
             cmd.Parameters.Add(new DB2Parameter("@porcAut", dto.PorcSubtotalAutores));
-            cmd.Parameters.Add(new DB2Parameter("@porcInst",dto.PorcSubtotalInstitut));
-            cmd.Parameters.Add(new DB2Parameter("@uCrea",   (object?)dto.IdUsuarioCrea ?? DBNull.Value));
+            cmd.Parameters.Add(new DB2Parameter("@porcInst", dto.PorcSubtotalInstitut));
+            cmd.Parameters.Add(new DB2Parameter("@uCrea", (object?)dto.IdUsuarioCrea ?? DBNull.Value));
 
             await cmd.ExecuteNonQueryAsync(ct);
         }
@@ -134,10 +139,9 @@ VALUES
             parms.Add(new DB2Parameter("@umod", dto.IdUsuarioMod.Value));
         }
 
-        // Siempre actualizamos la fecha de modificación
         sets.Add("FECHAMODIFICA = CURRENT_TIMESTAMP");
 
-        if (sets.Count == 1 && !dto.IdUsuarioMod.HasValue) // solo la fecha ⇒ no hay cambios reales
+        if (sets.Count == 1 && !dto.IdUsuarioMod.HasValue)
             return false;
 
         var sql = $@"UPDATE {Table}
@@ -155,13 +159,13 @@ WHERE IDOTRITTDISTRIBUCIONRESOLUCION = @id";
         return n > 0;
     }
 
-    // ← Cambiado a DbDataReader para evitar el error de tipos
+    // ✅ Refleja null reales desde DB
     private static DistribucionResolucionDto ReadDto(DbDataReader rd) => new()
     {
         Id                   = rd.GetInt32(0),
         IdResolucion         = rd.GetInt32(1),
-        MontoMaximo          = rd.IsDBNull(2) ? 0m : rd.GetDecimal(2),
-        MontoMinimo          = rd.IsDBNull(3) ? 0m : rd.GetDecimal(3),
+        MontoMaximo          = rd.IsDBNull(2) ? (decimal?)null : rd.GetDecimal(2),
+        MontoMinimo          = rd.GetDecimal(3),
         PorcSubtotalAutores  = rd.IsDBNull(4) ? 0m : rd.GetDecimal(4),
         PorcSubtotalInstitut = rd.IsDBNull(5) ? 0m : rd.GetDecimal(5),
         IdUsuarioCrea        = rd.IsDBNull(6) ? (int?)null : rd.GetInt32(6),

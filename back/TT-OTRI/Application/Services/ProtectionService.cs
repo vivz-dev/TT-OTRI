@@ -1,6 +1,6 @@
 // ============================================================================
 // File: Application/Services/ProtectionService.cs
-// Lógica de negocio: valida FKs (Technology, TipoProteccion), evita duplicados
+// Lógica de negocio: valida FKs (Tecnologia, TipoProteccion), evita duplicados
 // por par (TechnologyId, TipoProteccionId) y expone operaciones CRUD.
 // ============================================================================
 using TT_OTRI.Application.DTOs;
@@ -12,12 +12,12 @@ namespace TT_OTRI.Application.Services;
 public class ProtectionService
 {
     private readonly IProtectionRepository      _repo;
-    private readonly ITechnologyRepository      _techRepo;
+    private readonly ITecnologiaRepository      _techRepo;
     private readonly ITipoProteccionRepository  _tipoRepo;
 
     public ProtectionService(
         IProtectionRepository     repo,
-        ITechnologyRepository     techRepo,
+        ITecnologiaRepository     techRepo,
         ITipoProteccionRepository tipoRepo)
     {
         _repo     = repo;
