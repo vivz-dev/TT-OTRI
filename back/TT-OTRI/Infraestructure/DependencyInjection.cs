@@ -54,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<RegaliaService>();
         services.AddScoped<RegistroPagoService>();
         services.AddScoped<RolPermisoService>();
+        services.AddScoped<SublicenciamientoService>();
 
         // ---------------- Repos por provider -----------------
         if (provider == "db2")
@@ -94,7 +95,7 @@ public static class DependencyInjection
             services.AddScoped<IRegaliaRepository, RegaliaRepositoryDb2>();
             services.AddScoped<IRegistroPagoRepository, RegistroPagoRepositoryDb2>();
             services.AddScoped<IRolPermisoRepository, RolPermisoRepositoryDb2>();
-
+            services.AddScoped<ISublicenciamientoRepository, SublicenciamientoRepositoryDb2>();
 
             // (opcional) otros repos explícitos aquí si los necesitas
             // services.AddScoped<IOtroRepo, OtroRepoDb2>();
