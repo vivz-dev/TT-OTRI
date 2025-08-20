@@ -1,3 +1,4 @@
+// Controllers/CotitularidadInstController.cs
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TT_OTRI.Application.DTOs;
@@ -19,26 +20,29 @@ public sealed class CotitularidadInstController : ControllerBase
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CotitularidadInstReadDto>>> GetAll(CancellationToken ct)
-        => Ok(await _service.GetAllAsync(ct));
+    {
+        var result = await _service.GetAllAsync(ct);
+        return Ok(result);
+    }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<CotitularidadInstReadDto>> GetById(int id, CancellationToken ct)
     {
-        var dto = await _service.GetByIdAsync(id, ct);
-        return dto == null ? NotFound() : Ok(dto);
+        var result = await _service.GetByIdAsync(id, ct);
+        return result == null ? NotFound() : Ok(result);
     }
 
     [HttpPost]
-    public async Task<ActionResult> Create(CotitularidadInstCreateDto dto, CancellationToken ct)
+    public async Task<ActionResult> Create([FromBody] CotitularidadInstCreateDto dto, CancellationToken ct)
     {
         var id = await _service.CreateAsync(dto, ct);
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
 
     [HttpPatch("{id:int}")]
-    public async Task<ActionResult> Update(int id, CotitularidadInstPatchDto dto, CancellationToken ct)
+    public async Task<ActionResult> Patch(int id, [FromBody] CotitularidadInstPatchDto dto, CancellationToken ct)
     {
-        await _service.UpdateAsync(id, dto, ct);
-        return NoContent();
+        var success = await _service.UpdateAsync(id, dto, ct);
+        return success ? NoContent() : NotFound();
     }
 }
