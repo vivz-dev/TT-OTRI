@@ -46,6 +46,10 @@ public static class DependencyInjection
         services.TryAddScoped<TipoProteccionService>();
         services.AddScoped<CotitularService>();
         services.AddScoped<CotitularidadTecnoService>();
+        services.AddScoped<AutorService>();
+        services.AddScoped<CesionService>();
+        services.AddScoped<ProteccionService>();
+        services.AddScoped<LicenciamientoService>();
         
 
         // ---------------- Repos por provider -----------------
@@ -78,6 +82,12 @@ public static class DependencyInjection
             services.AddScoped<ITipoProteccionRepository, TipoProteccionRepositoryDb2>();
             services.AddScoped<ICotitularRepository, CotitularRepositoryDb2>();
             services.AddScoped<ICotitularidadTecnoRepository, CotitularidadTecnoRepositoryDb2>();
+            services.AddScoped<IAcuerdoDistribAutorRepository, AcuerdoDistribAutorRepositoryDb2>();
+            services.AddScoped<IAutorRepository, AutorRepositoryDb2>();
+            services.AddScoped<ICesionRepository, CesionRepositoryDb2>();
+            services.AddScoped<IProteccionRepository, ProteccionRepositoryDb2>();
+            services.AddScoped<ILicenciamientoRepository, LicenciamientoRepositoryDb2>();
+
 
 
             // (opcional) otros repos explícitos aquí si los necesitas
