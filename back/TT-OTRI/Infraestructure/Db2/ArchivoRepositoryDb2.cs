@@ -26,12 +26,13 @@ public sealed class ArchivoRepositoryDb2 : IArchivoRepository
         {
             Id            = r.IsDBNull(GetOrdinal("IDOTRITTARCHIVO")) ? 0  : r.GetInt32(GetOrdinal("IDOTRITTARCHIVO")),
             Tamano        = r.IsDBNull(GetOrdinal("TAMANIO"))         ? null : r.GetInt32(GetOrdinal("TAMANIO")),
-            IdTEntidad    = r.IsDBNull(GetOrdinal("IDTTENTIDAD"))      ? null : r.GetInt32(GetOrdinal("IDTTENTIDAD")),
+            IdTEntidad    = r.IsDBNull(GetOrdinal("IDTTENTIDAD"))     ? null : r.GetInt32(GetOrdinal("IDTTENTIDAD")),
             Nombre        = r.IsDBNull(GetOrdinal("NOMBRE"))          ? null : r.GetString(GetOrdinal("NOMBRE")),
             Formato       = r.IsDBNull(GetOrdinal("FORMATO"))         ? null : r.GetString(GetOrdinal("FORMATO")),
             Url           = r.IsDBNull(GetOrdinal("URL"))             ? null : r.GetString(GetOrdinal("URL")),
             FechaCreacion = r.IsDBNull(GetOrdinal("FECHACREACION"))   ? null : r.GetDateTime(GetOrdinal("FECHACREACION")),
             UltimoCambio  = r.IsDBNull(GetOrdinal("ULTIMO_CAMBIO"))   ? null : r.GetDateTime(GetOrdinal("ULTIMO_CAMBIO")),
+            TipoEntidad   = r.IsDBNull(GetOrdinal("TIPOENTIDAD"))     ? null : r.GetString(GetOrdinal("TIPOENTIDAD")) // 🆕
         };
     }
 
@@ -41,7 +42,7 @@ public sealed class ArchivoRepositoryDb2 : IArchivoRepository
         await conn.OpenAsync(ct);
 
         string sql = $@"
-            SELECT IDOTRITTARCHIVO, TAMANIO, IDTTENTIDAD, NOMBRE, FORMATO, URL, FECHACREACION, ULTIMO_CAMBIO
+            SELECT IDOTRITTARCHIVO, TAMANIO, IDTTENTIDAD, NOMBRE, FORMATO, URL, FECHACREACION, ULTIMO_CAMBIO, TIPOENTIDAD
             FROM {_schema}.T_OTRI_TT_ARCHIVO
             ORDER BY IDOTRITTARCHIVO DESC";
 
@@ -59,7 +60,7 @@ public sealed class ArchivoRepositoryDb2 : IArchivoRepository
         await conn.OpenAsync(ct);
 
         string sql = $@"
-            SELECT IDOTRITTARCHIVO, TAMANIO, IDTTENTIDAD, NOMBRE, FORMATO, URL, FECHACREACION, ULTIMO_CAMBIO
+            SELECT IDOTRITTARCHIVO, TAMANIO, IDTTENTIDAD, NOMBRE, FORMATO, URL, FECHACREACION, ULTIMO_CAMBIO, TIPOENTIDAD
             FROM {_schema}.T_OTRI_TT_ARCHIVO
             WHERE IDOTRITTARCHIVO = @id";
 
@@ -96,9 +97,9 @@ public sealed class ArchivoRepositoryDb2 : IArchivoRepository
 
             string sql = $@"
                 INSERT INTO {_schema}.T_OTRI_TT_ARCHIVO
-                (IDOTRITTARCHIVO, TAMANIO, IDTTENTIDAD, NOMBRE, FORMATO, URL, FECHACREACION, ULTIMO_CAMBIO)
-                VALUES
-                (@id, @tam, @idten, @nombre, @formato, @url, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+    (IDOTRITTARCHIVO, TAMANIO, IDTTENTIDAD, NOMBRE, FORMATO, URL, FECHACREACION, ULTIMO_CAMBIO, TIPOENTIDAD)
+    VALUES
+    (@id, @tam, @idten, @nombre, @formato, @url, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, @tipo)";
 
             using var cmd = new DB2Command(sql, conn, tx);
             cmd.Parameters.Add(new DB2Parameter("@id", id));
@@ -107,6 +108,8 @@ public sealed class ArchivoRepositoryDb2 : IArchivoRepository
             cmd.Parameters.Add(new DB2Parameter("@nombre", (object?)e.Nombre     ?? DBNull.Value));
             cmd.Parameters.Add(new DB2Parameter("@formato",(object?)e.Formato    ?? DBNull.Value));
             cmd.Parameters.Add(new DB2Parameter("@url",    (object?)e.Url        ?? DBNull.Value));
+            cmd.Parameters.Add(new DB2Parameter("@tipo", (object?)e.TipoEntidad ?? DBNull.Value));
+
 
             await cmd.ExecuteNonQueryAsync(ct);
             await tx.CommitAsync(ct);
@@ -155,6 +158,12 @@ public sealed class ArchivoRepositoryDb2 : IArchivoRepository
                 sets.Add("URL = @url");
                 cmd.Parameters.Add(new DB2Parameter("@url", (object?)patch.Url ?? DBNull.Value));
             }
+            if (patch.TipoEntidad != null)
+            {
+                sets.Add("TIPOENTIDAD = @tipo");
+                cmd.Parameters.Add(new DB2Parameter("@tipo", (object?)patch.TipoEntidad ?? DBNull.Value));
+            }
+
 
             // Siempre refrescamos ULTIMO_CAMBIO
             sets.Add("ULTIMO_CAMBIO = CURRENT_TIMESTAMP");

@@ -1,74 +1,51 @@
 /**
  * TransferenciaTecnologicaPage
  * ----------------------------
- * Lista las transferencias disponibles.  El Card muestra:
+ * Lista las transferencias disponibles. El Card muestra:
  *   • título  -> codigoTransferencia
  *   • descripción -> descripcion
  */
-import './TransferenciaTecnologicaPage.css';              // crea si lo necesitas
+import './TransferenciaTecnologicaPage.css';
 import React, { useState, useMemo } from 'react';
 import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetTransfersQuery } from '../../services/transfersApi';
 
-/* --- Datos de ejemplo -------------------------------------------------- */
-const dummyTransfers = [
-  {
-    id: 1,
-    titulo: 'TT-24-001',
-    descripcion: 'Acuerdo de licencia con ACME Corp.',
-    estado: 'Vigente',
-    completed: false,
-    fechaInicio: '2025-08-01',
-    usuario: 'Viviana Vera',
-  },
-  {
-    id: 2,
-    titulo: 'TT-23-015',
-    descripcion: 'Licencia exclusiva de patente XYZ.',
-    estado: 'Finalizada',
-    completed: true,
-    fechaInicio: '2024-01-15',
-    usuario: 'Juan Pérez',
-  },
-  /* ➕  agrega más objetos si lo necesitas */
-];
-
 const fmtFecha = (iso) =>
-  new Date(iso).toLocaleDateString('es-EC', {
+  iso ? new Date(iso).toLocaleDateString('es-EC', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
-  });
+  }) : 'Sin fecha';
 
 const TransferenciaTecnologicaPage = ({ onRegister }) => {
   const { data = [], isLoading, error } = useGetTransfersQuery();
 
-
-  /* Mapeo al formato que usa CardScroll */
-  const dummyData = useMemo(
-    () =>
-      dummyTransfers.map((t) => ({
-        id: t.id,
-        estado: t.estado,
-        completed: t.completed,
-        titulo: t.titulo,
-        descripcion: t.descripcion,
-        fecha: fmtFecha(t.fechaInicio),
-        usuario: t.usuario,
-      })),
-    []
-  );
+  // Mapeo de datos reales de la API al formato que usa CardScroll
+  const transfersData = useMemo(() => {
+    if (!data || data.length === 0) return [];
     
+    return data.map((transfer) => ({
+      id: transfer.id,
+      estado: transfer.estado,
+      completed: transfer.completed || false,
+      titulo: transfer.titulo || 'Sin título',
+      descripcion: transfer.descripcion || 'Sin descripción',
+      fecha: fmtFecha(transfer.fechaInicio),
+      usuario: transfer.usuarioRegistrador || 'Usuario no disponible',
+    }));
+  }, [data]);
 
-  const [filter, setFilter]     = useState('todas');
+  console.log('Transferencias cargadas:', transfersData);
+
+  const [filter, setFilter] = useState('todas');
   const [searchText, setSearch] = useState('');
 
   if (isLoading) return <p>Cargando…</p>;
+  if (error) return <p>Error al cargar las transferencias: {error.message}</p>;
 
-  /* Filtros iguales a Resoluciones */
   const filterOptions = [
-    { label: 'Todas',      value: 'todas' },
-    { label: 'Vigentes',   value: 'Vigente' },
+    { label: 'Todas', value: 'todas' },
+    { label: 'Vigentes', value: 'Vigente' },
     { label: 'Finalizadas', value: 'Finalizada' },
   ];
 
@@ -79,7 +56,6 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
         subtitle="Consulta todas las TT registradas."
       />
 
-      {/* ActionBar sin botón Registrar */}
       <ActionBar
         filter={filter}
         setFilter={setFilter}
@@ -92,7 +68,7 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
       <CardScroll
         filter={filter}
         searchText={searchText}
-        dummyData={dummyData}
+        dummyData={transfersData}
       />
     </main>
   );

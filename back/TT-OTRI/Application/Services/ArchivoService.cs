@@ -19,9 +19,9 @@ public sealed class ArchivoService
         Formato = x.Formato,
         Url = x.Url,
         FechaCreacion = x.FechaCreacion,
-        UltimoCambio = x.UltimoCambio
+        UltimoCambio = x.UltimoCambio,
+        TipoEntidad = x.TipoEntidad   // 🆕
     };
-
     public async Task<IReadOnlyList<ArchivoDto>> GetAllAsync(CancellationToken ct = default)
         => (await _repo.GetAllAsync(ct)).Select(ToDto).ToList();
 
@@ -39,14 +39,14 @@ public sealed class ArchivoService
             IdTEntidad = dto.IdTEntidad,
             Nombre = dto.Nombre,
             Formato = dto.Formato,
-            Url = dto.Url
+            Url = dto.Url,
+            TipoEntidad = dto.TipoEntidad  // 🆕
         };
 
         var id = await _repo.CreateAsync(entity, ct);
         var created = await _repo.GetByIdAsync(id, ct) ?? new Archivo { Id = id };
         return ToDto(created);
     }
-
     public async Task<bool> PatchAsync(int id, UpdateArchivoDto dto, CancellationToken ct = default)
     {
         var patch = new Archivo
@@ -55,8 +55,8 @@ public sealed class ArchivoService
             IdTEntidad = dto.IdTEntidad,
             Nombre = dto.Nombre,
             Formato = dto.Formato,
-            Url = dto.Url
+            Url = dto.Url,
+            TipoEntidad = dto.TipoEntidad // 🆕
         };
         return await _repo.UpdatePartialAsync(id, patch, ct);
-    }
-}
+    }}

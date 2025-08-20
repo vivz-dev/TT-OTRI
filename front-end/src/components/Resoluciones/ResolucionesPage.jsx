@@ -33,6 +33,8 @@ const ResolucionesPage = ({ onRegister }) => {
     [data, error]
   );
 
+  console.log('Resoluciones cargadas:', dummyData);
+
   const [filter, setFilter]     = useState('todas');
   const [searchText, setSearch] = useState('');
 

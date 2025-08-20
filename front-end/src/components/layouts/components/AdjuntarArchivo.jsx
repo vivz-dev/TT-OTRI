@@ -1,12 +1,9 @@
 // src/components/AdjuntarArchivo.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import './AdjuntarArchivo.css';
 
-import {
-  useCreateArchivoMutation,
-  buildArchivoPayload,
-  sanitizeFileName,
-} from '../../../services/archivosApi';
+import { useUploadToDspaceMutation, useCreateArchivoMutation } from '../../../services/storage/archivosApi';
+import { uploadAndSaveArchivo } from '../../../services/storage/archivosOrchestrator';
 
 const MAX_BYTES = 6 * 1024 * 1024;
 
@@ -15,69 +12,116 @@ const isValidPdf = (file) =>
   (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) &&
   file.size <= MAX_BYTES;
 
-const AdjuntarArchivo = ({
-  entityId,           // <-- idTEntidad (ej: id resolución). Requerido para habilitar "Registrar".
+const AdjuntarArchivo = forwardRef(({
+  entityId: entityIdProp = null,
+  idColeccion = 155,
   descripcion = 'Adjuntar documento en PDF.',
-  onUploaded,         // callback(respuestaBackend)
-  onBeforeUpload,     // callback() opcional (para spinners externos)
-  onError,            // callback(error) opcional
+  onUploaded,
+  onBeforeUpload,
+  onError,
   buttonLabel = 'Registrar archivo',
-}) => {
+  // overrides opcionales:
+  overrideTitulo,
+  overrideNombresAutor,
+  overrideIdentificacion,
+}, ref) => {
   const [file, setFile] = useState(null);
+  const [entityIdState, setEntityIdState] = useState(entityIdProp);
+  const entityId = entityIdState ?? entityIdProp;
+
   const [localError, setLocalError] = useState('');
-  const [createArchivo, { isLoading }] = useCreateArchivoMutation();
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const [uploadToDspace] = useUploadToDspaceMutation();
+  const [createArchivo]  = useCreateArchivoMutation();
 
   const validMsg = useMemo(() => {
-    if (!file) return 'Selecciona un archivo PDF (máx 6 MB).';
-    if (!isValidPdf(file)) {
-      return 'Archivo inválido: debe ser PDF y pesar ≤ 6 MB.';
-    }
-    if (entityId == null || entityId === '') {
-      return 'Falta el id de la entidad. Guarda/crea primero para obtenerlo.';
-    }
+    if (!file) return 'Selecciona un archivo PDF (máx 6 MB).';
+    if (!isValidPdf(file)) return 'Archivo inválido: debe ser PDF y pesar ≤ 6 MB.';
+    if (entityId == null || entityId === '') return 'Falta el id de la entidad. Guarda/crea primero para obtenerlo.';
     return '';
   }, [file, entityId]);
 
-  const disabled = useMemo(
-    () => !file || !isValidPdf(file) || entityId == null || entityId === '' || isLoading,
-    [file, entityId, isLoading]
-  );
-
   const handleSelect = (e) => {
     setLocalError('');
+    setSuccessMsg('');
     setFile(e.target.files?.[0] ?? null);
   };
 
-  const handleUpload = async () => {
+  const doUpload = async (eid) => {
+    if (!file || !isValidPdf(file)) throw new Error('Archivo inválido: debe ser PDF y pesar ≤ 6 MB.');
+    if (eid == null || eid === '') throw new Error('No hay id de entidad (idTEntidad).');
+
+    if (onBeforeUpload) onBeforeUpload();
+    setLoading(true);
     try {
-      setLocalError('');
-      if (onBeforeUpload) onBeforeUpload();
-
-      if (!file || !isValidPdf(file)) {
-        setLocalError('Archivo inválido: debe ser PDF y pesar ≤ 6 MB.');
-        return;
-      }
-      if (entityId == null || entityId === '') {
-        setLocalError('No hay id de entidad (idTEntidad).');
-        return;
-      }
-
-      const body = buildArchivoPayload({ file, idTEntidad: entityId });
-      // Debug útil
-      console.groupCollapsed('[AdjuntarArchivo] Enviando /api/archivos');
-      console.log('entityId:', entityId);
-      console.log('file:', { name: file.name, type: file.type, size: file.size });
-      console.log('nombre sanitizado:', sanitizeFileName(file.name));
-      console.log('payload:', body);
+      console.groupCollapsed('[AdjuntarArchivo] Preparando orquestación');
+      console.log('entityId:', eid);
+      console.log('overrides:', {
+        overrideTitulo,
+        overrideNombresAutor,
+        overrideIdentificacion,
+      });
       console.groupEnd();
 
-      const res = await createArchivo(body).unwrap();
-      if (onUploaded) onUploaded(res);
+      const result = await uploadAndSaveArchivo({
+        file,
+        meta: {
+          idTEntidad: eid,
+          idColeccion,
+          titulo: overrideTitulo,
+          nombresAutor: overrideNombresAutor,
+          identificacion: overrideIdentificacion,
+        },
+        uploadToDspace,
+        createArchivo,
+      });
+
+      if (onUploaded) onUploaded(result.archivo);
+      return result;
     } catch (err) {
       console.error('[AdjuntarArchivo] Error al registrar archivo:', err);
-      setLocalError('No se pudo registrar el archivo. Revisa consola.');
+      const msg = err?.message || 'No se pudo registrar el archivo.';
+      setLocalError(msg);
       if (onError) onError(err);
+      throw err;
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Exponer métodos al padre
+  useImperativeHandle(ref, () => ({
+    setEntityId(id) {
+      setEntityIdState(id);
+    },
+    hasFile() {
+      return !!file;
+    },
+    getSelectedFileName() {
+      return file?.name ?? null;
+    },
+    /** Sube si hay archivo y (entityId || entityId argument). Si no hay archivo, no hace nada. */
+    async uploadIfReady({ entityId: eidArg, silent = false } = {}) {
+      const eid = eidArg ?? entityId;
+      if (!file) {
+        if (!silent) console.info('[AdjuntarArchivo] No hay archivo seleccionado. Subida omitida.');
+        return null;
+      }
+      // Si falta entityId, omitimos también (caso guardado sin id)
+      if (eid == null || eid === '') {
+        if (!silent) console.info('[AdjuntarArchivo] No hay id de entidad. Subida omitida.');
+        return null;
+      }
+      return await doUpload(eid);
+    },
+  }));
+
+  const handleUploadClick = async () => {
+    try {
+      await (ref?.current?.uploadIfReady ? ref.current.uploadIfReady({}) : doUpload(entityId));
+    } catch { /* el error ya fue logueado arriba */ }
   };
 
   return (
@@ -89,12 +133,13 @@ const AdjuntarArchivo = ({
       <label className="archivo-input">
         <input
           type="file"
-          accept=".pdf,application/pdf"
+          accept=".pdf"
           onChange={handleSelect}
           hidden
+          disabled={loading}
         />
         <div className="file-wrapper">
-          <span>Examinar…</span>
+          <span>{loading ? 'Procesando…' : 'Examinar…'}</span>
           <span className="file-name">
             {file ? file.name : 'Seleccionar archivo...'}
           </span>
@@ -103,23 +148,14 @@ const AdjuntarArchivo = ({
 
       <div className="requisitos">
         <p><strong>Requerimientos para subir archivo</strong></p>
-        <p>Límite de 6MB.<br />
-           Tipos de archivos permitidos: <span className="pdf-tag">.pdf</span></p>
+        <p>
+          Límite de 6MB.<br />
+          Tipos de archivos permitidos: <span className="pdf-tag">.pdf</span>
+        </p>
       </div>
-
-      {!!validMsg && <p className="hint">{validMsg}</p>}
-      {!!localError && <p className="monto-error">{localError}</p>}
-
-      <button
-        type="button"
-        className="btn-primary"
-        disabled={disabled}
-        onClick={handleUpload}
-      >
-        {isLoading ? 'Registrando…' : buttonLabel}
-      </button>
+      
     </div>
   );
-};
+});
 
 export default AdjuntarArchivo;

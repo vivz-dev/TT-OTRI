@@ -14,13 +14,14 @@ public sealed class TransferTecnologicaReadDto
     public bool      Completed          { get; set; }
     public string    Titulo             { get; set; } = string.Empty;
     public string    Descripcion        { get; set; } = string.Empty;
-    public char      Estado             { get; set; }   // 'V' o 'F'
+    public string    Estado             { get; set; } = string.Empty;   // Cambiado de char a string
     public DateTime? FechaInicio        { get; set; }
     public DateTime? FechaFin           { get; set; }
     public DateTime  CreatedAt          { get; set; }
     public DateTime  UpdatedAt          { get; set; }
 }
 
+// Los DTOs de creación y patch siguen usando char para la entrada
 public sealed class TransferTecnologicaCreateDto
 {
     public int       IdPersona          { get; set; }

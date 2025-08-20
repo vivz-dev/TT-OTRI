@@ -11,27 +11,29 @@ const TipoProteccion = ({
   disabled,
   onChange,
   onArchivoChange,
-  onFechaChange,              // 👈 NUEVO: prop para notificar al padre
+  onFechaChange,
 }) => {
   const [archivos, setArchivos] = useState([]);
   const [fechaConcesion, setFechaConcesion] = useState('');
 
-  useEffect(() => {
+useEffect(() => {
     if (!checked) {
       if (archivos.length > 0 || fechaConcesion) {
         setArchivos([]);
         setFechaConcesion('');
         onArchivoChange?.([]);
-        onFechaChange?.('');          // 👈 limpiar en el padre
+        onFechaChange?.('');
       }
       return;
     }
-    if (checked && index !== 7 && archivos.length === 0) {
+    
+    // No inicializar archivos para "No aplica" (ID 8)
+    if (checked && index !== 8 && archivos.length === 0) {
       const inicial = [{ file: null, fecha: '' }];
       setArchivos(inicial);
       setFechaConcesion('');
       onArchivoChange?.(inicial);
-      onFechaChange?.('');            // 👈 inicializar vacío en el padre
+      onFechaChange?.('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checked]);
@@ -77,7 +79,7 @@ const TipoProteccion = ({
         {label}
       </label>
 
-      {checked && index !== 7 && (
+      {checked && index !== 8 && (
         <div className="form-card proteccion-container">
           <label className="fecha-label" style={{ marginBottom: '0.75rem' }}>
             <div className="date-input-wrapper">

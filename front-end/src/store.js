@@ -8,7 +8,7 @@ import { tiposProteccionApi } from './services/tiposProteccionApi';
 import { cotitularesApi } from './services/cotitularesApi';
 import { benefInstitucionesApi } from './services/benefInstitucionesApi';
 import { resolucionOrchestratorApi } from './services/resolucionOrchestratorApi';
-import { archivosApi } from './services/archivosApi';
+import { archivosApi } from './services/storage/archivosApi';
 import { distribBenefInstitucionesApi } from './services/distribBenefInstitucionesApi';
 
 /** Nuevos (generados en la respuesta anterior) */

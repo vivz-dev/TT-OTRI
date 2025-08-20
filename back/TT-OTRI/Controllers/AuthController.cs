@@ -113,9 +113,7 @@ public sealed class AuthController : ControllerBase
         if (roleNames.Count == 0)
         {
             // Cambia "Usuario" por el nombre que usabas antes (p.ej. "Invitado" / "Solicitante")
-            roleNames = new List<string> { "Administrador de sistema OTRI" };
-            roleNames.Add("Administrador de contrato de TT");
-            roleNames.Add("Autor");
+            roleNames = new List<string> { "Autor" };
             // Si quieres también un IdRol simbólico:
             // roleIds = new List<int> { 0 };
         }

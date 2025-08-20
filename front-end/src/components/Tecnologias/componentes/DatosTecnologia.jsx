@@ -33,11 +33,27 @@ const DatosTecnologia = forwardRef((_, ref) => {
   const handleCheckboxChange = (tipoId, checked) => {
     setTiposProteccion((prev) => {
       const nuevo = { ...prev };
-      if (tipoId === ID_NO_APLICA) return checked ? { [ID_NO_APLICA]: true } : {};
-      if (checked) { delete nuevo[ID_NO_APLICA]; nuevo[tipoId] = true; } else { delete nuevo[tipoId]; }
-      return nuevo;
+      if (tipoId === ID_NO_APLICA) {
+        // Limpiar otros tipos y archivos cuando se selecciona "No aplica"
+        if (checked) {
+          setArchivosPorProteccion({});
+          setFechasConcesion({});
+          return { [ID_NO_APLICA]: true };
+        } else {
+          return {};
+        }
+      } else {
+        if (checked) {
+          delete nuevo[ID_NO_APLICA];
+          nuevo[tipoId] = true;
+        } else {
+          delete nuevo[tipoId];
+        }
+        return nuevo;
+      }
     });
   };
+
   const handleArchivoChange = (tipoId, archivos) =>
     setArchivosPorProteccion((p) => ({ ...p, [tipoId]: archivos }));
 
@@ -48,24 +64,18 @@ const DatosTecnologia = forwardRef((_, ref) => {
       const seleccionoAlMenosUno = Object.keys(tiposProteccion).length > 0;
       const seleccionoNoAplica = !!tiposProteccion[ID_NO_APLICA];
 
-      let archivosOk = true;
-      if (!seleccionoNoAplica) {
-        for (const id of Object.keys(tiposProteccion)) {
-          const archivos = archivosPorProteccion[id] || [];
-          if (archivos.length === 0 || !archivos.some((a) => a.file)) { archivosOk = false; break; }
-        }
-      }
+      // No validar archivos ni fechas si seleccionó "No aplica"
+      let archivosOk = seleccionoNoAplica ? true : Object.keys(tiposProteccion).every(id => {
+        const archivos = archivosPorProteccion[id] || [];
+        return archivos.length > 0 && archivos.some(a => a.file);
+      });
 
-      let fechasOk = true;
-      if (!seleccionoNoAplica) {
-        for (const id of Object.keys(tiposProteccion)) {
-          const archivos = archivosPorProteccion[id] || [];
-          const fecha = fechasConcesion[id];
-          if (archivos.length === 0 || !archivos.some((a) => a.file) || !fecha) { fechasOk = false; break; }
-        }
-      }
+      let fechasOk = seleccionoNoAplica ? true : Object.keys(tiposProteccion).every(id => {
+        return fechasConcesion[id];
+      });
 
       const cotitularidadOk = cotitularidad !== null;
+
 
       setErrores({
         nombre: !nombreOk, descripcion: !descripcionOk,

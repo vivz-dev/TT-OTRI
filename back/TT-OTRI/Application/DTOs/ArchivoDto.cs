@@ -10,4 +10,7 @@ public sealed class ArchivoDto
     public string? Url { get; set; }
     public DateTime? FechaCreacion { get; set; }
     public DateTime? UltimoCambio { get; set; }
+
+    // 🆕 Nuevo campo
+    public string? TipoEntidad { get; set; }
 }

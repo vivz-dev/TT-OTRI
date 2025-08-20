@@ -19,7 +19,6 @@ public sealed class TransferTecnologicaRepositoryDb2 : ITransferTecnologicaRepos
 
     public TransferTecnologicaRepositoryDb2(IConfiguration cfg)
     {
-        // Mantén el mismo estilo que tu ResolutionRepositoryDb2
         _connString = "Server=192.168.254.53:50000;Database=SAAC;UserID=USROTRI;Password=wL8QUtS9FbprI;";
         _schema = "SOTRI";
     }
@@ -44,7 +43,7 @@ ORDER BY IDOTRITTTRANSFERTECNOLOGICA DESC";
 
         var list = new List<TransferTecnologica>();
         while (await rdr.ReadAsync(ct))
-            list.Add(Map(rdr));
+            list.Add(MapFromRecord(rdr));
         return list;
     }
 
@@ -65,10 +64,7 @@ WHERE IDOTRITTTRANSFERTECNOLOGICA = @id";
         cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) { Value = id });
 
         await using var rd = (DbDataReader)await cmd.ExecuteReaderAsync(ct);
-        if (await rd.ReadAsync(ct))
-            return Map(rd);
-
-        return null;
+        return await rd.ReadAsync(ct) ? MapFromRecord(rd) : null;
     }
 
     /* --------------------------- CREATE ------------------------- */
@@ -171,7 +167,12 @@ VALUES
                 "COMPLETADO"          => new DB2Parameter(pname, DB2Type.SmallInt) { Value = (val is int i2) ? i2 : (val is bool b2 ? BoolToSmallInt(b2) : 0) },
                 "TITULO"              => new DB2Parameter(pname, DB2Type.VarChar)  { Value = val ?? string.Empty },
                 "DESCRIPCION"         => new DB2Parameter(pname, DB2Type.VarChar)  { Value = val ?? string.Empty },
-                "ESTADO"              => new DB2Parameter(pname, DB2Type.Char)     { Value = val ?? "V" },
+                "ESTADO"              => new DB2Parameter(pname, DB2Type.Char) 
+                { 
+                    Value = val is TransferStatus status ? (char)status : 
+                           (val is string str && str.Length > 0 ? str[0] : 
+                           (val is char c ? c : 'V')) 
+                },
                 "FECHAINICIO"         => new DB2Parameter(pname, DB2Type.Date)     { Value = val ?? DBNull.Value },
                 "FECHAFIN"            => new DB2Parameter(pname, DB2Type.Date)     { Value = val ?? DBNull.Value },
                 _ => throw new InvalidOperationException("Columna no permitida.")
@@ -200,27 +201,60 @@ WHERE IDOTRITTTRANSFERTECNOLOGICA = @id";
 
     /* --------------------------- helpers ------------------------ */
 
-    private static TransferTecnologica Map(IDataRecord rec)
+    private static TransferTecnologica MapFromRecord(IDataRecord rec)
     {
         int Ord(string name) => rec.GetOrdinal(name);
-        bool Has(string name) => !rec.IsDBNull(Ord(name));
+
+        static int GetInt32Safe(IDataRecord r, int ord) =>
+            r.IsDBNull(ord) ? 0 : Convert.ToInt32(r.GetValue(ord));
+
+        static bool GetBoolFromSmallInt(IDataRecord r, int ord)
+        {
+            if (r.IsDBNull(ord)) return false;
+            var v = r.GetValue(ord);
+            return Convert.ToInt32(v) != 0;
+        }
+
+        static char GetCharSafe(IDataRecord r, int ord, char fallback = 'V')
+        {
+            if (r.IsDBNull(ord)) return fallback;
+            var v = r.GetValue(ord);
+            return Convert.ToChar(v);
+        }
+
+        static DateTime? GetNullableDate(IDataRecord r, int ord) =>
+            r.IsDBNull(ord) ? (DateTime?)null : Convert.ToDateTime(r.GetValue(ord));
+
+        static DateTime GetDateTimeSafe(IDataRecord r, int ord, DateTime fallbackUtcNow)
+        {
+            if (r.IsDBNull(ord)) return fallbackUtcNow;
+            return Convert.ToDateTime(r.GetValue(ord));
+        }
+
+        static string GetStringSafe(IDataRecord r, int ord) =>
+            r.IsDBNull(ord) ? string.Empty : Convert.ToString(r.GetValue(ord)) ?? string.Empty;
+
+        static decimal? GetNullableDecimal(IDataRecord r, int ord) =>
+            r.IsDBNull(ord) ? (decimal?)null : Convert.ToDecimal(r.GetValue(ord));
+
+        var nowUtc = DateTime.UtcNow;
 
         return new TransferTecnologica
         {
-            Id           = rec.GetInt32(Ord("IDOTRITTTRANSFERTECNOLOGICA")),
-            IdPersona    = rec.GetInt32(Ord("IDPERSONA")),
-            IdResolucion = rec.GetInt32(Ord("IDOTRITTRESOLUCION")),
-            IdTecnologia = rec.GetInt32(Ord("IDOTRITTTECNOLOGIA")),
-            Monto        = Has("MONTO") ? rec.GetDecimal(Ord("MONTO")) : (decimal?)null,
-            Pago         = Convert.ToInt16(rec.GetValue(Ord("PAGO"))) != 0,
-            Completed    = Convert.ToInt16(rec.GetValue(Ord("COMPLETADO"))) != 0,
-            Titulo       = (Has("TITULO") ? rec["TITULO"] : string.Empty) as string ?? string.Empty,
-            Descripcion  = (Has("DESCRIPCION") ? rec["DESCRIPCION"] : string.Empty) as string ?? string.Empty,
-            Estado       = (TransferStatus)Convert.ToChar(rec["ESTADO"]),
-            FechaInicio  = Has("FECHAINICIO") ? rec.GetDateTime(Ord("FECHAINICIO")) : (DateTime?)null,
-            FechaFin     = Has("FECHAFIN") ? rec.GetDateTime(Ord("FECHAFIN")) : (DateTime?)null,
-            CreatedAt    = rec.GetDateTime(Ord("FECHACREACION")),
-            UpdatedAt    = rec.GetDateTime(Ord("ULTIMO_CAMBIO")),
+            Id = GetInt32Safe(rec, Ord("IDOTRITTTRANSFERTECNOLOGICA")),
+            IdPersona = GetInt32Safe(rec, Ord("IDPERSONA")),
+            IdResolucion = GetInt32Safe(rec, Ord("IDOTRITTRESOLUCION")),
+            IdTecnologia = GetInt32Safe(rec, Ord("IDOTRITTTECNOLOGIA")),
+            Monto = GetNullableDecimal(rec, Ord("MONTO")),
+            Pago = GetBoolFromSmallInt(rec, Ord("PAGO")),
+            Completed = GetBoolFromSmallInt(rec, Ord("COMPLETADO")),
+            Titulo = GetStringSafe(rec, Ord("TITULO")),
+            Descripcion = GetStringSafe(rec, Ord("DESCRIPCION")),
+            Estado = (TransferStatus)GetCharSafe(rec, Ord("ESTADO"), 'V'), // Convertir char a enum
+            FechaInicio = GetNullableDate(rec, Ord("FECHAINICIO")),
+            FechaFin = GetNullableDate(rec, Ord("FECHAFIN")),
+            CreatedAt = GetDateTimeSafe(rec, Ord("FECHACREACION"), nowUtc),
+            UpdatedAt = GetDateTimeSafe(rec, Ord("ULTIMO_CAMBIO"), nowUtc),
         };
     }
 

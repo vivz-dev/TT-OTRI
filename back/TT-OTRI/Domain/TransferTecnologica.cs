@@ -5,8 +5,8 @@ namespace TT_OTRI.Domain;
 
 public enum TransferStatus
 {
-    V = 'V', // Vigente
-    F = 'F', // Finalizada
+    Vigente = 'V', // Vigente
+    Finalizada = 'F', // Finalizada
 }
 
 public sealed class TransferTecnologica
@@ -20,7 +20,7 @@ public sealed class TransferTecnologica
     public bool       Completed          { get; set; }  // COMPLETADO SMALLINT (1/0)
     public string     Titulo             { get; set; } = string.Empty; // VARGRAPHIC(100)
     public string     Descripcion        { get; set; } = string.Empty; // VARGRAPHIC(100)
-    public TransferStatus Estado         { get; set; } = TransferStatus.V; // CHAR(1)
+    public TransferStatus Estado         { get; set; } = TransferStatus.Vigente; // CHAR(1)
     public DateTime?  FechaInicio        { get; set; }  // DATE nullable
     public DateTime?  FechaFin           { get; set; }  // DATE nullable
     public DateTime   CreatedAt          { get; set; }  // FECHACREACION TIMESTAMP

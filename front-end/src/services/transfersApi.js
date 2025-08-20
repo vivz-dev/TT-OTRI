@@ -1,18 +1,17 @@
 /**
  * RTK Query – Transferencias Tecnológicas
  */
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
-const baseUrl = 'http://localhost:5196/api';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from './baseQuery';
 
 export const transfersApi = createApi({
   reducerPath: 'transfersApi',
-  baseQuery: fetchBaseQuery({ baseUrl }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ['Transfer'],
   endpoints: (builder) => ({
-    /* ---------- GET ---------- */
+    /* ---------- GET (Todas las transferencias) ---------- */
     getTransfers: builder.query({
-      query: () => '/transferencias',
+      query: () => '/transfers',
       providesTags: (result) =>
         result
           ? [
@@ -22,19 +21,37 @@ export const transfersApi = createApi({
           : [{ type: 'Transfer', id: 'LIST' }],
     }),
 
-    /* ---------- POST ---------- */
+    /* ---------- GET (Transferencia por ID) ---------- */
+    getTransferById: builder.query({
+      query: (id) => `/transfers/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Transfer', id }],
+    }),
+
+    /* ---------- POST (Crear transferencia) ---------- */
     createTransfer: builder.mutation({
       query: (body) => ({
-        url: '/transferencias',
+        url: '/transfers',
         method: 'POST',
         body,
       }),
       invalidatesTags: [{ type: 'Transfer', id: 'LIST' }],
+    }),
+
+    /* ---------- PATCH (Actualizar parcialmente) ---------- */
+    updateTransfer: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/transfers/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Transfer', id }],
     }),
   }),
 });
 
 export const {
   useGetTransfersQuery,
+  useGetTransferByIdQuery,
   useCreateTransferMutation,
+  useUpdateTransferMutation,
 } = transfersApi;

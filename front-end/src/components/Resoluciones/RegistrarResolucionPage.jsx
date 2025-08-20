@@ -144,10 +144,7 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
   const [submitting, setSubmitting] = useState(false);
   const [resolutionId, setResolutionId] = useState(null);
 
-  // FINALIZAR (orquestador)
   const [createResolucionCompleta] = useCreateResolucionCompletaMutation();
-
-  // BORRADOR / PARCIALES
   const [createResolution]     = useCreateResolutionMutation();
   const [patchResolution]      = usePatchResolutionMutation();
   const [createDistribution]   = useCreateDistributionMutation();
@@ -155,6 +152,7 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
 
   const formRef   = useRef();
   const scrollRef = useRef();
+  const footerRef = useRef();   // 👈 nuevo: para disparar subida auto
 
   /* ---------------- Guardar (BORRADOR / INCOMPLETO) ---------------- */
   const handleSave = async () => {
@@ -167,13 +165,18 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
         {};
       const distribucionesRaw = scrollRef.current?.getDistribuciones?.() ?? [];
 
-      // 1) Resolución: POST (si no existe) o PATCH parcial con lo disponible
+      // 1) Resolución: POST (si no existe) o PATCH parcial
       const draftPatch = buildResolutionDraftPatch(rawForm);
 
+      let idForUpload = resolutionId; // puede ya existir
       if (!resolutionId) {
         if (hasKeys(draftPatch)) {
-          const { id } = await createResolution(draftPatch).unwrap();
-          if (id) setResolutionId(id);
+          const res = await createResolution(draftPatch).unwrap();
+          const newId = res?.id ?? res?.Id ?? res?.idResolucion ?? null;
+          if (newId) {
+            setResolutionId(newId);
+            idForUpload = newId; // 👈 usar inmediatamente para subir
+          }
         }
       } else {
         if (hasKeys(draftPatch)) {
@@ -181,26 +184,22 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
         }
       }
 
-      // 2) Distribuciones: por cada ítem, PATCH si trae id; si no trae id y hay campos -> POST
+      // 2) Distribuciones draft (igual que antes)
       const IdUsuarioCrea = getIdPersonaFromAppJwt() ?? 0;
-
       for (const d of Array.isArray(distribucionesRaw) ? distribucionesRaw : []) {
         const distId = getDistribId(d);
         const bodyPartial = buildDistributionDraftPatch(d);
-
-        if (!hasKeys(bodyPartial)) continue; // nada que persistir
+        if (!hasKeys(bodyPartial)) continue;
 
         if (distId) {
-          // PATCH parcial
           await patchDistribution({ id: distId, body: bodyPartial }).unwrap();
-        } else if (resolutionId) {
-          // Sembrar distribución borrador (POST con lo disponible)
+        } else if (idForUpload) { // 👈 ya hay resolución creada
           await createDistribution({
-            resolutionId,
+            resolutionId: idForUpload,
             body: removeNullish({
-              IdResolucion: resolutionId,
+              IdResolucion: idForUpload,
               ...bodyPartial,
-              IdUsuarioCrea, // requerido por DB en tu proyecto
+              IdUsuarioCrea,
             }),
           }).unwrap();
         }
@@ -210,6 +209,15 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
       console.log('form(parcial):', draftPatch);
       console.log('distribuciones(parcial):', distribucionesRaw);
       console.groupEnd();
+
+      // 🔥 Subida automática si hay archivo seleccionado y id válido
+      if (idForUpload && footerRef.current?.triggerUploadIfReady) {
+        const pendingName = footerRef.current.getPendingFileName?.();
+        if (pendingName) {
+          console.log(`[AUTO-UPLOAD][Guardar] Intentando subir "${pendingName}" con idResolucion=${idForUpload}...`);
+        }
+        await footerRef.current.triggerUploadIfReady(idForUpload);
+      }
 
       alert('Borrador guardado (solo campos disponibles).');
 
@@ -250,6 +258,15 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
       if (!newResolutionId) throw new Error('Orquestador no devolvió resolutionId');
       setResolutionId(newResolutionId);
 
+      // 🔥 Subida automática al finalizar (si hay archivo seleccionado)
+      if (footerRef.current?.triggerUploadIfReady) {
+        const pendingName = footerRef.current.getPendingFileName?.();
+        if (pendingName) {
+          console.log(`[AUTO-UPLOAD][Finalizar] Intentando subir "${pendingName}" con idResolucion=${newResolutionId}...`);
+        }
+        await footerRef.current.triggerUploadIfReady(newResolutionId);
+      }
+
       alert('¡Resolución registrada con éxito!');
       if (typeof onSuccess === 'function') onSuccess();
     } catch (err) {
@@ -274,6 +291,7 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
         />
 
         <RegistrarResolucionFooter
+          ref={footerRef}
           resolutionId={resolutionId}
           onSave={submitting ? () => {} : handleSave}
           onFinish={submitting ? () => {} : handleFinish}

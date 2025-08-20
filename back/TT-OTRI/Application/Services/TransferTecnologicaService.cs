@@ -45,7 +45,7 @@ public sealed class TransferTecnologicaService
             Completed    = dto.Completed ?? false,
             Titulo       = dto.Titulo ?? string.Empty,
             Descripcion  = dto.Descripcion ?? string.Empty,
-            Estado       = estadoChar == 'V' ? TransferStatus.V : TransferStatus.F,
+            Estado       = estadoChar == 'V' ? TransferStatus.Vigente : TransferStatus.Finalizada,
             FechaInicio  = dto.FechaInicio,
             FechaFin     = dto.FechaFin
         };
@@ -71,7 +71,7 @@ public sealed class TransferTecnologicaService
         {
             var e = char.ToUpperInvariant(dto.Estado.Value);
             if (e != 'V' && e != 'F') throw new ArgumentException("Estado inválido. Use 'V' o 'F'.", nameof(dto.Estado));
-            Set("ESTADO", e.ToString());
+            Set("ESTADO", e);
         }
         if (dto.FechaInicio.HasValue)  Set("FECHAINICIO", dto.FechaInicio.Value.Date);
         if (dto.FechaFin.HasValue)     Set("FECHAFIN", dto.FechaFin.Value.Date);
@@ -93,7 +93,7 @@ public sealed class TransferTecnologicaService
         Completed    = e.Completed,
         Titulo       = e.Titulo,
         Descripcion  = e.Descripcion,
-        Estado       = (char)e.Estado,
+        Estado       = e.Estado.ToString(), // Cambio clave aquí: usar ToString() en lugar de (char)
         FechaInicio  = e.FechaInicio,
         FechaFin     = e.FechaFin,
         CreatedAt    = e.CreatedAt,
