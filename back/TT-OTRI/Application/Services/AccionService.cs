@@ -1,6 +1,5 @@
 // ============================================================================
-// File: Application/Services/AccionService.cs
-// Lógica de negocio para listar, obtener, crear, actualizar y eliminar acciones.
+// Application/Services/AccionService.cs
 // ============================================================================
 using TT_OTRI.Application.DTOs;
 using TT_OTRI.Application.Interfaces;
@@ -8,38 +7,47 @@ using TT_OTRI.Domain;
 
 namespace TT_OTRI.Application.Services;
 
-public class AccionService
+public sealed class AccionService
 {
     private readonly IAccionRepository _repo;
+
     public AccionService(IAccionRepository repo) => _repo = repo;
 
-    /*---------------- Lectura ----------------*/
-    public Task<IEnumerable<Accion>> ListAsync()       => _repo.GetAllAsync();
-    public Task<Accion?>             GetAsync (int id) => _repo.GetByIdAsync(id);
-
-    /*---------------- Creación ---------------*/
-    public async Task<Accion?> CreateAsync(AccionCreateDto dto)
+    public async Task<IReadOnlyList<AccionReadDto>> GetAllAsync(CancellationToken ct)
     {
-        if (dto is null || string.IsNullOrWhiteSpace(dto.Nombre)) return null;
-        var e = new Accion { Nombre = dto.Nombre.Trim() };
-        await _repo.AddAsync(e);
-        return e;
+        var list = await _repo.GetAllAsync(ct);
+        return list.Select(Map).ToList();
     }
 
-    /*---------------- Patch ------------------*/
-    public async Task<bool> PatchAsync(int id, AccionPatchDto dto)
+    public async Task<AccionReadDto?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var e = await _repo.GetByIdAsync(id);
-        if (e is null) return false;
-
-        if (!string.IsNullOrWhiteSpace(dto.Nombre))
-            e.Nombre = dto.Nombre.Trim();
-
-        e.UpdatedAt = DateTime.UtcNow;
-        await _repo.UpdateAsync(e);
-        return true;
+        var a = await _repo.GetByIdAsync(id, ct);
+        return a is null ? null : Map(a);
     }
 
-    /*---------------- Delete -----------------*/
-    public Task<bool> DeleteAsync(int id) => _repo.DeleteAsync(id);
+    public async Task<int> CreateAsync(AccionCreateDto dto, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Nombre))
+            throw new ArgumentException("Nombre es requerido.");
+
+        var a = new Accion { Nombre = dto.Nombre.Trim() };
+        var id = await _repo.CreateAsync(a, ct);
+        return id;
+    }
+
+    public async Task<bool> PatchAsync(int id, AccionPatchDto dto, CancellationToken ct)
+    {
+        if (dto.Nombre is string s && string.IsNullOrWhiteSpace(s))
+            throw new ArgumentException("Si se envía Nombre, no puede ser vacío.");
+
+        return await _repo.PatchAsync(id, dto.Nombre?.Trim(), ct);
+    }
+
+    private static AccionReadDto Map(Accion a) => new()
+    {
+        Id        = a.IdAccion,
+        Nombre    = a.Nombre,
+        CreatedAt = a.CreatedAt,
+        UpdatedAt = a.UpdatedAt
+    };
 }

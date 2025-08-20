@@ -1,51 +1,48 @@
 // ============================================================================
-// File: Api/Controllers/AccionesController.cs
-// Endpoints REST para Acciones: GET, GET/{id}, POST, PATCH/{id}, DELETE/{id}.
+// Controllers/AccionesController.cs
 // ============================================================================
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TT_OTRI.Application.DTOs;
 using TT_OTRI.Application.Services;
-using TT_OTRI.Domain;
 
-namespace TT_OTRI.Api.Controllers;
+namespace TT_OTRI.Controllers;
 
-/// <summary>Controlador HTTP para Acciones del sistema.</summary>
 [ApiController]
 [Route("api/acciones")]
-public class AccionesController : ControllerBase
+[Authorize] // Protegido por la política por defecto (AppJwtOnly)
+public sealed class AccionesController : ControllerBase
 {
     private readonly AccionService _svc;
+
     public AccionesController(AccionService svc) => _svc = svc;
 
-    /// <summary>GET /api/acciones</summary>
+    /// <summary>Lista todas las acciones.</summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Accion>>> GetAll()
-        => Ok(await _svc.ListAsync());
+    public async Task<ActionResult<IReadOnlyList<AccionReadDto>>> GetAll(CancellationToken ct)
+        => Ok(await _svc.GetAllAsync(ct));
 
-    /// <summary>GET /api/acciones/{id}</summary>
+    /// <summary>Obtiene una acción por ID.</summary>
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
-        => await _svc.GetAsync(id) is { } e ? Ok(e) : NotFound();
-
-    /// <summary>POST /api/acciones</summary>
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] AccionCreateDto dto)
+    public async Task<ActionResult<AccionReadDto>> GetById(int id, CancellationToken ct)
     {
-        var e = await _svc.CreateAsync(dto);
-        return e is null
-            ? BadRequest("Nombre requerido.")
-            : CreatedAtAction(nameof(GetById), new { id = e.Id }, e);
+        var dto = await _svc.GetByIdAsync(id, ct);
+        return dto is null ? NotFound() : Ok(dto);
     }
 
-    /// <summary>PATCH /api/acciones/{id}</summary>
-    [HttpPatch("{id:int}")]
-    public async Task<IActionResult> Patch(int id, [FromBody] AccionPatchDto dto)
-        => dto is null
-            ? BadRequest()
-            : await _svc.PatchAsync(id, dto) ? NoContent() : NotFound();
+    /// <summary>Crea una nueva acción.</summary>
+    [HttpPost]
+    public async Task<ActionResult> Create([FromBody] AccionCreateDto body, CancellationToken ct)
+    {
+        var newId = await _svc.CreateAsync(body, ct);
+        return CreatedAtAction(nameof(GetById), new { id = newId }, new { id = newId });
+    }
 
-    /// <summary>DELETE /api/acciones/{id}</summary>
-    [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
-        => await _svc.DeleteAsync(id) ? NoContent() : NotFound();
+    /// <summary>PATCH parcial de una acción (solo nombre).</summary>
+    [HttpPatch("{id:int}")]
+    public async Task<ActionResult> Patch(int id, [FromBody] AccionPatchDto body, CancellationToken ct)
+    {
+        var ok = await _svc.PatchAsync(id, body, ct);
+        return ok ? NoContent() : NotFound();
+    }
 }
