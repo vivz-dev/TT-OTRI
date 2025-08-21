@@ -1,4 +1,3 @@
-// src/pages/Resoluciones/componentes/Scroll.jsx
 import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import './Scroll.css';
 import DatosTecnologia from './DatosTecnologia';
@@ -8,6 +7,7 @@ import {
   useSaveTechnologyStepMutation,
   useFinalizeTechnologyWithProtectionsMutation,
 } from '../../../services/technologyOrchestratorApi';
+import * as Buttons from '../../layouts/buttons/buttons_index';
 
 const Scroll = forwardRef((_, ref) => {
   const [step, setStep] = useState(0);
@@ -29,11 +29,12 @@ const Scroll = forwardRef((_, ref) => {
     if (typeof gotoStep === 'number') setStep(gotoStep);
   };
 
-  /* ------------------------- Guardar (borrador) ------------------------- */
   const saveDraft = async () => {
     try {
       const draft = datosRef.current?.getDraftPayload?.() || {};
+      console.log('[UI] saveDraft payload =>', draft);
       const res = await saveTechStep({ currentId: technologyId, data: draft }).unwrap();
+      console.log('[UI] saveDraft response =>', res);
       if (res?.id && !technologyId) setTechnologyId(res.id);
       setShowWarning(false);
       return { ok: true, id: res?.id ?? technologyId };
@@ -49,22 +50,46 @@ const Scroll = forwardRef((_, ref) => {
     }
   };
 
-  /* --------------------------- Siguiente paso --------------------------- */
   const handleNext = async () => {
     if (step === 0) {
       const isValid = datosRef.current?.validate();
+      console.log('[UI] handleNext step=0 => canAdvance:', !!isValid);
       if (!isValid) {
         showWarn('Completa: nombre, descripción, tipo(s), archivo(s), fecha(s) (si aplica) y cotitularidad.', 0);
         return;
       }
       const hayCotitularidad = datosRef.current?.getCotitularidad();
       const payload = datosRef.current?.getPayload?.();
+
+      console.log('[UI] handleNext step=0 payload =>', {
+        titulo: payload?.titulo,
+        descripcion: payload?.descripcion,
+        estado: payload?.estado,
+        cotitularidad: payload?.cotitularidad,
+        tiposSeleccionados: payload?.tiposSeleccionados,
+        fechasConcesion: payload?.fechasConcesion,
+        archivosPorProteccion: payload?.archivosPorProteccion
+          ? Object.fromEntries(
+              Object.entries(payload.archivosPorProteccion).map(([k, arr]) => [
+                k,
+                (arr || []).map((a, i) => ({
+                  idx: i,
+                  hasFile: !!(a?.file || (typeof File !== 'undefined' && a instanceof File)),
+                  fileName: (a?.file?.name) || (typeof File !== 'undefined' && a instanceof File ? a.name : null),
+                  fecha: a?.fecha ?? null,
+                })),
+              ])
+            )
+          : {},
+      });
+
       try {
-        // Guardamos incompleto (completed:false) hasta terminar todo el flujo
         const res = await saveTechStep({
           currentId: technologyId,
           data: { ...payload, completed: false },
         }).unwrap();
+
+        console.log('[UI] handleNext step=0 saveTechStep response =>', res);
 
         const id = res?.id ?? technologyId;
         if (!id) throw new Error('La API no devolvió id de tecnología.');
@@ -87,6 +112,7 @@ const Scroll = forwardRef((_, ref) => {
 
     if (step === 1) {
       const okCot = cotiRef.current?.validate();
+      console.log('[UI] handleNext step=1 => canAdvance:', !!okCot);
       if (!okCot) {
         showWarn('Cotitularidad incompleta. Verifica filas y que el total sume 100%.', 1);
         return;
@@ -102,11 +128,11 @@ const Scroll = forwardRef((_, ref) => {
     else setStep((p) => Math.max(p - 1, 0));
   };
 
-  /* ---------------------------- Finalizar ------------------------------- */
   useImperativeHandle(ref, () => ({
     saveDraft,
     finalize: async () => {
       const okDatos = datosRef.current?.validate();
+      console.log('[UI] finalize => step0 valid:', !!okDatos);
       if (!okDatos) {
         showWarn('Datos de tecnología incompletos. Revisa campos del paso 0.', 0);
         return { ok: false, message: 'Datos incompletos' };
@@ -115,6 +141,7 @@ const Scroll = forwardRef((_, ref) => {
       const hayCot = datosRef.current?.getCotitularidad();
       if (hayCot) {
         const okCot = cotiRef.current?.validate();
+        console.log('[UI] finalize => step1 valid:', !!okCot);
         if (!okCot) {
           showWarn('Cotitularidad incompleta. Asegura que el total sume 100%.', 1);
           return { ok: false, message: 'Cotitularidad incompleta' };
@@ -122,6 +149,7 @@ const Scroll = forwardRef((_, ref) => {
       }
 
       const okDist = distRef.current?.validate?.() ?? true;
+      console.log('[UI] finalize => step2 valid:', !!okDist);
       if (!okDist) {
         showWarn('Acuerdo de distribución incompleto.', 2);
         return { ok: false, message: 'Acuerdo de distribución incompleto' };
@@ -130,7 +158,6 @@ const Scroll = forwardRef((_, ref) => {
       try {
         const techPayload = datosRef.current.getPayload();
 
-        // 🔎 Log detallado para depurar antes de mandar
         console.log('[UI] Finalize payload =>', {
           titulo: techPayload?.titulo,
           descripcion: techPayload?.descripcion,
@@ -138,12 +165,27 @@ const Scroll = forwardRef((_, ref) => {
           cotitularidad: techPayload?.cotitularidad,
           tiposSeleccionados: techPayload?.tiposSeleccionados,
           fechasConcesion: techPayload?.fechasConcesion,
+          archivosPorProteccion: techPayload?.archivosPorProteccion
+            ? Object.fromEntries(
+                Object.entries(techPayload.archivosPorProteccion).map(([k, arr]) => [
+                  k,
+                  (arr || []).map((a, i) => ({
+                    idx: i,
+                    hasFile: !!(a?.file || (typeof File !== 'undefined' && a instanceof File)),
+                    fileName: (a?.file?.name) || (typeof File !== 'undefined' && a instanceof File ? a.name : null),
+                    fecha: a?.fecha ?? null,
+                  })),
+                ])
+              )
+            : {},
         });
 
         const res = await finalizeTech({
           currentId: technologyId,
           data: techPayload,
         }).unwrap();
+
+        console.log('[UI] finalize response =>', res);
 
         const idTec = res?.id ?? technologyId;
         if (!idTec) throw new Error('No se obtuvo id de tecnología al finalizar.');
@@ -166,7 +208,6 @@ const Scroll = forwardRef((_, ref) => {
 
   return (
     <section className="step-scroll">
-      {/* Barra de pasos */}
       <nav className="stepper">
         {[0, 1, 2].map((idx) => {
           const state =
@@ -179,7 +220,6 @@ const Scroll = forwardRef((_, ref) => {
         })}
       </nav>
 
-      {/* Contenido */}
       <div className="step-content">
         <div style={{ display: step === 0 ? 'block' : 'none' }}>
           <DatosTecnologia ref={datosRef} />
@@ -194,13 +234,10 @@ const Scroll = forwardRef((_, ref) => {
         </div>
       </div>
 
-      {/* Navegación entre pasos */}
       <div className="step-actions">
         {step > 0 ? (
           <div className="left">
-            <button type="button" className="btn-secondary" onClick={handlePrev}>
-              Anterior
-            </button>
+            <Buttons.RegisterButton onClick={handlePrev} text={"Anterior"} />
           </div>
         ) : (
           <span />
@@ -208,16 +245,13 @@ const Scroll = forwardRef((_, ref) => {
 
         {step < 2 ? (
           <div className="right">
-            <button type="button" className="btn-primary" onClick={handleNext}>
-              Siguiente
-            </button>
+            <Buttons.RegisterButton onClick={handleNext} text={"Siguiente"} />
           </div>
         ) : (
           <span />
         )}
       </div>
 
-      {/* Mensaje de validación */}
       {showWarning && <div className="warning-msg">{warningText}</div>}
     </section>
   );

@@ -12,18 +12,39 @@ const isValidPdf = (file) =>
   (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) &&
   file.size <= MAX_BYTES;
 
+/**
+ * Props:
+ *  - entityId, tipoEntidad, idColeccion, descripcion, overrides...
+ *  - onUploaded(result.archivo)
+ *  - onBeforeUpload()
+ *  - onError(err)
+ *
+ *  - 🔥 NUEVO: callbacks de selección para integrarse con el padre:
+ *    - onSelectedChange({ file, hasFile:boolean, fileName:string|null })
+ *    - onChange(file)            // compat
+ *    - onFileChange(file)        // compat
+ *
+ *  - buttonLabel (si agregas botón externo)
+ */
 const AdjuntarArchivo = forwardRef(({
   entityId: entityIdProp = null,
+  tipoEntidad = 'R', // por defecto 'R' (resoluciones)
   idColeccion = 155,
   descripcion = 'Adjuntar documento en PDF.',
   onUploaded,
   onBeforeUpload,
   onError,
   buttonLabel = 'Registrar archivo',
-  // overrides opcionales:
+
+  // overrides opcionales
   overrideTitulo,
   overrideNombresAutor,
   overrideIdentificacion,
+
+  // 🔥 NUEVOS callbacks para reflejar selección hacia arriba
+  onSelectedChange,
+  onChange,
+  onFileChange,
 }, ref) => {
   const [file, setFile] = useState(null);
   const [entityIdState, setEntityIdState] = useState(entityIdProp);
@@ -43,10 +64,27 @@ const AdjuntarArchivo = forwardRef(({
     return '';
   }, [file, entityId]);
 
+  const emitSelection = (f) => {
+    const payload = { file: f ?? null, hasFile: !!f, fileName: f?.name ?? null };
+    // Callback nuevo primero
+    if (typeof onSelectedChange === 'function') {
+      try { onSelectedChange(payload); } catch {}
+    }
+    // Alias de compatibilidad (TipoProteccion puede usar estos)
+    if (typeof onChange === 'function') {
+      try { onChange(f ?? null); } catch {}
+    }
+    if (typeof onFileChange === 'function') {
+      try { onFileChange(f ?? null); } catch {}
+    }
+  };
+
   const handleSelect = (e) => {
     setLocalError('');
     setSuccessMsg('');
-    setFile(e.target.files?.[0] ?? null);
+    const f = e.target.files?.[0] ?? null;
+    setFile(f);
+    emitSelection(f); // 🔥 notifica hacia arriba
   };
 
   const doUpload = async (eid) => {
@@ -58,6 +96,7 @@ const AdjuntarArchivo = forwardRef(({
     try {
       console.groupCollapsed('[AdjuntarArchivo] Preparando orquestación');
       console.log('entityId:', eid);
+      console.log('tipoEntidad:', tipoEntidad);
       console.log('overrides:', {
         overrideTitulo,
         overrideNombresAutor,
@@ -69,6 +108,7 @@ const AdjuntarArchivo = forwardRef(({
         file,
         meta: {
           idTEntidad: eid,
+          tipoEntidad,
           idColeccion,
           titulo: overrideTitulo,
           nombresAutor: overrideNombresAutor,
@@ -79,6 +119,7 @@ const AdjuntarArchivo = forwardRef(({
       });
 
       if (onUploaded) onUploaded(result.archivo);
+      setSuccessMsg('Archivo registrado correctamente.');
       return result;
     } catch (err) {
       console.error('[AdjuntarArchivo] Error al registrar archivo:', err);
@@ -109,7 +150,6 @@ const AdjuntarArchivo = forwardRef(({
         if (!silent) console.info('[AdjuntarArchivo] No hay archivo seleccionado. Subida omitida.');
         return null;
       }
-      // Si falta entityId, omitimos también (caso guardado sin id)
       if (eid == null || eid === '') {
         if (!silent) console.info('[AdjuntarArchivo] No hay id de entidad. Subida omitida.');
         return null;
@@ -133,7 +173,7 @@ const AdjuntarArchivo = forwardRef(({
       <label className="archivo-input">
         <input
           type="file"
-          accept=".pdf"
+          accept="application/pdf,.pdf"
           onChange={handleSelect}
           hidden
           disabled={loading}
@@ -152,8 +192,16 @@ const AdjuntarArchivo = forwardRef(({
           Límite de 6MB.<br />
           Tipos de archivos permitidos: <span className="pdf-tag">.pdf</span>
         </p>
+        {validMsg && file && <p className="valid-msg">{validMsg}</p>}
+        {localError && <p className="error-msg">{localError}</p>}
+        {successMsg && <p className="success-msg">{successMsg}</p>}
       </div>
-      
+
+      {/* Si quieres un botón para subir inmediatamente desde aquí, descomenta:
+      <button type="button" onClick={handleUploadClick} disabled={loading || !!validMsg}>
+        {buttonLabel}
+      </button>
+      */}
     </div>
   );
 });

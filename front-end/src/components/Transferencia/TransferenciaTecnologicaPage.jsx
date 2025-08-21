@@ -9,6 +9,7 @@ import './TransferenciaTecnologicaPage.css';
 import React, { useState, useMemo } from 'react';
 import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetTransfersQuery } from '../../services/transfersApi';
+import CompletarRegistro from '../layouts/components/CompletarRegistro';
 
 const fmtFecha = (iso) =>
   iso ? new Date(iso).toLocaleDateString('es-EC', {
@@ -20,9 +21,24 @@ const fmtFecha = (iso) =>
 const TransferenciaTecnologicaPage = ({ onRegister }) => {
   const { data = [], isLoading, error } = useGetTransfersQuery();
 
+  const [selectedItem, setSelectedItem] = useState(null);
+      const [showModal, setShowModal] = useState(false);
+  
+    const handleCardClick = (item) => {
+      setSelectedItem(item);
+      setShowModal(true);
+    };
+  
+    const handleCloseModal = () => {
+      setShowModal(false);
+      setSelectedItem(null);
+    };
+
   // Mapeo de datos reales de la API al formato que usa CardScroll
   const transfersData = useMemo(() => {
     if (!data || data.length === 0) return [];
+
+    console.log('TransferenciaTecnologicaPage data:', data, 'error:', error);
     
     return data.map((transfer) => ({
       id: transfer.id,
@@ -31,11 +47,10 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
       titulo: transfer.titulo || 'Sin título',
       descripcion: transfer.descripcion || 'Sin descripción',
       fecha: fmtFecha(transfer.fechaInicio),
-      usuario: transfer.usuarioRegistrador || 'Usuario no disponible',
+      usuario: transfer.idPersona || 'Usuario no disponible',
     }));
   }, [data]);
 
-  console.log('Transferencias cargadas:', transfersData);
 
   const [filter, setFilter] = useState('todas');
   const [searchText, setSearch] = useState('');
@@ -66,10 +81,18 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
       />
 
       <CardScroll
-        filter={filter}
-        searchText={searchText}
-        dummyData={transfersData}
-      />
+                      filter={filter}
+                      searchText={searchText}
+                      dummyData={transfersData}
+                      onCardClick={handleCardClick}
+                    />
+
+      {showModal && (
+                    <CompletarRegistro
+                      item={selectedItem}
+                      onClose={handleCloseModal}
+                    />
+            )}
     </main>
   );
 };

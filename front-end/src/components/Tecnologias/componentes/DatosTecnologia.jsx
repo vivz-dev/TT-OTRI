@@ -1,12 +1,14 @@
-// src/pages/Resoluciones/componentes/DatosTecnologia.jsx
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react';
 import TipoProteccion from './TipoProteccion';
 import './DatosTecnologia.css';
 import * as Components from '../../layouts/components/index';
 import { useGetTiposQuery } from '../../../services/tiposProteccionApi';
 
-const ID_NO_APLICA = 8; // según el backend
-const ESTADO_DISPONIBLE = 'D'; // <- Clave esperada por el backend
+const ID_NO_APLICA = 8;
+const ESTADO_DISPONIBLE = 'D';
+
+const isNonEmpty = (s) => typeof s === 'string' && s.trim().length > 0;
+const isValidISODate = (v) => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 const DatosTecnologia = forwardRef((_, ref) => {
   const [nombre, setNombre] = useState('');
@@ -29,28 +31,60 @@ const DatosTecnologia = forwardRef((_, ref) => {
 
   const { data: tiposData, isLoading, isError } = useGetTiposQuery();
 
-  const handleFechaChange = (tipoId, fecha) => setFechasConcesion((p) => ({ ...p, [tipoId]: fecha }));
+  useEffect(() => {
+    console.log('[Step0] State snapshot =>', {
+      nombre, descripcion, tiposProteccion, cotitularidad,
+      archivosPorProteccion: mapArchivosToLog(archivosPorProteccion),
+      fechasConcesion
+    });
+  }, [nombre, descripcion, tiposProteccion, cotitularidad, archivosPorProteccion, fechasConcesion]);
+
+  const mapArchivosToLog = (mapa) =>
+    Object.fromEntries(
+      Object.entries(mapa).map(([k, arr]) => [
+        k,
+        (arr || []).map((a, i) => {
+          const f = (typeof File !== 'undefined' && a instanceof File) ? a : a?.file;
+          return {
+            idx: i,
+            hasFile: !!f,
+            fileName: f?.name ?? null,
+            fecha: a?.fecha ?? null,
+          };
+        }),
+      ])
+    );
+
+  const handleFechaChange = (tipoId, fecha) =>
+    setFechasConcesion((p) => ({ ...p, [tipoId]: fecha }));
+
   const handleCheckboxChange = (tipoId, checked) => {
     setTiposProteccion((prev) => {
       const nuevo = { ...prev };
+
       if (tipoId === ID_NO_APLICA) {
-        // Limpiar otros tipos y archivos cuando se selecciona "No aplica"
         if (checked) {
           setArchivosPorProteccion({});
           setFechasConcesion({});
+          console.log('[Step0] Seleccionó solo "No aplica" (8). Limpiando archivos/fechas.');
           return { [ID_NO_APLICA]: true };
-        } else {
-          return {};
         }
-      } else {
-        if (checked) {
-          delete nuevo[ID_NO_APLICA];
-          nuevo[tipoId] = true;
-        } else {
-          delete nuevo[tipoId];
-        }
-        return nuevo;
+        return {};
       }
+
+      if (checked) {
+        delete nuevo[ID_NO_APLICA];
+        nuevo[tipoId] = true;
+      } else {
+        delete nuevo[tipoId];
+        setArchivosPorProteccion((p) => {
+          const n = { ...p }; delete n[tipoId]; return n;
+        });
+        setFechasConcesion((p) => {
+          const n = { ...p }; delete n[tipoId]; return n;
+        });
+      }
+      return nuevo;
     });
   };
 
@@ -59,48 +93,90 @@ const DatosTecnologia = forwardRef((_, ref) => {
 
   useImperativeHandle(ref, () => ({
     validate: () => {
-      const nombreOk = nombre.trim() !== '';
-      const descripcionOk = descripcion.trim() !== '';
       const seleccionoAlMenosUno = Object.keys(tiposProteccion).length > 0;
       const seleccionoNoAplica = !!tiposProteccion[ID_NO_APLICA];
 
-      // No validar archivos ni fechas si seleccionó "No aplica"
-      let archivosOk = seleccionoNoAplica ? true : Object.keys(tiposProteccion).every(id => {
-        const archivos = archivosPorProteccion[id] || [];
-        return archivos.length > 0 && archivos.some(a => a.file);
-      });
-
-      let fechasOk = seleccionoNoAplica ? true : Object.keys(tiposProteccion).every(id => {
-        return fechasConcesion[id];
-      });
-
+      const nombreOk = isNonEmpty(nombre);
+      const descripcionOk = isNonEmpty(descripcion);
       const cotitularidadOk = cotitularidad !== null;
 
+      const tiposSeleccionados = Object.keys(tiposProteccion).map(Number).filter(id => id !== ID_NO_APLICA);
+
+      // Detectar presencia de archivo de forma muy tolerante
+      const hasSomeFile = (it) => {
+        if (!it) return false;
+        if (typeof File !== 'undefined' && it instanceof File) return true;
+        if (it.file) {
+          if (typeof File !== 'undefined' && it.file instanceof File) return true;
+          if (it.file?.name) return true;
+        }
+        // Algunos componentes envían { name, size, type, ... } sin ser File real
+        if (it.name && typeof it.size !== 'undefined') return true;
+        return false;
+      };
+
+      const tiposSinArchivo = !seleccionoNoAplica
+        ? tiposSeleccionados.filter((id) => {
+            const arr = archivosPorProteccion[id] || [];
+            return arr.length === 0 || !arr.some(hasSomeFile);
+          })
+        : [];
+
+      const tiposSinFecha = !seleccionoNoAplica
+        ? tiposSeleccionados.filter((id) => !isValidISODate(fechasConcesion[id]))
+        : [];
+
+      const archivosOk = seleccionoNoAplica ? true : tiposSinArchivo.length === 0;
+      const fechasOk   = seleccionoNoAplica ? true : tiposSinFecha.length === 0;
+
+      const canAdvance = nombreOk && descripcionOk && seleccionoAlMenosUno && archivosOk && cotitularidadOk && fechasOk;
+
+      console.log('[Step0] Validate =>', {
+        nombreOk, descripcionOk, seleccionoAlMenosUno, seleccionoNoAplica,
+        archivosOk, fechasOk, cotitularidadOk,
+        tiposSinArchivo, tiposSinFecha,
+        canAdvance,
+        payloadPreview: {
+          idUsuario: 1,
+          titulo: nombre,
+          descripcion,
+          estado: ESTADO_DISPONIBLE,
+          completed: false,
+          cotitularidad: !!cotitularidad,
+          tiposSeleccionados: Object.keys(tiposProteccion).map(Number),
+          fechasConcesion,
+          archivosPorProteccion: mapArchivosToLog(archivosPorProteccion),
+        }
+      });
 
       setErrores({
-        nombre: !nombreOk, descripcion: !descripcionOk,
-        tipoProteccion: !seleccionoAlMenosUno, archivos: !archivosOk,
-        cotitularidad: !cotitularidadOk, fecha: !fechasOk,
+        nombre: !nombreOk,
+        descripcion: !descripcionOk,
+        tipoProteccion: !seleccionoAlMenosUno,
+        archivos: !archivosOk,
+        cotitularidad: !cotitularidadOk,
+        fecha: !fechasOk,
       });
 
       setShake({
-        nombre: !nombreOk, descripcion: !descripcionOk,
-        tipoProteccion: !seleccionoAlMenosUno, archivos: !archivosOk,
+        nombre: !nombreOk,
+        descripcion: !descripcionOk,
+        tipoProteccion: !seleccionoAlMenosUno,
+        archivos: !archivosOk,
         cotitularidad: !cotitularidadOk,
       });
       setTimeout(() => setShake({ nombre:false, descripcion:false, tipoProteccion:false, archivos:false, cotitularidad:false }), 500);
 
-      return nombreOk && descripcionOk && seleccionoAlMenosUno && archivosOk && cotitularidadOk && fechasOk;
+      return canAdvance;
     },
 
     getCotitularidad: () => cotitularidad,
 
-    // Payload completo para crear/actualizar
     getPayload: () => ({
       idUsuario: 1, // TODO: reemplazar por IdPersona real desde token
       titulo: nombre,
       descripcion,
-      estado: ESTADO_DISPONIBLE, // <- enviar clave 'D'
+      estado: ESTADO_DISPONIBLE,
       completed: false,
       cotitularidad: !!cotitularidad,
       tiposSeleccionados: Object.keys(tiposProteccion).map(Number),
@@ -108,11 +184,10 @@ const DatosTecnologia = forwardRef((_, ref) => {
       fechasConcesion,
     }),
 
-    // Borrador parcial (solo lo que haya)
     getDraftPayload: () => ({
       titulo: nombre || '',
       descripcion: descripcion || '',
-      estado: ESTADO_DISPONIBLE, // <- también en el borrador
+      estado: ESTADO_DISPONIBLE,
       cotitularidad: cotitularidad ?? null,
       tiposSeleccionados: Object.keys(tiposProteccion).map(Number),
       archivosPorProteccion,

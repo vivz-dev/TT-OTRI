@@ -183,7 +183,8 @@ textarea.error {
 }
 /* Rojo para estados negativos */
 .card-status.no-disponible,
-.card-status.derogada {
+.card-status.derogada,
+.card-status.finalizada {
   background-color:  var(--bullet-rojo-bg);
   color: var(--bullet-rojo-text);
 }

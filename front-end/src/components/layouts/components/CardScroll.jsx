@@ -1,13 +1,8 @@
-/**
- * CardScroll
- * ----------
- * Filtra y delega a Card.  Ya no envía `number` ni `subtitulo`.
- */
 import React from 'react';
 import './CardScroll.css';
 import Card from './Card';
 
-const CardScroll = ({ filter, searchText, dummyData }) => {
+const CardScroll = ({ filter, searchText, dummyData, onCardClick }) => {
   const search = searchText.toLowerCase();
 
   const filtered = dummyData.filter((item) => {
@@ -37,6 +32,7 @@ const CardScroll = ({ filter, searchText, dummyData }) => {
           textoRegistrado={item.usuario}
           protecciones={item.protecciones}
           completed={item.completed}
+          onClick={onCardClick ? () => onCardClick(item) : undefined}
         />
       ))}
     </div>

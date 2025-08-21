@@ -45,6 +45,7 @@ const RegistrarResolucionFooter = forwardRef(({
         <AdjuntarArchivo
           ref={adjRef}
           entityId={resolutionId}
+          tipoEntidad="R" // Pasamos 'R' para resoluciones
           descripcion="La resolución firmada y aprobada."
           onUploaded={(res) => {
             console.log('[Footer] Archivo registrado OK:', res);

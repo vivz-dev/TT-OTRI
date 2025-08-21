@@ -144,11 +144,11 @@ export async function uploadAndSaveArchivo({
   // 2) Guardar en tu backend (usando urlDspace) + incluir TipoEntidad
   const createDto = buildCreateArchivoDto({
     nombre: truncate(name, 100),                     // DDL: VARGRAPHIC 100
-    formato: truncate((mime || ext || "pdf"), 10),   // DDL: VARGRAPHIC 10
+    formato: "pdf",   // DDL: VARGRAPHIC 10
     tamano: size,
-    url: truncate(urlDspace || "", 200),             // DDL: VARGRAPHIC 200
+    url: truncate(urlDescargaServicio || "", 200),             // DDL: VARGRAPHIC 200
     idTEntidad,
-    tipoEntidad: truncate(tipoEntidad ?? "", 2),     // DDL: VARCHAR 2
+    tipoEntidad: truncate(tipoEntidad ?? null, 2),     // DDL: VARCHAR 2
   });
 
   console.groupCollapsed("[ORQ-ARCHIVOS] Backend payload (JSON)");
