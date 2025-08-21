@@ -1,4 +1,3 @@
-// src/pages/Resoluciones/components/Cotitularidad.jsx
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import './Cotitularidad.css';
 import { AdjuntarArchivo } from '../../layouts/components';
@@ -9,7 +8,7 @@ const NUEVA_FILA = {
   institucion: '',
   ruc: '',
   correo: '',
-  representante: { nombre: '', username: '', telefono: '', porcentaje: '', correo: '' },
+  representante: { nombre: '', username: '', porcentaje: '', correo: '' },
   esEspol: false,
 };
 
@@ -19,7 +18,7 @@ const Cotitularidad = forwardRef((_, ref) => {
       institucion: 'ESPOL',
       ruc: '0967486931',
       correo: 'espol@espol.edu.ec',
-      representante: { nombre: '', username: '', telefono: '', porcentaje: '', correo: '' },
+      representante: { nombre: '', username: '', porcentaje: '', correo: '' },
       esEspol: true,
     },
   ]);
@@ -59,7 +58,6 @@ const Cotitularidad = forwardRef((_, ref) => {
   const handleSelectUsuarioESPOL = (usuario, idx) => {
     updateFila(idx, 'representante.nombre', usuario.nombre);
     updateFila(idx, 'representante.username', usuario.username);
-    updateFila(idx, 'representante.telefono', usuario.telefono);
     updateFila(idx, 'representante.correo', `${usuario.username}@espol.edu.ec`);
   };
 
@@ -135,16 +133,15 @@ const Cotitularidad = forwardRef((_, ref) => {
             <thead>
               <tr className="th-group">
                 <th colSpan={3}>Institución cotitular</th>
-                <th colSpan={4}>Representante cotitular</th>
+                <th colSpan={3}>Representante cotitular</th>
                 <th />
               </tr>
               <tr>
                 <th>Nombre</th>
                 <th>RUC</th>
-                <th>Correo</th>
-                <th>Nombre</th>
                 <th>Correo institucional</th>
-                <th>Teléfono de contacto</th>
+                <th>Nombre</th>
+                <th>Correo</th>
                 <th>% titularidad</th>
                 <th></th>
               </tr>
@@ -175,7 +172,7 @@ const Cotitularidad = forwardRef((_, ref) => {
 
             <tfoot>
               <tr>
-                <td colSpan={7} className="tfoot-label">Total de cotitularidad</td>
+                <td colSpan={6} className="tfoot-label">Total de cotitularidad</td>
                 <td className="tfoot-badge">
                   <span className={`badge-total ${totalOk ? 'ok' : 'warn'}`}>{total}%</span>
                 </td>

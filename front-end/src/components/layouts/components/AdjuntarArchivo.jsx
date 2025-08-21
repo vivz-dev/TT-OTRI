@@ -60,7 +60,6 @@ const AdjuntarArchivo = forwardRef(({
   const validMsg = useMemo(() => {
     if (!file) return 'Selecciona un archivo PDF (máx 6 MB).';
     if (!isValidPdf(file)) return 'Archivo inválido: debe ser PDF y pesar ≤ 6 MB.';
-    if (entityId == null || entityId === '') return 'Falta el id de la entidad. Guarda/crea primero para obtenerlo.';
     return '';
   }, [file, entityId]);
 
@@ -192,7 +191,7 @@ const AdjuntarArchivo = forwardRef(({
           Límite de 6MB.<br />
           Tipos de archivos permitidos: <span className="pdf-tag">.pdf</span>
         </p>
-        {validMsg && file && <p className="valid-msg">{validMsg}</p>}
+        {validMsg && file && <p className="error-msg">{validMsg}</p>}
         {localError && <p className="error-msg">{localError}</p>}
         {successMsg && <p className="success-msg">{successMsg}</p>}
       </div>

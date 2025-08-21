@@ -82,8 +82,8 @@ const GeneralCotitularRow = ({
       />
     </td>
 
-    <td>
-      {/* Teléfono: sólo dígitos, 7–10 */}
+    {/* <td>
+
       <Components.GrowTextArea
         id={`rep-tel-${index}`}
         name="RepresentanteTelefono"
@@ -94,7 +94,7 @@ const GeneralCotitularRow = ({
         rows={1}
         kind="phone"
       />
-    </td>
+    </td> */}
 
     <td>
       <input

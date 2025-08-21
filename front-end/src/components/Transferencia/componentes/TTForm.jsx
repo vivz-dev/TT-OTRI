@@ -1,4 +1,3 @@
-// TTForm.jsx
 import React, {
   useState,
   forwardRef,
@@ -10,6 +9,10 @@ import "./TTForm.css";
 import { useGetResolutionsQuery } from "../../../services/resolutionsApi";
 import { useGetTechnologiesQuery } from "../../../services/technologiesApi";
 import * as Components from "../../layouts/components/index";
+
+import DatosTransferencia from "./DatosTransferencia";
+import AsociarResolucionTecnologia from "./AsociarResolucionTecnologia";
+import DatosEspol from "./DatosEspol";
 
 const fmtFecha = (iso) =>
   iso
@@ -47,8 +50,8 @@ const TTForm = forwardRef(({ shakeError }, ref) => {
         label: `${r.codigo} — ${r.descripcion?.slice(0, 60) || ""}`,
         estado: r.estado,
         completed: r.completed,
-        titulo: r.codigo || "Sin título", // ← título = número/código
-        descripcion: r.descripcion || "Sin descripción", // ← cuerpo = descripción
+        titulo: r.codigo || "Sin título",
+        descripcion: r.descripcion || "Sin descripción",
         fecha: fmtFecha(r.fechaResolucion),
         usuario: r.idUsuario || "Usuario no disponible",
       }));
@@ -250,289 +253,56 @@ const TTForm = forwardRef(({ shakeError }, ref) => {
 
   return (
     <>
-      {/* ======= BLOQUE: Información básica ======= */}
-      <div className="formulario">
-        <div className="form-header">
-          <h1 className="titulo-principal-form">
-            Datos de la transferencia tecnológica
-          </h1>
-          <p className="subtitulo-form">Complete la información sobre la TT.</p>
-        </div>
+      <DatosTransferencia
+        fechaInicio={fechaInicio}
+        setFechaInicio={setFechaInicio}
+        fechaFin={fechaFin}
+        setFechaFin={setFechaFin}
+        tipo={tipo}
+        setTipo={setTipo}
+        nombre={nombre}
+        setNombre={setNombre}
+        monto={monto}
+        setMonto={setMonto}
+        pago={pago}
+        setPago={setPago}
+        errores={errores}
+        shakeError={shakeError}
+      />
 
-        <div className="form-fieldsets">
-          <div className={`form-card ${shakeError ? "error shake" : ""}`}>
-            <h2 className="form-card-header">Información básica</h2>
+      <AsociarResolucionTecnologia
+        idResolucion={idResolucion}
+        setIdResolucion={setIdResolucion}
+        idTecnologia={idTecnologia}
+        setIdTecnologia={setIdTecnologia}
+        resolucionesOpts={resolucionesOpts}
+        techOpts={techOpts}
+        isLoading={isLoading}
+        error={error}
+        isTechLoading={isTechLoading}
+        techError={techError}
+        selectedRes={selectedRes}
+        selectedTec={selectedTec}
+        errores={errores}
+        shakeError={shakeError}
+      />
 
-            <div className="input-row">
-              <label className="input-group">
-                Fecha de inicio de Transferencia Tecnológica
-                <input
-                  type="date"
-                  value={fechaInicio}
-                  onChange={(e) => setFechaInicio(e.target.value)}
-                  className={errores.fechaInicio ? "error" : ""}
-                />
-              </label>
-
-              <label className="input-group">
-                Fecha de fin de Transferencia Tecnológica
-                <input
-                  type="date"
-                  value={fechaFin}
-                  onChange={(e) => setFechaFin(e.target.value)}
-                  className={errores.fechaFin ? "error" : ""}
-                />
-              </label>
-            </div>
-
-            <div className="input-row">
-              <label className="input-group">
-                Tipo
-                <input
-                  type="text"
-                  value={tipo}
-                  onChange={(e) => setTipo(e.target.value)}
-                  className={errores.tipo ? "error" : ""}
-                  placeholder="Tipo de TT (p. ej. Licencia, Spin-off, Know-how)…"
-                />
-              </label>
-
-              <label className="input-group">
-                Nombre
-                <input
-                  type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  className={errores.nombre ? "error" : ""}
-                  placeholder="Nombre o referencia comercial…"
-                />
-              </label>
-            </div>
-
-            <div className="input-row">
-              <label className="input-group">
-                Monto
-                <input
-                  type="number"
-                  value={monto}
-                  onChange={(e) => setMonto(e.target.value)}
-                  className={errores.monto ? "error" : ""}
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                />
-              </label>
-
-              <label className="input-group checkbox-group">
-                <input
-                  type="checkbox"
-                  checked={pago}
-                  onChange={(e) => setPago(e.target.checked)}
-                />
-                <span>¿Lleva Pago?</span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ======= BLOQUE: Asociación resolución / tecnología ======= */}
-      <div className="formulario">
-        <div className="form-header">
-          <h1 className="titulo-principal-form">
-            Asociación de resolución y tecnología
-          </h1>
-          <p className="subtitulo-form">
-            Selecciona la resolución y la tecnología/know-how relacionadas a
-            esta transferencia.
-          </p>
-        </div>
-
-        <div className="form-fieldsets">
-          <div className={`form-card ${shakeError ? "error shake" : ""}`}>
-            <h2 className="form-card-header">Seleccionar Resolución</h2>
-            <div className="input-row">
-              <label className="input-group">
-                Resolución
-                <select
-                  value={idResolucion}
-                  onChange={(e) => setIdResolucion(e.target.value)}
-                  className={errores.idResolucion ? "error" : ""}
-                  disabled={isLoading || error}
-                >
-                  <option value="">
-                    {isLoading
-                      ? "Cargando resoluciones…"
-                      : error
-                      ? "Error al cargar"
-                      : "Seleccione…"}
-                  </option>
-                  {resolucionesOpts.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            {
-              selectedRes && (
-                <Components.Card
-                  key={selectedRes.id}
-                  titulo={selectedRes.codigo}
-                  estado={selectedRes.estado}
-                  descripcion={selectedRes.descripcion}
-                  textoFecha={selectedRes.fecha}
-                  textoRegistrado={selectedRes.usuario}
-                  completed={selectedRes.completed}
-                />
-              )
-            }
-          </div>
-
-          <div className={`form-card ${shakeError ? "error shake" : ""}`}>
-            <h2 className="form-card-header">Seleccionar Tecnología</h2>
-            <div className="input-row">
-              <label className="input-group">
-                Tecnología
-                <select
-                  value={idTecnologia}
-                  onChange={(e) => setIdTecnologia(e.target.value)}
-                  className={errores.idTecnologia ? "error" : ""}
-                  disabled={isTechLoading || techError}
-                >
-                  <option value="">
-                    {isTechLoading
-                      ? "Cargando tecnologías…"
-                      : techError
-                      ? "Error al cargar"
-                      : "Seleccione…"}
-                  </option>
-                  {techOpts.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            {selectedTec && (
-              <Components.Card
-                key={selectedTec.id}
-                titulo={selectedTec.codigo}
-                estado={selectedTec.estado}
-                descripcion={selectedTec.descripcion}
-                textoFecha={selectedTec.fecha}
-                textoRegistrado={selectedTec.usuario}
-                completed={selectedTec.completed}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ======= BLOQUE: Datos de la ESPOL y del administrador ======= */}
-      <div className="formulario">
-        <div className="form-header">
-          <h1 className="titulo-principal-form">Datos de la ESPOL</h1>
-          <p className="subtitulo-form">
-            Información institucional y del administrador del contrato.
-          </p>
-        </div>
-
-        <div className="form-fieldsets">
-          <div className={`form-card ${shakeError ? "error shake" : ""}`}>
-            <h2 className="form-card-header">Datos de la ESPOL</h2>
-
-            <div className="input-row">
-              <label className="input-group">
-                Nombre
-                <input
-                  type="text"
-                  value={espolNombre}
-                  onChange={(e) => setEspolNombre(e.target.value)}
-                  className={errores.espolNombre ? "error" : ""}
-                  placeholder="Escuela Superior Politécnica del Litoral"
-                />
-              </label>
-
-              <label className="input-group">
-                RUC
-                <input
-                  type="text"
-                  value={espolRuc}
-                  onChange={(e) => setEspolRuc(e.target.value)}
-                  className={errores.espolRuc ? "error" : ""}
-                  placeholder="###########"
-                />
-              </label>
-            </div>
-
-            <div className="input-row">
-              <label className="input-group" style={{ flex: 1 }}>
-                Correo
-                <input
-                  type="email"
-                  value={espolCorreo}
-                  onChange={(e) => setEspolCorreo(e.target.value)}
-                  className={errores.espolCorreo ? "error" : ""}
-                  placeholder="contacto@espol.edu.ec"
-                />
-              </label>
-            </div>
-          </div>
-
-          <div className={`form-card ${shakeError ? "error shake" : ""}`}>
-            <h2 className="form-card-header">
-              Datos del administrador de contrato
-            </h2>
-
-            <div className="input-row">
-              <label
-                className="input-group"
-                style={{ display: "flex", alignItems: "flex-end" }}
-              >
-                Correo
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    type="text"
-                    value={adminCorreoLocal}
-                    onChange={(e) => setAdminCorreoLocal(e.target.value)}
-                    className={errores.adminCorreoLocal ? "error" : ""}
-                    placeholder="usuario"
-                    style={{ width: 220 }}
-                  />
-                  <span className="suffix">{adminCorreoDominio}</span>
-                </div>
-              </label>
-
-              <label className="input-group">
-                Nombre
-                <input
-                  type="text"
-                  value={adminNombre}
-                  readOnly
-                  className="italic"
-                />
-              </label>
-            </div>
-
-            <div className="input-row">
-              <div className="input-group">
-                <label>Cédula</label>
-                <div className="value-big">{adminCedula}</div>
-              </div>
-
-              <div className="input-group">
-                <label>Número de contacto</label>
-                <div className="value-big">{adminContacto}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <DatosEspol
+        espolNombre={espolNombre}
+        setEspolNombre={setEspolNombre}
+        espolRuc={espolRuc}
+        setEspolRuc={setEspolRuc}
+        espolCorreo={espolCorreo}
+        setEspolCorreo={setEspolCorreo}
+        adminCorreoLocal={adminCorreoLocal}
+        setAdminCorreoLocal={setAdminCorreoLocal}
+        adminCorreoDominio={adminCorreoDominio}
+        adminNombre={adminNombre}
+        adminCedula={adminCedula}
+        adminContacto={adminContacto}
+        errores={errores}
+        shakeError={shakeError}
+      />
     </>
   );
 });
