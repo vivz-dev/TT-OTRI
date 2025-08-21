@@ -8,16 +8,6 @@ const Scroll = () => {
       <div className="formulario-section">
         <TTForm/>
       </div>
-
-      <div className="distribuciones-section">
-        {/* {distribuciones.map((_, idx) => (
-          <Distribucion
-            key={idx}
-            ref={distribRefs.current[idx]}
-            onDelete={() => removeDistribucion(idx)}
-          />
-        ))} */}
-      </div>
     </section>
   );
 };

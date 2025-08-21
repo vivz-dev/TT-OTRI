@@ -5,7 +5,7 @@ import { resolutionsApi } from './services/resolutionsApi';
 import { transfersApi } from './services/transfersApi';
 import { technologiesApi } from './services/technologiesApi';
 import { tiposProteccionApi } from './services/tiposProteccionApi';
-import { cotitularesApi } from './services/cotitularesApi';
+import { cotitularApi } from './services/cotitularApi';
 import { benefInstitucionesApi } from './services/benefInstitucionesApi';
 import { resolucionOrchestratorApi } from './services/resolucionOrchestratorApi';
 import { archivosApi } from './services/storage/archivosApi';
@@ -20,6 +20,8 @@ import { cotitularidadTecnoApi } from './services/cotitularidadTecnoApi';
 import { technologyOrchestratorApi } from './services/technologyOrchestratorApi';
 import { tipoTransferenciaApi } from './services/tipoTransferenciaApi';
 
+import { cotitularidadOrchestratorApi } from './services/cotitularidadOrchestratorApi';
+
 
 export const store = configureStore({
   reducer: {
@@ -28,7 +30,7 @@ export const store = configureStore({
     [resolutionsApi.reducerPath]: resolutionsApi.reducer,
     [transfersApi.reducerPath]: transfersApi.reducer,
     [tiposProteccionApi.reducerPath]: tiposProteccionApi.reducer,
-    [cotitularesApi.reducerPath]: cotitularesApi.reducer,
+    [cotitularApi.reducerPath]: cotitularApi.reducer,
     [benefInstitucionesApi.reducerPath]: benefInstitucionesApi.reducer,
     [archivosApi.reducerPath]: archivosApi.reducer,
     [distribBenefInstitucionesApi.reducerPath]: distribBenefInstitucionesApi.reducer,
@@ -41,6 +43,7 @@ export const store = configureStore({
     [cotitularidadTecnoApi.reducerPath]: cotitularidadTecnoApi.reducer,
     [technologyOrchestratorApi.reducerPath]: technologyOrchestratorApi.reducer,
     [tipoTransferenciaApi.reducerPath]: tipoTransferenciaApi.reducer,
+    [cotitularidadOrchestratorApi.reducerPath]: cotitularidadOrchestratorApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -49,7 +52,7 @@ export const store = configureStore({
       .concat(resolutionsApi.middleware)
       .concat(transfersApi.middleware)
       .concat(tiposProteccionApi.middleware)
-      .concat(cotitularesApi.middleware)
+      .concat(cotitularApi.middleware)
       .concat(benefInstitucionesApi.middleware)
       .concat(archivosApi.middleware)
       .concat(distribBenefInstitucionesApi.middleware)
@@ -63,4 +66,6 @@ export const store = configureStore({
 
       .concat(technologyOrchestratorApi.middleware)
       .concat(tipoTransferenciaApi.middleware)
+
+      .concat(cotitularidadOrchestratorApi.middleware)
 });

@@ -85,13 +85,9 @@ const CorreoESPOLInput = ({ onSelectUsuario }) => {
       const reqId = ++lastReqIdRef.current;
       setLoading(true);
       try {
-        console.log('[CorreoESPOLInput] Query usado para búsqueda:', value);
         const items = await searchUsersByEmail(value, MAX_RESULTS);
 
         if (reqId !== lastReqIdRef.current) return;
-
-        console.log('[CorreoESPOLInput] Raw service items:', items);
-
         const mapped = (Array.isArray(items) ? items : [])
           .map((it) => {
             const email = extractEmailFromItem(it);

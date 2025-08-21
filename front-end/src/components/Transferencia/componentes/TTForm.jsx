@@ -31,6 +31,7 @@ const TTForm = forwardRef(({ shakeError }, ref) => {
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
   const [pago, setPago] = useState(false);
+  const [datosAdicionales, setDatosAdicionales] = useState({});
 
   /* ---------------- Selecciones ---------------- */
   const [idResolucion, setIdResolucion] = useState("");
@@ -268,6 +269,8 @@ const TTForm = forwardRef(({ shakeError }, ref) => {
         setPago={setPago}
         errores={errores}
         shakeError={shakeError}
+        datosAdicionales={datosAdicionales}
+        setDatosAdicionales={setDatosAdicionales}
       />
 
       <AsociarResolucionTecnologia

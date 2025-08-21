@@ -1,134 +1,105 @@
+/* -------- Contenedor -------- */
+.table-wrap{
+  display:block;
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;      /* scroll horizontal si no cabe */
+  overflow-y:visible;   /* deja salir el dropdown hacia abajo */
+}
+
+/* Si tu .card o .coti-card tenía overflow oculto, libéralo */
+.coti-card{
+  overflow:visible;
+}
+
+.th-group{
+  text-align: center;
+  background: var(--esp-azul-institucional);
+  color: white;
+  font-weight: bold;
+}
 /* -------- Tabla -------- */
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
+.coti-table{
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:.95rem;
+  color:#0f172a;
+  min-width: 960px;     /* 🔑 evita que “salte” del contenedor; usa scroll dentro de .table-wrap */
+  table-layout:fixed;   /* 🔑 columnas respetan sus anchos */
+  position:relative;
 }
 
-.coti-table {
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 0.95rem;
-  color: #0f172a;
-  table-layout: fixed; /* 🔹 clave: asegura ancho fijo */
-  width: 100%;
+/* Anchos por columna (suman 100%) */
+.coti-table th:nth-child(1), .coti-table td:nth-child(1){ width:14%; }
+.coti-table th:nth-child(2), .coti-table td:nth-child(2){ width:12%; }
+.coti-table th:nth-child(3), .coti-table td:nth-child(3){ width:18%; }
+.coti-table th:nth-child(4), .coti-table td:nth-child(4){ width:16%; }
+.coti-table th:nth-child(5), .coti-table td:nth-child(5){ width:30%; } /* correo */
+.coti-table th:nth-child(6), .coti-table td:nth-child(6){ width:6%;  text-align:center; }
+.coti-table th:nth-child(7), .coti-table td:nth-child(7){ width:4%;  text-align:center; padding-left:0; padding-right:0; }
+
+/* Permite que el dropdown se vea sin ensanchar la tabla */
+.coti-table th,
+.coti-table td{
+  overflow:visible;     /* antes hidden -> recortaba el dropdown */
+  word-wrap:break-word; /* no romper el layout con textos largos */
 }
 
-/* 🔒 Anchos por columna (7 columnas) */
-.coti-table th:nth-child(1),
-.coti-table td:nth-child(1) { width: 16%; } /* Nombre institución */
-.coti-table th:nth-child(2),
-.coti-table td:nth-child(2) { width: 12%; } /* RUC */
-.coti-table th:nth-child(3),
-.coti-table td:nth-child(3) { width: 16%; } /* Correo institucional */
-.coti-table th:nth-child(4),
-.coti-table td:nth-child(4) { width: 20%; } /* Nombre representante */
-.coti-table th:nth-child(5),
-.coti-table td:nth-child(5) { width: 20%; } /* Correo (usuario + dominio) */
-.coti-table th:nth-child(6),
-.coti-table td:nth-child(6) { width: 11%; text-align: center; } /* % titularidad */
-
-/* 🧹 Columna icono / acciones */
-.coti-table th:nth-child(7),
-.coti-table td:nth-child(7) {
-  width: 5%;
-  max-width: 48px;
-  min-width: 44px;
-  text-align: center;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-/* Evitar empujes */
-.coti-table th, .coti-table td { overflow: hidden; }
-.coti-table input, .coti-table textarea { max-width: 100%; }
-
-/* Encabezados */
-.coti-table thead th {
-  font-weight: 700;
-  background: #f3f4f6;
-  color: #111827;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 14px 12px;
-}
-
-.coti-table thead .th-group th {
-  text-align: left;
-  font-size: .95rem;
-  background: #eef2ff;
-  color: #1e3a8a;
-}
-
-/* Celdas */
-.coti-table tbody td {
-  border-bottom: 1px solid #eef2f7;
-  padding: 12px 10px;
-  vertical-align: middle;
-  text-align: left;
-}
-
-.coti-table tbody tr:nth-child(odd) td {
-  background: #fafafa;
-}
-
-.coti-table tfoot td {
-  padding: 14px 12px;
-  border-top: 1px solid #e5e7eb;
-  background: #fafafa;
-}
-
-/* Bordes redondeados externos */
-.coti-table thead tr:first-child th:first-child { border-top-left-radius: 8px; }
-.coti-table thead tr:first-child th:last-child  { border-top-right-radius: 8px; }
-.coti-table tfoot tr:last-child td:first-child  { border-bottom-left-radius: 8px; }
-.coti-table tfoot tr:last-child td:last-child   { border-bottom-right-radius: 8px; }
-
-/* Inputs en tabla */
+/* Inputs en celdas (no fuerzan el ancho de la columna) */
 .coti-table input,
-.coti-table textarea {
-  width: 100%;
-  box-sizing: border-box;
-  font: inherit;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  outline: none;
+.coti-table textarea{
+  box-sizing:border-box;
+  font:inherit;
+  padding:10px 12px;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  outline:none;
+  max-width:100%;       /* evita que el padding empuje la celda */
 }
 
-.coti-table input:focus,
-.coti-table textarea:focus {
-  border-color: #1e3a8a;
-  box-shadow: 0 0 0 3px rgba(30,58,138,.12);
+/* Celda de correo con dropdown */
+.cell-correo{ position:relative; overflow:visible; z-index:0; }
+
+/* Input usuario de correo: tamaño fijo sin romper layout */
+.correo-institucional-wrapper{
+  display:grid;
+  grid-template-columns: 220px auto; /* input fijo + dominio flexible */
+  align-items:center;
+  gap:8px;
+}
+.correo-user-input{
+  width:220px;
+  min-width:220px;
+  max-width:220px;
+}
+.correo-dominio{
+  padding:10px 12px;
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  color:#475569;
+  white-space:nowrap;
 }
 
-/* Correo institucional (usuario + dominio fijo) */
-.correo-institucional-wrapper {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 8px;
-}
-.correo-dominio {
-  padding: 10px 12px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  color: #475569;
-  white-space: nowrap;
-}
-
-/* Columna % */
-.input-porcentaje {
-  width: 88px;
-  text-align: center;
+/* Menú del dropdown (por encima de la tabla, no afecta layout) */
+.correo-menu,
+.cell-correo .autocomplete-menu,
+.cell-correo .dropdown,
+.cell-correo .select-menu{
+  position:absolute;
+  top:calc(100% + 4px);
+  left:0;
+  min-width:220px;
+  max-height:240px;
+  overflow:auto;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.08);
+  z-index:50;
 }
 
-/* Tfoot */
-.tfoot-label {
-  text-align: right;
-  font-weight: 700;
-  color: #111827;
-}
-.tfoot-badge {
-  text-align: left;
-}
+/* % titularidad */
+.input-porcentaje{ width:88px; text-align:center; }
+
+/* Encabezados / tfoot como ya tenías */

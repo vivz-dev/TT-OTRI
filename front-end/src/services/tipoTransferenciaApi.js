@@ -29,7 +29,7 @@ export const tipoTransferenciaApi = createApi({
   tagTypes: ['TipoTransferencia'],
   endpoints: (builder) => ({
     getTiposTransferencia: builder.query({
-      query: () => '/api/tipos-transferencia',
+      query: () => '/tipos-transferencia',
       providesTags: (result) =>
         result
           ? [
@@ -40,13 +40,13 @@ export const tipoTransferenciaApi = createApi({
     }),
 
     getTipoTransferenciaById: builder.query({
-      query: (id) => `/api/tipos-transferencia/${id}`,
+      query: (id) => `/tipos-transferencia/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'TipoTransferencia', id }],
     }),
 
     createTipoTransferencia: builder.mutation({
       query: (body) => ({
-        url: '/api/tipos-transferencia',
+        url: '/tipos-transferencia',
         method: 'POST',
         body,
       }),
@@ -55,7 +55,7 @@ export const tipoTransferenciaApi = createApi({
 
     updateTipoTransferencia: builder.mutation({
       query: ({ id, ...body }) => ({
-        url: `/api/tipos-transferencia/${id}`,
+        url: `/tipos-transferencia/${id}`,
         method: 'PATCH',
         body,
       }),

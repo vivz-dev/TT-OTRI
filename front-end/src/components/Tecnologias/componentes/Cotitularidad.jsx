@@ -3,6 +3,8 @@ import './Cotitularidad.css';
 import { AdjuntarArchivo } from '../../layouts/components';
 import ESPOLCotitularRow from './ESPOLCotitularRow';
 import GeneralCotitularRow from './GeneralCotitularRow';
+import * as Buttons from "../../layouts/buttons/buttons_index";
+
 
 const NUEVA_FILA = {
   institucion: '',
@@ -98,31 +100,33 @@ const Cotitularidad = forwardRef((_, ref) => {
     );
   };
 
-  useImperativeHandle(ref, () => ({
-    validate: () => {
-      const totalOk = validarTotal(filas);
-      const filasOk = filas.every(filaCompleta);
-      const archivoOk = !!archivoAcuerdo;
-      return totalOk && filasOk && archivoOk;
-    },
-    getPayload: () => ({
-      filas: filas.map(f => ({
-        esEspol: f.esEspol,
-        institucion: f.institucion,
-        ruc: f.ruc,
-        correo: f.correo,
-        representante: { ...f.representante },
-      })),
-      acuerdoArchivoNombre: archivoAcuerdo?.name ?? null,
-      acuerdoArchivoTipo: archivoAcuerdo?.type ?? null,
-    }),
-  }));
+useImperativeHandle(ref, () => ({
+  validate: () => {
+    const totalOk = validarTotal(filas);
+    const filasOk = filas.every(filaCompleta);
+    const archivoOk = !!archivoAcuerdo; // requerido para tu validación
+    return totalOk && filasOk && archivoOk;
+  },
+  getPayload: () => ({
+    filas: filas.map(f => ({
+      esEspol: f.esEspol,
+      institucion: f.institucion,
+      ruc: f.ruc,
+      correo: f.correo,
+      representante: { ...f.representante },
+    })),
+    acuerdoArchivoNombre: archivoAcuerdo?.name ?? null,
+    acuerdoArchivoTipo: archivoAcuerdo?.type ?? null,
+    acuerdoArchivoFile: archivoAcuerdo ?? null, 
+  }),
+}));
+
 
   const total = filas.reduce((acc, f) => acc + Number(f.representante.porcentaje || 0), 0);
   const totalOk = total === 100;
 
   return (
-    <form className="coti-form">
+    <form className="coti-form" onSubmit={(e) => e.preventDefault()}>
       <div className="form-header">
         <h1 className="titulo-principal-form">Cotitularidad</h1>
         <p className="subtitulo-form">Complete los datos de las instituciones cotitulares según el acuerdo.</p>
@@ -185,9 +189,10 @@ const Cotitularidad = forwardRef((_, ref) => {
           <p className="coti-error">El total debe sumar exactamente 100%.</p>
         )}
 
-        <button type="button" className="btn-outline" onClick={handleAddFila}>
-          <span className="plus">+</span> Añadir cotitular
-        </button>
+        <Buttons.RegisterButton
+          onClick={handleAddFila}
+          text={' +  Añadir cotitular'}
+        />
       </section>
 
       <section className="card attach-card">

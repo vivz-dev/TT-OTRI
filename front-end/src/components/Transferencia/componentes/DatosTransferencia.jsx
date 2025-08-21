@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useGetTiposTransferenciaQuery } from "../../../services/tipoTransferenciaApi";
+import Licencia from "./Licencia";
+import Cesion from "./Cesion";
 
 const DatosTransferencia = ({
   fechaInicio,
@@ -13,9 +16,51 @@ const DatosTransferencia = ({
   setMonto,
   pago,
   setPago,
+  datosAdicionales,
+  setDatosAdicionales,
   errores,
   shakeError,
 }) => {
+  const [tiposOptions, setTiposOptions] = useState([]);
+  const { data: tiposData, error, isLoading } = useGetTiposTransferenciaQuery();
+
+  // Filtrar solo los tipos con ID 1 y 2
+  useEffect(() => {
+    if (tiposData && tiposData.length > 0) {
+      const filteredTipos = tiposData.filter(
+        (tipoItem) => tipoItem.id === 1 || tipoItem.id === 2
+      );
+      setTiposOptions(filteredTipos);
+      
+      console.log("Tipos cargados:", tiposData);
+      console.log("Tipos filtrados (IDs 1 y 2):", filteredTipos);
+    }
+  }, [tiposData]);
+
+  // Determinar qué componente mostrar basado en el ID del tipo seleccionado
+  const renderComponenteAdicional = () => {
+    console.log("Tipo seleccionado ID:", tipo);
+    
+    if (tipo === "1") {
+      return (
+        <Licencia
+          datos={datosAdicionales}
+          setDatos={setDatosAdicionales}
+          errores={errores}
+        />
+      );
+    } else if (tipo === "2") {
+      return (
+        <Cesion
+          datos={datosAdicionales}
+          setDatos={setDatosAdicionales}
+          errores={errores}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="formulario">
       <div className="form-header">
@@ -54,13 +99,20 @@ const DatosTransferencia = ({
           <div className="input-row">
             <label className="input-group">
               Tipo
-              <input
-                type="text"
+              <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
                 className={errores.tipo ? "error" : ""}
-                placeholder="Tipo de TT (p. ej. Licencia, Spin-off, Know-how)…"
-              />
+              >
+                <option value="">Seleccione un tipo</option>
+                {isLoading && <option value="">Cargando tipos...</option>}
+                {error && <option value="">Error al cargar tipos</option>}
+                {tiposOptions.map((tipoItem) => (
+                  <option key={tipoItem.id} value={tipoItem.id}>
+                    {tipoItem.nombre}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="input-group">
@@ -70,7 +122,7 @@ const DatosTransferencia = ({
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
                 className={errores.nombre ? "error" : ""}
-                placeholder="Nombre o referencia comercial…"
+                placeholder="Nombre o Título Referencial"
               />
             </label>
           </div>
@@ -99,6 +151,9 @@ const DatosTransferencia = ({
             </label>
           </div>
         </div>
+
+        {/* Mostrar componente específico según el ID del tipo seleccionado */}
+        {renderComponenteAdicional()}
       </div>
     </div>
   );
