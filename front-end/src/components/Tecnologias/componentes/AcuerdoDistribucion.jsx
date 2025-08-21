@@ -1,4 +1,3 @@
-// src/pages/Resoluciones/components/AcuerdoDistribucion.jsx
 import React, { useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import { PlusCircle, AlertCircle } from 'lucide-react';
 import './AcuerdoDistribucion.css';
@@ -7,39 +6,8 @@ import { AdjuntarArchivo } from '../../layouts/components';
 import AutorInventorRow from './AutorInventorRow';
 
 /* ============================
-   MOCKS (puedes moverlos a otro archivo)
+   Lista de unidades (puedes moverlo a un catálogo)
    ============================ */
-const MOCK_ESPOL_USERS = [
-  {
-    username: 'vivvfalcon',
-    correo: 'vivvfalcon@espol.edu.ec',
-    identificacion: '0999999999',
-    nombreCompleto: 'Viviana Yolanda Vera Falconí',
-    unidad: 'FIEC',
-  },
-  {
-    username: 'jperez',
-    correo: 'jperez@espol.edu.ec',
-    identificacion: '0912345678',
-    nombreCompleto: 'Juan Pérez González',
-    unidad: 'FIMCP',
-  },
-  {
-    username: 'mlopez',
-    correo: 'mlopez@espol.edu.ec',
-    identificacion: '0987654321',
-    nombreCompleto: 'María López Andrade',
-    unidad: 'FCNM',
-  },
-  {
-    username: 'rquiroz',
-    correo: 'rquiroz@espol.edu.ec',
-    identificacion: '0970010020',
-    nombreCompleto: 'Roberto Quiroz',
-    unidad: 'ESPAE',
-  },
-];
-
 const MOCK_UNIDADES = ['FIEC','FIMCP','FCNM','ESPAE','FICT','FCSH','CELEX','COPSI','VICINN','OTRI'];
 
 /* ============================
@@ -60,7 +28,7 @@ const AcuerdoDistribucion = forwardRef((_, ref) => {
   const [errorAutor, setErrorAutor] = useState(false);
   const [errorUnidad, setErrorUnidad] = useState(false);
 
-  // Totales (cada columna debe sumar 100)
+  // Totales
   const totalAutor = useMemo(
     () => filas.reduce((acc, f) => acc + Number(f.pctAutor || 0), 0),
     [filas]
@@ -118,8 +86,7 @@ const AcuerdoDistribucion = forwardRef((_, ref) => {
 
   const filaCompleta = (f) =>
     reqText(f.correo) &&
-    reqText(f.identificacion) &&
-    reqText(f.nombreCompleto) &&
+    reqText(f.nombreCompleto) &&    // ← el nombre ahora viene de la búsqueda por correo
     reqText(f.unidad) &&
     pctOk(f.pctAutor) &&
     pctOk(f.pctUnidad);
@@ -181,7 +148,6 @@ const AcuerdoDistribucion = forwardRef((_, ref) => {
                   key={idx}
                   index={idx}
                   data={fila}
-                  users={MOCK_ESPOL_USERS}
                   unidades={MOCK_UNIDADES}
                   onChange={(patch) => updateFila(idx, patch)}
                   onDelete={() => removeFila(idx)}

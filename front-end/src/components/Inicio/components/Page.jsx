@@ -6,13 +6,7 @@ import TecnologiasPage from "../../Tecnologias/TecnologiasPage";
 import RegistrarTecnologiasPage from "../../Tecnologias/RegistrarTecnologiasPage";
 import TransferenciaTecnologicaPage from "../../Transferencia/TransferenciaTecnologicaPage";
 import RegistrarTransferenciaPage from "../../Transferencia/RegistrarTransferenciaPage";
-
-const PagosPage = () => (
-  <div className="page-content">
-    <h2>Pagos</h2>
-    <p>Contenido de pagos...</p>
-  </div>
-);
+import PagosPage from "../../Pagos/PagosPage";
 
 const RolesPermisosPage = () => (
   <div className="page-content">

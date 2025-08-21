@@ -27,9 +27,6 @@ const TecnologiasPage = ({ onRegister }) => {
     setSelectedItem(null);
   };
 
-
-
-
   const filterOptions = [
     { label: 'Todas', value: 'todas' },
     { label: 'Disponibles', value: 'Disponible' },
@@ -53,7 +50,7 @@ const TecnologiasPage = ({ onRegister }) => {
       completed: tecnologia.completed || false,
       titulo: tecnologia.titulo || 'Sin título',
       descripcion: tecnologia.descripcion || 'Sin descripción',
-      fecha: fmtFecha(tecnologia.fechaInicio),
+      fecha: fmtFecha(tecnologia.fecha),
       usuario: tecnologia.usuario || 'Usuario no disponible',
     }));
   }, [data]);

@@ -29,7 +29,7 @@
 }
 
 .acuerdo-table {
-  width: 100%;
+  /* width: 100%; */
   border-collapse: separate;
   border-spacing: 0;
   font-size: .95rem;
@@ -52,9 +52,9 @@
 .acuerdo-table th:nth-child(6) { width: 10%; text-align: center; } /* % Unidad */
 .acuerdo-table td:nth-child(7),
 .acuerdo-table th:nth-child(7) {
-  width: 5%;
+  /* width: 5%;
   max-width: 48px;
-  min-width: 44px;
+  min-width: 44px; */
   text-align: center;
   padding-left: 0;
   padding-right: 0;

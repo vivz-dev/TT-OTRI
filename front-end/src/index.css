@@ -177,7 +177,8 @@ textarea.error {
 
 /* Verde para estados positivos */
 .card-status.disponible,
-.card-status.vigente {
+.card-status.vigente,
+.card-status.realizado {
   background-color: var(--bullet-verde-bg);  /* Fondo verde claro */
   color: var(--bullet-verde-text);             /* Texto verde oscuro */
 }

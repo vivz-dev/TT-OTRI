@@ -115,6 +115,57 @@ const DatosEspol = ({
           </div>
         </div>
       </div>
+
+      <div className="form-fieldsets">
+
+        <div className={`form-card ${shakeError ? "error shake" : ""}`}>
+          <h2 className="form-card-header">
+            Datos del receptor de tecnología<em>/know-how</em>
+          </h2>
+
+          <div className="input-row">
+            <label
+              className="input-group"
+              style={{ display: "flex", alignItems: "flex-end" }}
+            >
+              Correo
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  value={adminCorreoLocal}
+                  onChange={(e) => setAdminCorreoLocal(e.target.value)}
+                  className={errores.adminCorreoLocal ? "error" : ""}
+                  placeholder="usuario"
+                  style={{ width: 220 }}
+                />
+                <span className="suffix">{adminCorreoDominio}</span>
+              </div>
+            </label>
+
+            <label className="input-group">
+              Nombre
+              <input
+                type="text"
+                value={adminNombre}
+                readOnly
+                className="italic"
+              />
+            </label>
+          </div>
+
+          <div className="input-row">
+            <div className="input-group">
+              <label>Cédula</label>
+              <div className="value-big">{adminCedula}</div>
+            </div>
+
+            <div className="input-group">
+              <label>Número de contacto</label>
+              <div className="value-big">{adminContacto}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

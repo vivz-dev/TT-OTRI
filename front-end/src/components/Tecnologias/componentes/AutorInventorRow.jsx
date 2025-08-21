@@ -1,37 +1,74 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
+import { searchUsersByEmail } from '../../../services/espolUsers'; // ⬅️ usamos tu servicio real
 
-const AutorInventorRow = ({ index, data, users, unidades, onChange, onDelete }) => {
+const AutorInventorRow = ({ index, data, unidades, onChange, onDelete }) => {
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [remoteUsers, setRemoteUsers] = useState([]);
   const boxRef = useRef(null);
 
-  // 🔎 Armar listado: si no hay query, mostrar top N usuarios
+  // Query = lo que escribe el usuario en el input de correo
   const query = (data.correo || '').toLowerCase().trim();
-  const options = useMemo(() => {
-    const list = !query
-      ? users
-      : users.filter(
-          u =>
-            u.correo.toLowerCase().includes(query) ||
-            u.username.toLowerCase().includes(query) ||
-            u.nombreCompleto.toLowerCase().includes(query)
-        );
-    return list.slice(0, 8);
-  }, [query, users]);
 
-  // ✅ Elegir usuario → autocompletar campos
+  // Buscar remoto (debounced) cuando cambie la query
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    const run = async () => {
+      if (!query || query.length < 2) {
+        if (active) setRemoteUsers([]);
+        return;
+      }
+      try {
+        setLoading(true);
+        const items = await searchUsersByEmail(query, 5); // ⬅️ máximo 5 coincidencias
+        if (!active) return;
+        // Normalizar por si el backend trae campos distintos
+        const list = Array.isArray(items) ? items : (items?.items || []);
+        const mapped = list.map((u, i) => ({
+          key: u.correo || u.email || `user-${i}`,
+          correo: String(u.correo || u.email || '').trim(),
+          username: String(u.username || '').trim(),
+          nombreCompleto: String(u.nombreCompleto || u.nombre || '').trim(),
+        })).filter(u => u.correo && u.nombreCompleto);
+        setRemoteUsers(mapped.slice(0, 5));
+      } catch (e) {
+        if (active) setRemoteUsers([]);
+        // opcional: console.warn('searchUsersByEmail error:', e);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    const id = setTimeout(run, 200); // debounce 200ms
+    return () => {
+      active = false;
+      clearTimeout(id);
+      controller.abort();
+    };
+  }, [query]);
+
+  // Sugerencias (si no hay query no mostramos nada para evitar ruido)
+  const options = useMemo(() => {
+    if (!query) return [];
+    return remoteUsers;
+  }, [query, remoteUsers]);
+
+  // Elegir usuario → SOLO llena el nombre completo (según pedido)
+  // (Dejamos unidad e identificación como están. El correo se queda con lo que escribió el usuario,
+  // pero si quieres que tome el del seleccionado, descomenta el patch de correo.)
   const chooseUser = (u) => {
     onChange({
-      correo: u.correo,
-      identificacion: u.identificacion,
+      // correo: u.correo, // <- si quieres forzar el correo al seleccionado, descomenta esto
       nombreCompleto: u.nombreCompleto,
-      unidad: u.unidad,
     });
     setOpen(false);
   };
 
-  // 🧠 Cerrar dropdown si clic fuera
+  // Cerrar dropdown si clic fuera
   useEffect(() => {
     const onDocClick = (e) => {
       if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false);
@@ -79,27 +116,32 @@ const AutorInventorRow = ({ index, data, users, unidades, onChange, onDelete }) 
             aria-autocomplete="list"
             role="combobox"
           />
-          {open && options.length > 0 && (
+          {open && (loading || options.length > 0) && (
             <ul
               id={`correo-list-${index}`}
               className="sug-list"
               role="listbox"
               aria-label="Sugerencias de correo institucional"
             >
-              {options.map((u, i) => (
+              {loading && (
+                <li className="loading">Buscando…</li>
+              )}
+              {!loading && options.map((u, i) => (
                 <li
-                  key={u.correo}
+                  key={u.key}
                   role="option"
                   aria-selected={i === cursor}
                   className={i === cursor ? 'active' : ''}
                   onMouseDown={() => chooseUser(u)}  /* evita blur antes del click */
+                  title={u.nombreCompleto}
                 >
                   <div className="sug-top">{u.correo}</div>
-                  <div className="sug-sub">
-                    {u.nombreCompleto} — {u.unidad}
-                  </div>
+                  <div className="sug-sub">{u.nombreCompleto}</div>
                 </li>
               ))}
+              {!loading && options.length === 0 && query && (
+                <li className="empty">Sin coincidencias</li>
+              )}
             </ul>
           )}
         </div>
@@ -110,12 +152,12 @@ const AutorInventorRow = ({ index, data, users, unidades, onChange, onDelete }) 
         <input type="text" value={data.identificacion} readOnly />
       </td>
 
-      {/* Nombre completo (solo lectura) */}
+      {/* Nombre completo (solo lectura; lo autocompletamos desde la búsqueda) */}
       <td>
         <input type="text" value={data.nombreCompleto} readOnly />
       </td>
 
-      {/* Unidad/Centro (editable) */}
+      {/* Unidad/Centro (editable, ya no se llena automáticamente) */}
       <td>
         <select
           value={data.unidad || ''}

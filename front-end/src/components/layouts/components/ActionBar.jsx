@@ -3,7 +3,10 @@ import './ActionBar.css'
 import * as Buttons from '../buttons/buttons_index';
 import SearchInput from './SearchInput'; // asegúrate que la ruta sea correcta
 
-const ActionBar = ({ filter, setFilter, options, searchText, setSearchText, onRegister }) =>{
+const ActionBar = ({
+  filter, setFilter,
+  options = [],
+  searchText, setSearchText, onRegister }) =>{
 
 return (
   <section className="action-bar">
@@ -16,17 +19,20 @@ return (
 
 
     {/* Filtros */}
-    <div className='button-section'>
-        {options.map(({ label, value }) => (
-          <Buttons.FilterButton
-            key={value}
-            label={label}
-            value={value}
-            active={filter}
-            onClick={setFilter}
-          />
-        ))}
-    </div>
+    {options && options.length > 0 && (
+  <div className='button-section'>
+    {options.map(({ label, value }) => (
+      <Buttons.FilterButton
+        key={value}
+        label={label}
+        value={value}
+        active={filter}
+        onClick={setFilter}
+      />
+    ))}
+  </div>
+)}
+
 
     {/* Botón Registrar */}
     <Buttons.RegisterButton onClick={onRegister} text={"+ Registrar"}/>
