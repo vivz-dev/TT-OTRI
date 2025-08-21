@@ -3,9 +3,11 @@ import TipoProteccion from './TipoProteccion';
 import './DatosTecnologia.css';
 import * as Components from '../../layouts/components/index';
 import { useGetTiposQuery } from '../../../services/tiposProteccionApi';
+import { getIdPersonaFromAppJwt } from '../../../services/api';
 
 const ID_NO_APLICA = 8;
 const ESTADO_DISPONIBLE = 'D';
+const DEFAULT_ID_COLECCION = 155;
 
 const isNonEmpty = (s) => typeof s === 'string' && s.trim().length > 0;
 const isValidISODate = (v) => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -31,14 +33,6 @@ const DatosTecnologia = forwardRef((_, ref) => {
 
   const { data: tiposData, isLoading, isError } = useGetTiposQuery();
 
-  useEffect(() => {
-    console.log('[Step0] State snapshot =>', {
-      nombre, descripcion, tiposProteccion, cotitularidad,
-      archivosPorProteccion: mapArchivosToLog(archivosPorProteccion),
-      fechasConcesion
-    });
-  }, [nombre, descripcion, tiposProteccion, cotitularidad, archivosPorProteccion, fechasConcesion]);
-
   const mapArchivosToLog = (mapa) =>
     Object.fromEntries(
       Object.entries(mapa).map(([k, arr]) => [
@@ -54,6 +48,14 @@ const DatosTecnologia = forwardRef((_, ref) => {
         }),
       ])
     );
+
+  useEffect(() => {
+    console.log('[Step0] State snapshot =>', {
+      nombre, descripcion, tiposProteccion, cotitularidad,
+      archivosPorProteccion: mapArchivosToLog(archivosPorProteccion),
+      fechasConcesion
+    });
+  }, [nombre, descripcion, tiposProteccion, cotitularidad, archivosPorProteccion, fechasConcesion]);
 
   const handleFechaChange = (tipoId, fecha) =>
     setFechasConcesion((p) => ({ ...p, [tipoId]: fecha }));
@@ -91,6 +93,82 @@ const DatosTecnologia = forwardRef((_, ref) => {
   const handleArchivoChange = (tipoId, archivos) =>
     setArchivosPorProteccion((p) => ({ ...p, [tipoId]: archivos }));
 
+  // Util para obtener el nombre del tipo (para título DSpace)
+  const getNombreTipo = (idTipo) => {
+    const t = Array.isArray(tiposData) ? tiposData.find(x => Number(x.id) === Number(idTipo)) : null;
+    return t?.nombre || `Tipo ${idTipo}`;
+  };
+
+  /** Normaliza al shape unificado con metadatos para DSpace en cada archivo */
+  const buildUnifiedPayload = ({ includeFiles = true } = {}) => {
+    // OJO: idPersona solo se usa como hint en UI; el orquestador vuelve a resolverlo.
+    let idPersona = null;
+    try { idPersona = getIdPersonaFromAppJwt?.() ?? null; } catch {}
+
+    const tiposSeleccionados = Object.keys(tiposProteccion).map(Number);
+    const tiposValidos = tiposSeleccionados.filter((id) => id !== ID_NO_APLICA);
+
+    const tecnologia = {
+      idPersona, // el orquestador lo recalcula seguro
+      titulo: nombre,
+      descripcion,
+      estado: ESTADO_DISPONIBLE,
+      cotitularidad: !!cotitularidad,
+    };
+
+    const protecciones = tiposValidos.map((idTipoProteccion) => ({
+      idTipoProteccion,
+      fechaSolicitud: fechasConcesion?.[idTipoProteccion] ?? null,
+    }));
+
+    const archivos = [];
+    if (includeFiles) {
+      for (const tipoId of tiposValidos) {
+        const arr = archivosPorProteccion?.[tipoId] || [];
+        const nombreTipo = getNombreTipo(tipoId);
+        for (const it of arr) {
+          const file =
+            (typeof File !== 'undefined' && it instanceof File) ? it
+            : it?.file || null;
+          if (!file) continue;
+          const fecha = it?.fecha ?? fechasConcesion?.[tipoId] ?? null;
+
+          // 🔥 Metadatos DSpace para que el orquestador pueda enviar "normalmente"
+          const dspace = {
+            idColeccion: DEFAULT_ID_COLECCION,
+            titulo: `${nombre || 'Tecnología'} - ${nombreTipo}`,
+            nombresAutor: null,              // opcional
+            identificacion: idPersona ?? null, // opcional
+            formato: file.type || 'application/pdf',
+            tamano: file.size ?? null,
+          };
+
+          archivos.push({
+            idTipoProteccion: Number(tipoId),
+            fecha,
+            file,
+            dspace,
+          });
+        }
+      }
+    }
+
+    const payload = { tecnologia, protecciones, archivos };
+    console.log('[Step0] Unified payload (con DSpace meta) =>', {
+      tecnologia,
+      protecciones,
+      archivos: archivos.map((a, i) => ({
+        i,
+        idTipoProteccion: a.idTipoProteccion,
+        hasFile: !!a.file,
+        fileName: a.file?.name ?? null,
+        fecha: a.fecha,
+        dspace: a.dspace,
+      })),
+    });
+    return payload;
+  };
+
   useImperativeHandle(ref, () => ({
     validate: () => {
       const seleccionoAlMenosUno = Object.keys(tiposProteccion).length > 0;
@@ -100,9 +178,8 @@ const DatosTecnologia = forwardRef((_, ref) => {
       const descripcionOk = isNonEmpty(descripcion);
       const cotitularidadOk = cotitularidad !== null;
 
-      const tiposSeleccionados = Object.keys(tiposProteccion).map(Number).filter(id => id !== ID_NO_APLICA);
+      const tiposValidos = Object.keys(tiposProteccion).map(Number).filter(id => id !== ID_NO_APLICA);
 
-      // Detectar presencia de archivo de forma muy tolerante
       const hasSomeFile = (it) => {
         if (!it) return false;
         if (typeof File !== 'undefined' && it instanceof File) return true;
@@ -110,20 +187,19 @@ const DatosTecnologia = forwardRef((_, ref) => {
           if (typeof File !== 'undefined' && it.file instanceof File) return true;
           if (it.file?.name) return true;
         }
-        // Algunos componentes envían { name, size, type, ... } sin ser File real
         if (it.name && typeof it.size !== 'undefined') return true;
         return false;
       };
 
       const tiposSinArchivo = !seleccionoNoAplica
-        ? tiposSeleccionados.filter((id) => {
+        ? tiposValidos.filter((id) => {
             const arr = archivosPorProteccion[id] || [];
             return arr.length === 0 || !arr.some(hasSomeFile);
           })
         : [];
 
       const tiposSinFecha = !seleccionoNoAplica
-        ? tiposSeleccionados.filter((id) => !isValidISODate(fechasConcesion[id]))
+        ? tiposValidos.filter((id) => !isValidISODate(fechasConcesion[id]))
         : [];
 
       const archivosOk = seleccionoNoAplica ? true : tiposSinArchivo.length === 0;
@@ -136,17 +212,6 @@ const DatosTecnologia = forwardRef((_, ref) => {
         archivosOk, fechasOk, cotitularidadOk,
         tiposSinArchivo, tiposSinFecha,
         canAdvance,
-        payloadPreview: {
-          idUsuario: 1,
-          titulo: nombre,
-          descripcion,
-          estado: ESTADO_DISPONIBLE,
-          completed: false,
-          cotitularidad: !!cotitularidad,
-          tiposSeleccionados: Object.keys(tiposProteccion).map(Number),
-          fechasConcesion,
-          archivosPorProteccion: mapArchivosToLog(archivosPorProteccion),
-        }
       });
 
       setErrores({
@@ -172,28 +237,9 @@ const DatosTecnologia = forwardRef((_, ref) => {
 
     getCotitularidad: () => cotitularidad,
 
-    getPayload: () => ({
-      idUsuario: 1, // TODO: reemplazar por IdPersona real desde token
-      titulo: nombre,
-      descripcion,
-      estado: ESTADO_DISPONIBLE,
-      completed: false,
-      cotitularidad: !!cotitularidad,
-      tiposSeleccionados: Object.keys(tiposProteccion).map(Number),
-      archivosPorProteccion,
-      fechasConcesion,
-    }),
-
-    getDraftPayload: () => ({
-      titulo: nombre || '',
-      descripcion: descripcion || '',
-      estado: ESTADO_DISPONIBLE,
-      cotitularidad: cotitularidad ?? null,
-      tiposSeleccionados: Object.keys(tiposProteccion).map(Number),
-      archivosPorProteccion,
-      fechasConcesion,
-      completed: false,
-    }),
+    // FINAL y DRAFT usan el mismo shape unificado
+    getPayload: () => buildUnifiedPayload({ includeFiles: true }),
+    getDraftPayload: () => buildUnifiedPayload({ includeFiles: true }),
   }));
 
   const renderTipos = () => {

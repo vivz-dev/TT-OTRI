@@ -18,7 +18,6 @@ const mapEstadoToCode = (v) => {
   return "D";
 };
 
-// Llama a fn() y si devuelve promesa, la espera; si lanza, devuelve null.
 const resolveMaybePromise = async (fn) => {
   try {
     const v = fn();
@@ -28,223 +27,203 @@ const resolveMaybePromise = async (fn) => {
   }
 };
 
-// Construye el body que espera TecnologiaCreate/PatchDto
-const buildTecnologiaBody = async (data, completedFlag) => {
+/** ───────────── extractores del payload unificado ───────────── **/
+const extractTecnologia = (data) => {
+  if (data?.tecnologia) return data.tecnologia;
+  return {
+    idPersona: data?.idPersona,
+    titulo: data?.titulo,
+    descripcion: data?.descripcion,
+    estado: data?.estado,
+    cotitularidad: data?.cotitularidad,
+  };
+};
+
+const extractProtecciones = (data) => {
+  if (Array.isArray(data?.protecciones)) return data.protecciones;
+
+  const tiposSel = Array.isArray(data?.tiposSeleccionados) ? data.tiposSeleccionados : [];
+  const fechas = data?.fechasConcesion || {};
+  return tiposSel
+    .map((t) => Number(t))
+    .filter((t) => Number.isFinite(t) && t !== ID_NO_APLICA)
+    .map((idTipoProteccion) => ({
+      idTipoProteccion,
+      fechaSolicitud: fechas?.[String(idTipoProteccion)] ?? fechas?.[idTipoProteccion] ?? null,
+    }));
+};
+
+const extractArchivos = (data) => {
+  if (Array.isArray(data?.archivos)) return data.archivos;
+
+  // retrocompat: archivosPorProteccion + fechasConcesion
+  const map = data?.archivosPorProteccion || {};
+  const fechas = data?.fechasConcesion || {};
+  const out = [];
+  for (const [k, arr] of Object.entries(map)) {
+    const idTipoProteccion = Number(k);
+    if (!Number.isFinite(idTipoProteccion) || idTipoProteccion === ID_NO_APLICA) continue;
+    const items = Array.isArray(arr) ? arr : [];
+    for (const it of items) {
+      const file =
+        (typeof File !== "undefined" && it instanceof File) ? it
+        : it?.file || null;
+      const fecha = it?.fecha ?? fechas?.[String(idTipoProteccion)] ?? null;
+      out.push({ idTipoProteccion, file, fecha });
+    }
+  }
+  return out;
+};
+
+// Body correcto para TecnologiaCreate/Patch (camelCase)
+const buildTecnologiaBody = async (dataTecnologia, completadoFlag) => {
   const idPersona =
-    data?.idPersona ?? (await resolveMaybePromise(getIdPersonaFromAppJwt));
-  const estado = mapEstadoToCode(data?.estado);
+    dataTecnologia?.idPersona ?? (await resolveMaybePromise(getIdPersonaFromAppJwt));
+  const estado = mapEstadoToCode(dataTecnologia?.estado);
 
   const body = {
     idPersona: idPersona ?? null,
-    titulo: data?.titulo ?? "",
-    descripcion: data?.descripcion ?? "",
-    estado,                  // 'D' o 'N'
-    completed: !!completedFlag,
-    cotitularidad: !!data?.cotitularidad,
+    titulo: dataTecnologia?.titulo ?? "",
+    descripcion: dataTecnologia?.descripcion ?? "",
+    estado,
+    completado: !!completadoFlag, // DTO: Completado
+    cotitularidad: !!dataTecnologia?.cotitularidad,
   };
 
-  if (DEBUG_ORCHESTRATOR) {
-    console.log("[ORCH] Body /tecnologias =>", body);
-  }
+  if (DEBUG_ORCHESTRATOR) console.log("[ORCH] Body /tecnologias =>", body);
   return body;
 };
 
-// Extrae ID de múltiples formas
 const extractId = (obj) =>
-  normalizeId(obj) ??
-  obj?.id ??
-  obj?.Id ??
-  obj?.idTecnologia ??
-  obj?.idTecProteccion ??
-  null;
+  normalizeId(obj) ?? obj?.id ?? obj?.Id ?? obj?.idTecnologia ?? obj?.idTecProteccion ?? null;
 
+/** ───────────── función común para crear/actualizar y crear protecciones ───────────── **/
+const runTechFlow = async ({ currentId, data, baseQuery, completedFlag }) => {
+  const doPost = (url, body) => baseQuery({ url, method: "POST", body });
+  const doPatch = (url, body) => baseQuery({ url, method: "PATCH", body });
+
+  const createdProtectionIds = [];
+  const compensateProtections = async () => {
+    for (const pid of createdProtectionIds.reverse()) {
+      try { await baseQuery({ url: `protecciones/${pid}`, method: "DELETE" }); } catch {}
+    }
+  };
+
+  // 0) extraer payload
+  const tecnologia = extractTecnologia(data || {});
+  const protIn = extractProtecciones(data || {}); // [{ idTipoProteccion, fechaSolicitud }]
+
+  // 1) upsert tecnología con flag
+  const techBody = await buildTecnologiaBody(tecnologia, completedFlag);
+  let techId = currentId ?? null;
+
+  if (!techId) {
+    const resCreate = await doPost("tecnologias", techBody);
+    if (resCreate.error) return { error: resCreate.error };
+    techId = extractId(resCreate.data);
+    if (!techId) return { error: { status: 500, data: "No se obtuvo id de tecnología." } };
+  } else {
+    const resPatch = await doPatch(`tecnologias/${techId}`, techBody);
+    if (resPatch.error) return { error: resPatch.error };
+  }
+
+  if (isNullish(techId)) return { error: { status: 500, data: "Id de tecnología inválido." } };
+
+  // 2) crear protecciones si vienen y son válidas (solo si tenemos idTecnologia)
+  const proteccionesCreadas = [];
+  for (const p of protIn) {
+    const idTipoProteccion = Number(p?.idTipoProteccion);
+    if (!Number.isFinite(idTipoProteccion) || idTipoProteccion === ID_NO_APLICA) continue;
+
+    const fecha = p?.fechaSolicitud ?? null;
+    if (!fecha) {
+      await compensateProtections();
+      return { error: { status: 400, data: `Falta fecha para el tipo de protección ${idTipoProteccion}.` } };
+    }
+
+    const protBody = {
+      idTecnologia: Number(techId),
+      idTipoProteccion,
+      fechaSolicitud: String(fecha),
+    };
+
+    if (DEBUG_ORCHESTRATOR) console.log("[ORCH] Body POST /protecciones =>", protBody);
+    const resProt = await doPost("protecciones", protBody);
+    if (resProt.error) {
+      await compensateProtections();
+      return { error: resProt.error };
+    }
+
+    const protId = extractId(resProt.data);
+    if (protId) createdProtectionIds.push(protId);
+
+    proteccionesCreadas.push({
+      id: protId,
+      raw: resProt.data,
+      tipoId: idTipoProteccion,
+      fecha: String(fecha),
+    });
+  }
+
+  return { data: { id: techId, protecciones: proteccionesCreadas } };
+};
+
+/** ───────────── API ───────────── **/
 export const technologyOrchestratorApi = createApi({
   reducerPath: "technologyOrchestratorApi",
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     /**
-     * Guardar (borrador) del step 0:
-     * - Si NO hay id => POST /tecnologias (completed: false) y devuelve id.
-     * - Si hay id    => PATCH /tecnologias/{id} (completed: false).
+     * Guardar borrador: SOLO tecnología (legacy). Se deja por compatibilidad si lo llamas directo.
      */
     saveTechnologyStep: builder.mutation({
       async queryFn({ currentId, data }, _api, _extra, baseQuery) {
         try {
-          const body = await buildTecnologiaBody(data || {}, false);
+          const tecnologia = extractTecnologia(data || {});
+          const body = await buildTecnologiaBody(tecnologia, false);
 
           if (!currentId) {
-            const resCreate = await baseQuery({
-              url: "tecnologias",
-              method: "POST",
-              body,
-            });
+            const resCreate = await baseQuery({ url: "tecnologias", method: "POST", body });
             if (resCreate.error) return { error: resCreate.error };
             const id = extractId(resCreate.data);
-            if (!id) {
-              return {
-                error: {
-                  status: 500,
-                  data: "No se obtuvo id de tecnología en creación.",
-                },
-              };
-            }
+            if (!id) return { error: { status: 500, data: "No se obtuvo id de tecnología en creación." } };
             return { data: { id, raw: resCreate.data } };
           }
 
-          const resPatch = await baseQuery({
-            url: `tecnologias/${currentId}`,
-            method: "PATCH",
-            body,
-          });
+          const resPatch = await baseQuery({ url: `tecnologias/${currentId}`, method: "PATCH", body });
           if (resPatch.error) return { error: resPatch.error };
           return { data: { id: currentId, raw: resPatch.data } };
         } catch (e) {
-          return {
-            error: {
-              status: 500,
-              data: e?.message || "Error guardando tecnología.",
-            },
-          };
+          return { error: { status: 500, data: e?.message || "Error guardando tecnología." } };
         }
       },
     }),
 
     /**
-     * Finalizar step 0:
-     * - Crea/actualiza tecnología con completed:true
-     * - Luego crea TODAS las protecciones seleccionadas (excepto NO_APLICA).
-     *   • data.tiposSeleccionados: number[]
-     *   • data.fechasConcesion: { [tipoId]: 'YYYY-MM-DD' }
+     * Nuevo: Upsert con protecciones (completed:false).
+     * Úsalo para "Guardar" y enviar TODO lo disponible si se pueden obtener IDs.
+     */
+    upsertTechnologyWithProtections: builder.mutation({
+      async queryFn({ currentId, data }, _api, _extra, baseQuery) {
+        try {
+          const result = await runTechFlow({ currentId, data, baseQuery, completedFlag: false });
+          return result;
+        } catch (e) {
+          return { error: { status: 500, data: e?.message || "Error guardando (upsert) tecnología." } };
+        }
+      },
+    }),
+
+    /**
+     * Finalizar: Upsert con protecciones (completed:true).
      */
     finalizeTechnologyWithProtections: builder.mutation({
       async queryFn({ currentId, data }, _api, _extra, baseQuery) {
-        const doPost = (url, body) => baseQuery({ url, method: "POST", body });
-        const doPatch = (url, body) => baseQuery({ url, method: "PATCH", body });
-
-        const createdProtectionIds = [];
-        const compensateProtections = async () => {
-          for (const pid of createdProtectionIds.reverse()) {
-            try {
-              await baseQuery({
-                url: `tecnologia-protecciones/${pid}`,
-                method: "DELETE",
-              });
-            } catch {
-              /* no-op */
-            }
-          }
-        };
-
         try {
-          const techBody = await buildTecnologiaBody(data || {}, true);
-          let techId = currentId ?? null;
-
-          // 1) Crear o actualizar tecnología (completed:true)
-          if (!techId) {
-            const resCreate = await doPost("tecnologias", techBody);
-            if (resCreate.error) return { error: resCreate.error };
-            techId = extractId(resCreate.data);
-            if (!techId) {
-              return {
-                error: {
-                  status: 500,
-                  data: "No se obtuvo id de tecnología al finalizar.",
-                },
-              };
-            }
-          } else {
-            const resPatch = await doPatch(`tecnologias/${techId}`, techBody);
-            if (resPatch.error) return { error: resPatch.error };
-          }
-
-          // 2) Crear protecciones seleccionadas
-          const tiposSel = Array.isArray(data?.tiposSeleccionados)
-            ? data.tiposSeleccionados
-            : [];
-          const fechas = data?.fechasConcesion || {};
-
-          // Filtra NO APLICA (ID 8)
-          const tiposParaCrear = tiposSel
-            .map((t) => Number(t))
-            .filter((t) => Number.isFinite(t) && t !== ID_NO_APLICA);
-
-          if (DEBUG_ORCHESTRATOR) {
-            console.log("[ORCH] tiposSeleccionados (raw) =>", tiposSel);
-            console.log("[ORCH] tiposParaCrear (sin 8) =>", tiposParaCrear);
-            console.log("[ORCH] fechasConcesion =>", fechas);
-          }
-
-          if (tiposParaCrear.length === 0) {
-            return {
-              error: {
-                status: 400,
-                data:
-                  "No hay tipos de protección seleccionados (o solo 'No aplica').",
-              },
-            };
-          }
-          if (isNullish(techId)) {
-            return {
-              error: {
-                status: 500,
-                data: "Id de tecnología inválido al crear protecciones.",
-              },
-            };
-          }
-
-          const proteccionesCreadas = [];
-          for (const tipoId of tiposParaCrear) {
-            // Acepta clave numérica o string
-            const fecha =
-              (fechas && (fechas[String(tipoId)] ?? fechas[tipoId])) || null;
-
-            if (!fecha) {
-              await compensateProtections();
-              return {
-                error: {
-                  status: 400,
-                  data: `Falta fecha para el tipo de protección ${tipoId}.`,
-                },
-              };
-            }
-
-            // DTO espera FechaSolicitud
-            const protBody = {
-              IdTecnologia: Number(techId),
-              IdTipoProteccion: Number(tipoId), // backend lo mapea a short
-              FechaSolicitud: String(fecha), // 'YYYY-MM-DD'
-            };
-
-            if (DEBUG_ORCHESTRATOR) {
-              console.log("[ORCH] Body /tecnologia-protecciones =>", protBody);
-            }
-
-            const resProt = await doPost("tecnologia-protecciones", protBody);
-            if (resProt.error) {
-              await compensateProtections();
-              return { error: resProt.error };
-            }
-
-            const protId = extractId(resProt.data);
-            if (protId) createdProtectionIds.push(protId);
-
-            proteccionesCreadas.push({
-              id: protId,
-              raw: resProt.data,
-              tipoId: Number(tipoId),
-              fecha: String(fecha),
-            });
-          }
-
-          return { data: { id: techId, protecciones: proteccionesCreadas } };
+          const result = await runTechFlow({ currentId, data, baseQuery, completedFlag: true });
+          return result;
         } catch (e) {
-          await compensateProtections();
-          return {
-            error: {
-              status: 500,
-              data: e?.message || "Error al finalizar tecnología.",
-            },
-          };
+          return { error: { status: 500, data: e?.message || "Error al finalizar tecnología." } };
         }
       },
     }),
@@ -253,5 +232,6 @@ export const technologyOrchestratorApi = createApi({
 
 export const {
   useSaveTechnologyStepMutation,
+  useUpsertTechnologyWithProtectionsMutation,
   useFinalizeTechnologyWithProtectionsMutation,
 } = technologyOrchestratorApi;

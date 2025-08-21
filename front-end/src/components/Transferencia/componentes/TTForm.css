@@ -1,3 +1,15 @@
 .suffix { align-self: center; opacity: .8; }
 .value-big { font-size: 1.4rem; padding: .6rem 0; color: #233; }
 .italic { font-style: italic; }
+
+/* TTForm.css - Añadir estos estilos */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}

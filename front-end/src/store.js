@@ -18,7 +18,6 @@ import { cotitularidadInstApi } from './services/cotitularidadInstApi';
 import { cotitularidadTecnoApi } from './services/cotitularidadTecnoApi';
 
 import { technologyOrchestratorApi } from './services/technologyOrchestratorApi';
-import { tecnologiaProteccionesApi } from './services/tecnologiaProteccionesApi';
 
 
 export const store = configureStore({
@@ -40,7 +39,6 @@ export const store = configureStore({
     [cotitularidadInstApi.reducerPath]: cotitularidadInstApi.reducer,
     [cotitularidadTecnoApi.reducerPath]: cotitularidadTecnoApi.reducer,
     [technologyOrchestratorApi.reducerPath]: technologyOrchestratorApi.reducer,
-    [tecnologiaProteccionesApi.reducerPath]: tecnologiaProteccionesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -62,5 +60,4 @@ export const store = configureStore({
       .concat(cotitularidadTecnoApi.middleware)
 
       .concat(technologyOrchestratorApi.middleware)
-      .concat(tecnologiaProteccionesApi.middleware)
 });
