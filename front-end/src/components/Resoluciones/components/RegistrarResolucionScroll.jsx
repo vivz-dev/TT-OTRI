@@ -46,7 +46,7 @@ const RegistrarResolucionScroll = forwardRef(({ formularioRef, shakeFormulario }
       <div className="distribuciones-section">
         <div className="formulario">
           <div className="form-header">
-            <h1 className="titulo-principal-form">Formularios de distribución de beneficios económicos</h1>
+            <h1 className="titulo-principal-form">Distribución de beneficios económicos</h1>
             <p className="subtitulo-form">Añade todos los formularios de distribuciones económicas asociados a esta resolución.</p>
           </div>
         </div>

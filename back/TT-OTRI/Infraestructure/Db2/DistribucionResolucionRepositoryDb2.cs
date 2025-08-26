@@ -114,6 +114,7 @@ VALUES
         return Convert.ToInt32(raw);
     }
 
+// Infrastructure/Db2/DistribucionResolucionRepositoryDb2.cs
     public async Task<bool> PatchAsync(int id, PatchDistribucionResolucionDto dto, CancellationToken ct = default)
     {
         var sets = new List<string>();
@@ -128,10 +129,20 @@ VALUES
             }
         }
 
-        Add("MONTOMAXIMO",          "@max",    dto.MontoMaximo);
-        Add("MONTOMINIMO",          "@min",    dto.MontoMinimo);
-        Add("PORCSUBTOTALAUTORES",  "@paut",   dto.PorcSubtotalAutores);
-        Add("PORCSUBTOTALINSTITUT", "@pinst",  dto.PorcSubtotalInstitut);
+        // --- MONTOMAXIMO ---
+        if (dto.SetMontoMaximoNull == true)
+        {
+            sets.Add("MONTOMAXIMO = NULL");  // <— fuerza NULL
+        }
+        else
+        {
+            Add("MONTOMAXIMO", "@max", dto.MontoMaximo);
+        }
+
+        // --- resto de campos ---
+        Add("MONTOMINIMO",          "@min",   dto.MontoMinimo);
+        Add("PORCSUBTOTALAUTORES",  "@paut",  dto.PorcSubtotalAutores);
+        Add("PORCSUBTOTALINSTITUT", "@pinst", dto.PorcSubtotalInstitut);
 
         if (dto.IdUsuarioMod.HasValue)
         {

@@ -1,0 +1,36 @@
+.card-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+  color: #898989;
+  font-size: small ;
+  cursor: default;
+}
+
+.footer-item {
+  display: flex;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.icon {
+  display: flex;
+}
+
+
+.footer-left{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+}
+
+.footer-right{
+    
+}

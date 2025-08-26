@@ -143,7 +143,7 @@ const TipoProteccion = ({
             {archivos.map((item, idx) => (
               <div key={idx} className="archivo-item">
                 <Components.AdjuntarArchivo
-                  descripcion="Documento(s) correspondiente a este tipo de protección."
+                  descripcion="Documento correspondiente a este tipo de protección."
                   file={item.file}
                   // Cualquier variante del child dispare este bridge:
                   onChange={(v) => handleChangeBridge(v, idx)}

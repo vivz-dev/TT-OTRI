@@ -72,11 +72,11 @@ const DatosTransferencia = ({
 
       <div className="form-fieldsets">
         <div className={`form-card ${shakeError ? "error shake" : ""}`}>
-          <h2 className="form-card-header">Información básica</h2>
+          {/* <h2 className="form-card-header">Información básica</h2> */}
 
           <div className="input-row">
             <label className="input-group">
-              Fecha de inicio de Transferencia Tecnológica
+              Fecha de inicio
               <input
                 type="date"
                 value={fechaInicio}
@@ -86,7 +86,7 @@ const DatosTransferencia = ({
             </label>
 
             <label className="input-group">
-              Fecha de fin de Transferencia Tecnológica
+              Fecha de fin
               <input
                 type="date"
                 value={fechaFin}
@@ -98,7 +98,7 @@ const DatosTransferencia = ({
 
           <div className="input-row">
             <label className="input-group">
-              Tipo
+              Modalidad
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
@@ -147,7 +147,7 @@ const DatosTransferencia = ({
                 checked={pago}
                 onChange={(e) => setPago(e.target.checked)}
               />
-              <span>¿Lleva Pago?</span>
+              <span>Tipo: Gratuita o pagada (Si/No)</span>
             </label>
           </div>
         </div>

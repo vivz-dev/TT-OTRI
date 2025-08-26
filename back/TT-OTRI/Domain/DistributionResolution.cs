@@ -8,7 +8,7 @@ public sealed class DistribucionResolucion
     public int IdDistribucionResolucion { get; set; }      // IDOTRITTDISTRIBUCIONRESOLUCION
     public int IdResolucion { get; set; }                  // IDOTRITTRESOLUCION
 
-    public decimal MontoMaximo { get; set; }               // MONTOMAXIMO
+    public decimal? MontoMaximo { get; set; }               // MONTOMAXIMO
     public decimal MontoMinimo { get; set; }               // MONTOMINIMO
     public decimal PorcSubtotalAutores { get; set; }       // PORCSUBTOTALAUTORES
     public decimal PorcSubtotalInstitut { get; set; }      // PORCSUBTOTALINSTITUT

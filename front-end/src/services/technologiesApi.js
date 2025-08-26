@@ -1,8 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQuery';
 
-/* ---------------- helpers de mapeo ---------------- */
-
 // Mapea el char Estado del backend a texto de UI:
 const mapEstado = (c) => {
   if (c === 'D') return 'Disponible';
@@ -18,20 +16,16 @@ const toCardItem = (t) => ({
   cotitularidad: !!t.cotitularidad,
   titulo:        t.titulo,
   descripcion:   t.descripcion,
-  fecha:         t.fechaCreacion,   // ISO string
-  ultimoCambio:  t.ultimoCambio,    // ISO string
-  usuario:       t.idPersona,       // IdPersona (puedes resolver nombre en otro servicio)
+  fecha:         t.fechaCreacion,
+  ultimoCambio:  t.ultimoCambio,
+  usuario:       t.idPersona,
 });
-
-
-/* ---------------- RTK Query API ---------------- */
 
 export const technologiesApi = createApi({
   reducerPath: 'technologiesApi',
   baseQuery: baseQueryWithReauth,
   tagTypes: ['Technology'],
   endpoints: (builder) => ({
-    // GET /api/tecnologias
     getTechnologies: builder.query({
       query: () => 'tecnologias',
       transformResponse: (res) => Array.isArray(res) ? res.map(toCardItem) : [],
@@ -44,29 +38,32 @@ export const technologiesApi = createApi({
           : [{ type: 'Technology', id: 'LIST' }],
     }),
 
-    // GET /api/tecnologias/{id}
     getTechnology: builder.query({
       query: (id) => `tecnologias/${id}`,
       transformResponse: (t) => (t ? toCardItem(t) : null),
       providesTags: (_res, _err, id) => [{ type: 'Technology', id }],
     }),
 
-    // POST /api/tecnologias
+    // <-- OPCIONAL: objeto crudo del backend (sin toCardItem)
+    getTechnologyRaw: builder.query({
+      query: (id) => `tecnologias/${id}`,
+      providesTags: (_res, _err, id) => [{ type: 'Technology', id: `RAW-${id}` }],
+    }),
+
     createTechnology: builder.mutation({
       query: (body) => ({
         url: 'tecnologias',
         method: 'POST',
-        body, // body debe seguir el shape de TecnologiaCreateDto
+        body,
       }),
       invalidatesTags: [{ type: 'Technology', id: 'LIST' }],
     }),
 
-    // PATCH /api/tecnologias/{id}
     updateTechnology: builder.mutation({
       query: ({ id, data, ...rest }) => ({
         url: `tecnologias/${id}`,
         method: 'PATCH',
-        body: data ?? rest, // body debe seguir el shape de TecnologiaPatchDto
+        body: data ?? rest,
       }),
       invalidatesTags: (_res, _err, { id }) => [
         { type: 'Technology', id },
@@ -79,6 +76,7 @@ export const technologiesApi = createApi({
 export const {
   useGetTechnologiesQuery,
   useGetTechnologyQuery,
+  useGetTechnologyRawQuery, // <-- OPCIONAL
   useCreateTechnologyMutation,
   useUpdateTechnologyMutation,
 } = technologiesApi;

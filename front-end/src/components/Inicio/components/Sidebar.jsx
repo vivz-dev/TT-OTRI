@@ -8,7 +8,8 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  Microscope
+  Microscope,
+  FolderOpen
 } from 'lucide-react';
 import MenuItem from './atoms/MenuItem';
 import './Sidebar.css';
@@ -65,8 +66,8 @@ const Sidebar = ({ onMenuSelect }) => {
     },
     {
       id: 'pagos',
-      label: 'Pagos',
-      icon: <Banknote size={18} />,
+      label: 'Administración contratos TT',
+      icon: <FolderOpen size={18} />,
       parent: 'transferencia'
     },
     {

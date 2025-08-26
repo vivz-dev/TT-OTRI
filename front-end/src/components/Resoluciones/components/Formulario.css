@@ -12,6 +12,7 @@
   background: #f4f4f4;
   color: black;
   resize: none;
+  width: 100px;
 }
 .resolucion-card{
   display: flex;

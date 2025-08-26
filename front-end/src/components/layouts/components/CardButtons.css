@@ -1,0 +1,18 @@
+.card-buttons{
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+.card-button{
+    cursor: pointer;
+}
+
+.card-icon{
+    color: var(--esp-azul-institucional);
+}
+
+.card-icon:hover{
+    color: var(--button-page-hover);
+    transform: scale(1.5);
+}

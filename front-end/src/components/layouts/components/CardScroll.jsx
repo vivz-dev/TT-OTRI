@@ -2,10 +2,15 @@ import React from 'react';
 import './CardScroll.css';
 import Card from './Card';
 
-const CardScroll = ({ filter, searchText, dummyData, onCardClick }) => {
-  const search = searchText.toLowerCase();
+const CardScroll = ({
+  filter,
+  searchText,
+  dummyData,
+  cardButtons = [],
+}) => {
+  const search = (searchText || '').toLowerCase();
 
-  const filtered = dummyData.filter((item) => {
+  const filtered = (dummyData || []).filter((item) => {
     const matchEstado = filter === 'todas' || item.estado === filter;
     const matchTexto  =
       (item.titulo ?? '').toLowerCase().includes(search) ||
@@ -32,7 +37,8 @@ const CardScroll = ({ filter, searchText, dummyData, onCardClick }) => {
           textoRegistrado={item.usuario}
           protecciones={item.protecciones}
           completed={item.completed}
-          onClick={onCardClick ? () => onCardClick(item) : undefined}
+          cardButtons={cardButtons}
+          item={item}                       // 👈 pasa el item completo
         />
       ))}
     </div>

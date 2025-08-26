@@ -110,17 +110,27 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
 
   const canAddMore = selectedIds.length < INSTITUCIONES.length;
 
-  const montosValidos = () => {
-    const min = parseMoney(montoMin);
-    if (min === null || min < 0) return false;
+const minimoValido = () => {
+  const min = parseMoney(montoMin);
+  if (min === null || min < 0) return false;
+  return true; // <-- faltaba
+};
+  
+const maximoValido = () => {
+  const min = parseMoney(montoMin);
+  if (min === null || min < 0) return false;
 
-    if (!noLimit) {
-      const max = parseMoney(montoMax);
-      if (max === null || max < 0) return false;
-      if (min > max) return false;
-    }
-    return true;
-  };
+  // 👇 si está marcado "No aplica límite", lo dejamos pasar
+  if (noLimit) return true;
+
+  const max = parseMoney(montoMax);
+  if (max === null || max < 0) return false;
+  if (min > max) return false;
+
+  return true;
+};
+
+const montosValidos = () => minimoValido() && maximoValido();
 
   /* ---------------- validación + API ---------------- */
   const isValid = () => {
@@ -205,7 +215,6 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   const handleNoLimit = (checked) => {
     setNoLimit(checked);
     if (checked) {
-      setMontoMin('');
       setMontoMax('');
     }
     if (showErrors) setShowErrors(!isValid());
@@ -223,7 +232,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
   /* ---------------- UI ---------------- */
   return (
     <div className="form-card">
-      <h2 className="form-card-header">Tabla de porcentaje de distribución</h2>
+      <h2 className="form-card-header">Montos:</h2>
       <div className="distribucion-delete-top">
         <button className="btn-delete-top" onClick={onDelete}>
           <MinusCircle size={18} />
@@ -249,7 +258,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
       <div className="monto-section">
         <div className="monto-row">
           <div className="monto-item">
-            <label className="monto-label">Monto Mínimo</label>
+            <label className="monto-label">Desde:</label>
             <input
               type="number"
               min="0"
@@ -259,8 +268,8 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
               disabled={false}
               className={
                 showErrors &&
-                !noLimit &&
-                !montosValidos() &&
+                !minimoValido() &&
+                // !montosValidos() &&
                 (montoMin === '' || parseMoney(montoMin) === null)
                   ? 'field-error'
                   : ''
@@ -270,7 +279,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
           </div>
 
           <div className="monto-item">
-            <label className="monto-label">Monto Máximo</label>
+            <label className="monto-label">Hasta:</label>
             <input
               type="number"
               min="0"
@@ -281,7 +290,8 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
               className={
                 showErrors &&
                 !noLimit &&
-                !montosValidos() &&
+                !maximoValido() &&
+                // !montosValidos() &&
                 (montoMax === '' || parseMoney(montoMax) === null)
                   ? 'field-error'
                   : ''
@@ -300,7 +310,7 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
           </label>
         </div>
 
-        {!noLimit && showErrors && !montosValidos() && (
+        {!noLimit && showErrors && !minimoValido() && !maximoValido() (
           <p className="monto-error">
             Verifica los montos: ambos requeridos, no negativos y Mínimo ≤ Máximo.
           </p>
@@ -410,16 +420,14 @@ const Distribucion = forwardRef(({ onDelete }, ref) => {
       {total !== 100 && (
         <p className="subtotales-error">¡Los subtotales deben sumar 100 %!</p>
       )}
-
-      <button
+      {canAddMore && (
+        <button
         className="btn-add"
         onClick={addCentro}
         disabled={!canAddMore || institLoading || institError || INSTITUCIONES.length === 0}
       >
         Añadir beneficiario institucional
       </button>
-      {!canAddMore && INSTITUCIONES.length > 0 && (
-        <p className="hint">No hay más beneficiarios institucionales disponibles para agregar.</p>
       )}
       {INSTITUCIONES.length === 0 && !institLoading && !institError && (
         <p className="hint">No hay beneficiarios institucionales registrados.</p>

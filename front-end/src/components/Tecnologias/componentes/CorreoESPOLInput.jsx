@@ -132,7 +132,7 @@ const CorreoESPOLInput = ({ onSelectUsuario }) => {
     <div ref={rootRef} style={{ position: 'relative' }}>
       <input
         type="text"
-        placeholder="Usuario ESPOL"
+        placeholder="usuario@espol.edu.ec"
         value={inputValue}
         onChange={handleChange}
         onFocus={() => filtered.length > 0 && setOpen(true)}

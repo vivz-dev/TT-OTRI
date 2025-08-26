@@ -43,6 +43,8 @@ public sealed class CreateDistribucionResolucionDto
 public sealed class PatchDistribucionResolucionDto
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SetMontoMaximoNull { get; set; }  // <— NUEVO
+
     public decimal? MontoMaximo { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -7,10 +7,10 @@ const ESPOLCotitularRow = ({ fila, index, onSelectUsuario, onPorcentajeChange })
     <td>ESPOL</td>
 
     {/* 2: RUC */}
-    <td>0967486931</td>
+    <td>096000278001</td>
 
     {/* 3: Correo institucional */}
-    <td>espol@espol.edu.ec</td>
+    <td>otri@espol.edu.ec</td>
 
     {/* 4: Nombre del representante */}
     <td>{fila?.representante?.nombre || ''}</td>
@@ -23,7 +23,6 @@ const ESPOLCotitularRow = ({ fila, index, onSelectUsuario, onPorcentajeChange })
       className="correo-user-input"
       menuClassName="correo-menu"
     />
-    <span className="correo-dominio">@espol.edu.ec</span>
   </div>
 </td>
 

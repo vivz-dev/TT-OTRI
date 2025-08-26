@@ -1,39 +1,47 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore } from "@reduxjs/toolkit";
 
 /** Existentes (tuyos) */
-import { resolutionsApi } from './services/resolutionsApi';
-import { transfersApi } from './services/transfersApi';
-import { technologiesApi } from './services/technologiesApi';
-import { tiposProteccionApi } from './services/tiposProteccionApi';
-import { cotitularApi } from './services/cotitularApi';
-import { benefInstitucionesApi } from './services/benefInstitucionesApi';
-import { resolucionOrchestratorApi } from './services/resolucionOrchestratorApi';
-import { archivosApi } from './services/storage/archivosApi';
-import { distribBenefInstitucionesApi } from './services/distribBenefInstitucionesApi';
+import { resolutionsApi } from "./services/resolutionsApi";
+import { transfersApi } from "./services/transfersApi";
+import { technologiesApi } from "./services/technologiesApi";
+import { tiposProteccionApi } from "./services/tiposProteccionApi";
+import { cotitularApi } from "./services/cotitularApi";
+import { benefInstitucionesApi } from "./services/benefInstitucionesApi";
+import { resolucionOrchestratorApi } from "./services/resolucionOrchestratorApi";
+import { archivosApi } from "./services/storage/archivosApi";
+import { distribBenefInstitucionesApi } from "./services/distribBenefInstitucionesApi";
 
 /** Nuevos (generados en la respuesta anterior) */
-import { acuerdosDistribAutoresApi } from './services/acuerdosDistribAutoresApi';
-import { proteccionesApi } from './services/proteccionesApi';
-import { cotitularidadInstApi } from './services/cotitularidadInstApi';
-import { cotitularidadTecnoApi } from './services/cotitularidadTecnoApi';
+import { acuerdosDistribAutoresApi } from "./services/acuerdosDistribAutoresApi";
+import { proteccionesApi } from "./services/proteccionesApi";
+import { cotitularidadInstApi } from "./services/cotitularidadInstApi";
+import { cotitularidadTecnoApi } from "./services/cotitularidadTecnoApi";
 
-import { technologyOrchestratorApi } from './services/technologyOrchestratorApi';
-import { tipoTransferenciaApi } from './services/tipoTransferenciaApi';
+import { technologyOrchestratorApi } from "./services/technologyOrchestratorApi";
+import { tipoTransferenciaApi } from "./services/tipoTransferenciaApi";
 
-import { cotitularidadOrchestratorApi } from './services/cotitularidadOrchestratorApi';
+import { cotitularidadOrchestratorApi } from "./services/cotitularidadOrchestratorApi";
 
+import { distribucionesApi } from "./services/distribucionesApi";
+import { pagosOrchestratorApi } from "./services/pagosOrchestratorApi";
+import { pagosFacturasApi } from "./services/pagosFacturasApi";
+
+import { distribucionPagoOrchestratorApi } from "./services/distribucionPagoOrchestratorApi";
+import {autoresApi} from "./services/autoresApi";
 
 export const store = configureStore({
   reducer: {
     // ---- Existentes
     [technologiesApi.reducerPath]: technologiesApi.reducer,
     [resolutionsApi.reducerPath]: resolutionsApi.reducer,
+    [distribucionesApi.reducerPath]: distribucionesApi.reducer,
     [transfersApi.reducerPath]: transfersApi.reducer,
     [tiposProteccionApi.reducerPath]: tiposProteccionApi.reducer,
     [cotitularApi.reducerPath]: cotitularApi.reducer,
     [benefInstitucionesApi.reducerPath]: benefInstitucionesApi.reducer,
     [archivosApi.reducerPath]: archivosApi.reducer,
-    [distribBenefInstitucionesApi.reducerPath]: distribBenefInstitucionesApi.reducer,
+    [distribBenefInstitucionesApi.reducerPath]:
+      distribBenefInstitucionesApi.reducer,
     [resolucionOrchestratorApi.reducerPath]: resolucionOrchestratorApi.reducer,
 
     // ---- Nuevos
@@ -43,13 +51,21 @@ export const store = configureStore({
     [cotitularidadTecnoApi.reducerPath]: cotitularidadTecnoApi.reducer,
     [technologyOrchestratorApi.reducerPath]: technologyOrchestratorApi.reducer,
     [tipoTransferenciaApi.reducerPath]: tipoTransferenciaApi.reducer,
-    [cotitularidadOrchestratorApi.reducerPath]: cotitularidadOrchestratorApi.reducer,
+    [cotitularidadOrchestratorApi.reducerPath]:
+      cotitularidadOrchestratorApi.reducer,
+    [pagosOrchestratorApi.reducerPath]: pagosOrchestratorApi.reducer,
+
+    [pagosFacturasApi.reducerPath]: pagosFacturasApi.reducer,
+    [distribucionPagoOrchestratorApi.reducerPath]: distribucionPagoOrchestratorApi.reducer,
+    [autoresApi.reducerPath]: autoresApi.reducer,
+    
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
       // ---- Existentes
       .concat(technologiesApi.middleware)
       .concat(resolutionsApi.middleware)
+      .concat(distribucionesApi.middleware)
       .concat(transfersApi.middleware)
       .concat(tiposProteccionApi.middleware)
       .concat(cotitularApi.middleware)
@@ -68,4 +84,8 @@ export const store = configureStore({
       .concat(tipoTransferenciaApi.middleware)
 
       .concat(cotitularidadOrchestratorApi.middleware)
+      .concat(pagosOrchestratorApi.middleware)
+      .concat(pagosFacturasApi.middleware)
+      .concat(distribucionPagoOrchestratorApi.middleware)
+      .concat(autoresApi.middleware)
 });

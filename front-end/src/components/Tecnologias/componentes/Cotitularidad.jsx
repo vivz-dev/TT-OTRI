@@ -197,7 +197,7 @@ useImperativeHandle(ref, () => ({
 
       <section className="card attach-card">
         <AdjuntarArchivo
-          descripcion="Documento(s) con especificaciones acerca de la cotitularidad."
+          descripcion="Acuerdo de cotitularidad."
           file={archivoAcuerdo}
           onChange={handleArchivoChange}
         />

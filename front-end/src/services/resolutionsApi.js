@@ -1,8 +1,9 @@
 /**
- * RTK Query – Resolutions / Distributions (con App JWT + reauth)
+ * RTK Query – Resolutions / Distributions
  * --------------------------------------------------------------
  *  • GET    /resoluciones
- *  • POST   /resoluciones          -> transformResponse => { id }
+ *  • GET    /resoluciones/:id           <-- NUEVO
+ *  • POST   /resoluciones               -> transformResponse => { id }
  *  • PATCH  /resoluciones/:id
  *
  *  • GET    /resoluciones/:id/distribuciones
@@ -15,8 +16,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth, normalizeId } from './baseQuery';
 
-
-/* ---------------- API ---------------- */
 export const resolutionsApi = createApi({
   reducerPath: 'resolutionsApi',
   baseQuery: baseQueryWithReauth,
@@ -35,17 +34,19 @@ export const resolutionsApi = createApi({
           : [{ type: 'Resolution', id: 'LIST' }],
     }),
 
+    // <-- NUEVO
+    getResolutionById: builder.query({
+      query: (id) => `/resoluciones/${id}`,
+      providesTags: (_res, _err, id) => [{ type: 'Resolution', id }],
+    }),
+
     createResolution: builder.mutation({
       query: (body) => ({
         url: '/resoluciones',
         method: 'POST',
         body,
       }),
-      // 🔴 CLAVE: normalizamos la respuesta a { id }
       transformResponse: (response, meta) => {
-        // Si tu backend está devolviendo la entidad completa, toma el Id.
-        // Si devuelve { id }, se respeta.
-        // Si devuelve un escalar, lo convertimos.
         const id = normalizeId(response);
         return { id, raw: response, status: meta?.response?.status };
       },
@@ -99,9 +100,9 @@ export const resolutionsApi = createApi({
   }),
 });
 
-/* Hooks auto-generados -------------------------------------------------- */
 export const {
   useGetResolutionsQuery,
+  useGetResolutionByIdQuery, // <-- NUEVO
   useCreateResolutionMutation,
   usePatchResolutionMutation,
   useGetDistributionsByResolutionQuery,

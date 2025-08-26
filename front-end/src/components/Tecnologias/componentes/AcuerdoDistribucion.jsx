@@ -192,7 +192,7 @@ const AcuerdoDistribucion = forwardRef((_, ref) => {
 
       <section className="card attach-card">
         <AdjuntarArchivo
-          descripcion="Documento(s) con especificaciones acerca del acuerdo de distribución."
+          descripcion="Acuerdo de distribución de autores/inventores."
           file={archivoAcuerdo}
           onChange={handleArchivoChange}
         />

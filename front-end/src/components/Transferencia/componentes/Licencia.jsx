@@ -73,7 +73,7 @@ const Licencia = ({ datos, setDatos, errores }) => {
       
       <div className="input-row">
         <label className="input-group">
-          Fecha Límite de Licencia
+          Plazo
           <input
             type="date"
             value={datos.fechaLimite || ""}

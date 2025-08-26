@@ -41,7 +41,16 @@ if (app.Environment.IsDevelopment())
 }
 
 // HTTPS (opcional en dev; recomendado en prod)
-app.UseHttpsRedirection();
+// Solo redirige si existe puerto HTTPS configurado
+var httpsPort =
+    builder.Configuration.GetValue<int?>("ASPNETCORE_HTTPS_PORT")
+    ?? builder.Configuration.GetValue<int?>("HTTPS_PORTS");
+
+if (httpsPort is not null)
+{
+    app.UseHttpsRedirection();
+    app.UseHsts();
+}
 
 // IMPORTANTE: orden del pipeline
 // 1) CORS SIEMPRE antes de auth y endpoints
@@ -53,6 +62,9 @@ app.UseAuthorization();
 
 // 3) Preflight OPTIONS (genera 200 + headers CORS sin pasar por auth)
 app.MapMethods("{*path}", new[] { "OPTIONS" }, () => Results.Ok()).AllowAnonymous();
+
+app.MapGet("/ping", () => Results.Ok(new { ok = true, ts = DateTime.UtcNow }))
+    .AllowAnonymous();
 
 // 4) Controllers (se exige CORS en todos los endpoints explícitamente)
 app.MapControllers().RequireCors(CorsSetup.PolicyName);

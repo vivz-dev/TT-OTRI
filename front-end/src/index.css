@@ -109,7 +109,7 @@ html, body {
 }
 .input-row {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   gap: 1.2rem;
 }
 .input-group {
@@ -164,30 +164,98 @@ textarea.error {
     flex: 1;
   }
 }
+input:disabled{
+  background: rgb(221, 221, 221);
+}
 
-/* CARD STATUS PARA BULLETS */
-.card-status {
-  font-size: 0.75rem;
-  font-weight: bolder;
+.tooltip-wrapper {
+  position: relative;
   display: inline-block;
-  text-transform: capitalize;
-  text-align: center;
-  width: 150px;
 }
 
-/* Verde para estados positivos */
-.card-status.disponible,
-.card-status.vigente,
-.card-status.realizado {
-  background-color: var(--bullet-verde-bg);  /* Fondo verde claro */
-  color: var(--bullet-verde-text);             /* Texto verde oscuro */
+.tooltip-text {
+  visibility: hidden;
+  background-color: #ededed;
+  color: rgb(97, 97, 97);
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgb(163, 163, 163);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  max-width: 200px;
+  text-wrap: wrap;
+
+  /* Posicionamiento */
+  position: absolute;
+  bottom: 125%; /* sobre el ícono */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+
+  /* Transición */
+  opacity: 0;
+  transition: opacity 0.3s;
 }
-/* Rojo para estados negativos */
-.card-status.no-disponible,
-.card-status.derogada,
-.card-status.finalizada {
-  background-color:  var(--bullet-rojo-bg);
-  color: var(--bullet-rojo-text);
+
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* MODALES  */
+.backdropStyle{
+  position: "fixed";
+  inset: 0;
+  background: "rgba(0,0,0,.45)";
+  display: "flex";
+  align-items: "center";
+  justify-content: "center";
+  z-index: 9999;
+}
+
+.modalStyle {
+    background: "#fff";
+    color: "#111";
+    width: "min(720px, 92vw)";
+    max-height: "90vh";
+    border-radius: 16;
+    box-shadow: "0 10px 30px rgba(0,0,0,.25)";
+    overflow: "auto";
+  };
+
+.headerStyle {
+    display: "flex";
+    align-items: "center";
+    justify-content: "space-between";
+    padding: "16px 20px";
+    border-bottom: "1px solid #eee";
+  };
+
+
+.bodyStyle{ padding: "16px 20px" };
+
+.footerStyle{
+    padding: "12px 20px";
+    border-top: "1px solid #eee";
+    text-align: "right";
+  };
+.rowStyle { display: "flex"; gap: 8; margin: "6px 0" };
+.mtStyle{ margin-top: 14 };
+
+
+/* DELETE BUTTON */
+.btn-delete-top {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s;
+  padding: 0.2rem;
+}
+
+.btn-delete-top:hover {
+  color: #dc2626;
 }
 
 

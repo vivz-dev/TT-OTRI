@@ -8,7 +8,8 @@ import './ResolucionesPage.css';
 import React, { useState, useMemo } from 'react';
 import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetResolutionsQuery } from '../../services/resolutionsApi';
-import CompletarRegistro from '../layouts/components/CompletarRegistro';
+import { ModalProvider } from "../layouts/components/ModalProvider";
+
 
 const fmtFecha = (iso) =>
   iso ? new Date(iso).toLocaleDateString('es-EC', {
@@ -20,46 +21,29 @@ const fmtFecha = (iso) =>
 const ResolucionesPage = ({ onRegister }) => {
   const { data = [], isLoading, error } = useGetResolutionsQuery();
 
-  console.log('ResolucionesPage data:', data, 'error:', error);
-
-  const dummyData = useMemo(
+  const items = useMemo(
     () =>
       (error ? [] : data).map((r) => ({
         id:          r.id,
         estado:      r.estado,
         completed:   r.completed,
-        titulo:      r.codigo || 'Sin título',          // ← título = número/código
-        descripcion: r.descripcion || 'Sin descripción',    // ← cuerpo = descripción
+        titulo:      r.codigo || 'Sin título',
+        descripcion: r.descripcion || 'Sin descripción',
         fecha:       fmtFecha(r.fechaResolucion),
         usuario:     r.idUsuario || 'Usuario no disponible',
+        tipo:        'resolucion',                 // 👈 importante
       })),
     [data, error]
   );
 
-  const [filter, setFilter]     = useState('todas');
-  const [searchText, setSearch] = useState('');
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-
-
-  if (isLoading) return <p>Cargando…</p>;
-
+  const [filter, setFilter]       = useState('todas');
+  const [searchText, setSearch]   = useState('');
   const filterOptions = [
     { label: 'Todas',    value: 'todas'   },
     { label: 'Vigentes', value: 'Vigente' },
     { label: 'Derogadas', value: 'Derogada' },
   ];
-
-  const handleCardClick = (item) => {
-    setSelectedItem(item);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedItem(null);
-  };
-  
+  if (isLoading) return <p>Cargando…</p>;
 
   return (
     <main className="page-container">
@@ -77,19 +61,15 @@ const ResolucionesPage = ({ onRegister }) => {
         onRegister={onRegister}
       />
 
-      <CardScroll
+      
+      <ModalProvider>
+         <CardScroll
         filter={filter}
         searchText={searchText}
-        dummyData={dummyData}
-        onCardClick={handleCardClick}
-      />
-
-      {showModal && (
-        <CompletarRegistro
-          item={selectedItem}
-          onClose={handleCloseModal}
+        dummyData={items}
+        cardButtons={['ver-resolucion', 'editar-resolucion']}            // botón específico
         />
-      )}
+      </ModalProvider>
     </main>
   );
 };

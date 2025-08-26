@@ -76,14 +76,14 @@ useImperativeHandle(ref, () => ({
     <div className="formulario">
       <div className="form-header">
         <h1 className="titulo-principal-form">Datos de la resolución</h1>
-        <p className="subtitulo-form">Complete la información sobre la resolución establecida.</p>
+        {/* <p className="subtitulo-form">Ingrese la información de la resolución.</p> */}
       </div>
       <div className='form-fieldsets'>
         <div className={`form-card ${shakeError ? 'error shake' : ''} resolucion-card`}>
-          <h2 className="form-card-header">Información básica</h2>
+          {/* <h2 className="form-card-header">Detalle de la resolución</h2> */}
           <div className="input-row">
             <label className="num-resolucion">
-              Número de resolución
+              Número: 
               <input
                 type="number"
                 value={num1}

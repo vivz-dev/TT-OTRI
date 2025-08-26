@@ -194,6 +194,6 @@
 .monto-item { display: flex; flex-direction: column; align-items: center; justify-content: center;}
 .monto-label { font-style: italic; color: #6b7280; margin-bottom: 6px; }
 .monto-item input { padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 10px; width: 180px; }
-.nolimit-check { display: inline-flex; align-items: center; gap: 8px; color: #374151; }
+.nolimit-check { display: flex; flex-direction: row; justify-content:center; align-content: center; align-items: center; gap: 8px; color: #374151; margin-top: 20px;}
 .monto-error { color: #ef4444; margin-top: 6px; }
 .field-error { border-color: #ef4444 !important; }

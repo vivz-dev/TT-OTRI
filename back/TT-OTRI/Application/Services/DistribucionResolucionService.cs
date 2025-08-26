@@ -21,11 +21,14 @@ public sealed class DistribucionResolucionService
     public Task<DistribucionResolucionDto?> GetByIdAsync(int id, CancellationToken ct)
         => _repo.GetByIdAsync(id, ct);
 
+// Application/Services/DistribucionResolucionService.cs
     public async Task<int> CreateAsync(int idResolucion, CreateDistribucionResolucionDto dto, CancellationToken ct)
     {
-        // Validación básica (opcional: podrías exigir que porcentajes sean >= 0, etc.)
         if (dto.PorcSubtotalAutores < 0 || dto.PorcSubtotalInstitut < 0)
             throw new ArgumentException("Los porcentajes no pueden ser negativos.");
+
+        if (dto.MontoMaximo.HasValue && dto.MontoMaximo.Value < dto.MontoMinimo)
+            throw new ArgumentException("MontoMaximo no puede ser menor que MontoMinimo.");
 
         return await _repo.CreateAsync(idResolucion, dto, ct);
     }

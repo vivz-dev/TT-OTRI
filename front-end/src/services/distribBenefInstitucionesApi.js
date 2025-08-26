@@ -35,6 +35,7 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
   if (result?.error && [401, 403].includes(result.error.status)) {
@@ -47,6 +48,8 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   }
   return result;
 };
+
+
 
 /* ==============================
    API RTK Query
@@ -112,6 +115,21 @@ export const distribBenefInstitucionesApi = createApi({
       ],
     }),
 
+    getDistribBenefByDistribucion: builder.query({
+  // Intenta primero ruta REST si la tienes en backend:
+  // query: (idDistribucion) => `/distribuciones/${idDistribucion}/benef-instituciones`,
+  // Si no existe, usa query param:
+  query: (idDistribucion) => `/distrib-benef-instituciones?IdDistribucionResolucion=${idDistribucion}`,
+  providesTags: (result, _err, idDistribucion) =>
+    result
+      ? [
+          ...result.map((x) => ({ type: 'DistribBenefInstitucion', id: x.idDistribBenefInstitucion ?? x.IdDistribBenefInstitucion })),
+          { type: 'DistribBenefInstitucion', id: `DIST-${idDistribucion}` },
+        ]
+      : [{ type: 'DistribBenefInstitucion', id: `DIST-${idDistribucion}` }],
+}),
+
+
   }),
 });
 
@@ -122,4 +140,7 @@ export const {
   useCreateDistribBenefInstitucionMutation,
   usePatchDistribBenefInstitucionMutation,
   useDeleteDistribBenefInstitucionMutation,
+  useGetDistribBenefByDistribucionQuery,          // <-- NUEVO (si quisieras usarlo directo)
+
+  getDistribBenefByDistribucion
 } = distribBenefInstitucionesApi;

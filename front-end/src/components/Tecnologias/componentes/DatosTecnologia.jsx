@@ -267,14 +267,14 @@ const DatosTecnologia = forwardRef((_, ref) => {
     <form className="formulario">
       <div className="form-header">
         <h1 className="titulo-principal-form">Datos de la tecnología/know-how</h1>
-        <p className="subtitulo-form">Complete la información sobre su tecnología o conocimiento especializado</p>
+        <p className="subtitulo-form">Complete la información sobre la tecnología o conocimiento.</p>
       </div>
 
       <div className="form-fieldsets">
         <div className={`form-card ${errores.nombre || errores.descripcion ? 'error' : ''} ${shake.nombre || shake.descripcion ? 'shake' : ''}`}>
-          <h2 className="form-card-header">Información básica</h2>
-          <div className="input-row">
-            <label className="input-group">
+          {/* <h2 className="form-card-header">Información básica</h2> */}
+          <div className="">
+            <label className="input-group ">
               <Components.GrowTextArea
                 id="tec-nombre" name="nombre" label="Nombre de la tecnología"
                 placeholder="Escribe el nombre…" value={nombre}

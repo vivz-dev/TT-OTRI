@@ -1,0 +1,34 @@
+/* tag STATUS PARA BULLETS */
+.tag-status {
+  font-size: 0.75rem;
+  font-weight: bolder;
+  display: inline-block;
+  text-transform: capitalize;
+  text-align: center;
+  width: 150px;
+  border-radius: 999px;
+  align-content: center;
+
+}
+
+/* Verde para estados positivos */
+.tag-status.disponible,
+.tag-status.vigente,
+.tag-status.realizado
+ {
+  background-color: var(--bullet-verde-bg);  /* Fondo verde claro */
+  color: var(--bullet-verde-text);             /* Texto verde oscuro */
+}
+/* Rojo para estados negativos */
+.tag-status.no-disponible,
+.tag-status.derogada,
+.tag-status.finalizada {
+  background-color:  var(--bullet-rojo-bg);
+  color: var(--bullet-rojo-text);
+}
+
+.tag-status.inactivo,
+.tag-status.inactiva {
+  background-color:  var(--bullet-rojo-bg);
+  color: var(--bullet-rojo-text);
+}

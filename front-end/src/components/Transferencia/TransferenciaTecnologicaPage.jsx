@@ -10,6 +10,8 @@ import React, { useState, useMemo } from "react";
 import { PageHeader, ActionBar, CardScroll } from "../layouts/components";
 import { useGetTransfersQuery } from "../../services/transfersApi";
 import CompletarRegistro from "../layouts/components/CompletarRegistro";
+import { ModalProvider } from "../layouts/components/ModalProvider";
+
 
 const fmtFecha = (iso) =>
   iso
@@ -57,7 +59,7 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
   const [searchText, setSearch] = useState("");
 
   if (isLoading) return <p>Cargando…</p>;
-  if (error) return <p>Error al cargar las transferencias: {error.message}</p>;
+  if (error) return <p>Error al cargar.{error.message}</p>;
 
   const filterOptions = [
     { label: "Todas", value: "todas" },
@@ -68,7 +70,7 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
   return (
     <main className="page-container">
       <PageHeader
-        title="Transferencias Tecnológicas"
+        title="Transferencia Tecnológica (TT)"
         subtitle="Consulta todas las TT registradas."
       />
 
@@ -81,16 +83,14 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
         onRegister={onRegister}
       />
 
+      <ModalProvider>
       <CardScroll
         filter={filter}
         searchText={searchText}
         dummyData={transfersData}
-        onCardClick={handleCardClick}
+        
       />
-
-      {showModal && (
-        <CompletarRegistro item={selectedItem} onClose={handleCloseModal} />
-      )}
+      </ModalProvider>
     </main>
   );
 };

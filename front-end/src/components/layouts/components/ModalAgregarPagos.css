@@ -1,0 +1,12 @@
+.btn-delete-top {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s;
+  padding: 0.2rem;
+}
+
+.btn-delete-top:hover {
+  color: #dc2626;
+}
