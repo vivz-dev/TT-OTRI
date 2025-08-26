@@ -8,6 +8,7 @@ import { useCreatePagoFacturasYArchivosMutation } from "../../../services/pagosO
 
 // ⬇️ orquestador de distribución (solo datos para la tabla)
 import { useComputeDistribucionTablaMutation } from "../../../services/distribucionPagoOrchestratorApi";
+import ModalDistribucion from "./ModalDistribucion";
 
 // ── helpers money ─────────────────────────────────────────
 const parseMoney = (value) => {
@@ -66,132 +67,26 @@ const money = (n) =>
 const DistribucionStep = ({
   item,
   resumenPago,
-  facturas = [],
+  facturas,
   onBack,
   onClose,
   onConfirmDistribucion,
 }) => {
-  const total =
-    resumenPago?.totalPago ||
-    facturas.reduce((acc, f) => acc + (f?.monto ?? 0), 0);
-  const cantidad = resumenPago?.totalFacturas || facturas.length;
+  // const total =
+  //   resumenPago?.totalPago ||
+  //   facturas.reduce((acc, f) => acc + (f?.monto ?? 0), 0);
+  // const cantidad = resumenPago?.totalFacturas || facturas.length;
 
   return (
-    <>
-      <header className="otri-modal-header headerStyle">
-        <h3>Definir distribución de beneficios</h3>
-        <div style={{ fontSize: 12, opacity: 0.8 }}>
-          TT: <strong>{item?.titulo || `#${item?.id}`}</strong>
-        </div>
-      </header>
 
-      <section
-        className="otri-modal-body bodyStyle"
-        style={{ maxHeight: "60vh", overflow: "auto", display: "grid", gap: 12 }}
-      >
-        <div
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: 12,
-            padding: 12,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 8,
-          }}
-        >
-          <div>
-            <strong>Facturas:</strong> {cantidad}
-          </div>
-          <div>
-            <strong>Total:</strong> {money(total)}
-          </div>
-        </div>
-
-        <div
-          style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>
-            Detalle de facturas
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "80px 1fr 140px",
-              gap: 8,
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            <div>#</div>
-            <div>Fecha</div>
-            <div>Monto</div>
-          </div>
-          <div style={{ height: 8 }} />
-          {facturas.map((f) => (
-            <div
-              key={f.index}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "80px 1fr 140px",
-                gap: 8,
-                padding: "6px 0",
-                borderTop: "1px dashed #eee",
-              }}
-            >
-              <div>Factura {f.index}</div>
-              <div>{f.fechaFactura ?? "—"}</div>
-              <div>{money(f.monto ?? 0)}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* TODO: UI de distribución */}
-        <div
-          style={{
-            border: "1px dashed #e5e7eb",
-            borderRadius: 12,
-            padding: 16,
-            fontSize: 14,
-            opacity: 0.9,
-          }}
-        >
-          <em>
-            Coloca aquí el formulario/componente para repartir el total entre
-            actores (inventores, unidades, universidad, etc.) con validaciones
-            (suma 100%, reglas de mínimos, etc.).
-          </em>
-        </div>
-      </section>
-
-      <footer
-        className="otri-modal-footer footerStyle"
-        style={{
-          display: "flex",
-          gap: 8,
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
-      >
-        <button type="button" onClick={onBack} className="btn-secondary">
-          Atrás
-        </button>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={onClose} className="btn-tertiary">
-            Cerrar
-          </button>
-          <button
-            type="button"
-            onClick={onConfirmDistribucion}
-            className="btn-primary"
-          >
-            Confirmar distribución
-          </button>
-        </div>
-      </footer>
-    </>
+    <ModalDistribucion
+    item={item}
+    resumenPago ={resumenPago}
+    facturas={facturas}
+    onClose={onClose}
+    onBack={onBack}
+    onConfirmDistribucion={onConfirmDistribucion}
+    />
   );
 };
 

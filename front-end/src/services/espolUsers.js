@@ -119,6 +119,8 @@ export async function getPersonaNameById(id) {
   try {
     const persona = await getPersonaById(id);
 
+    console.log("PERSONA BY ID -->", persona)
+
     if (persona && persona.apellidos && persona.nombres) {
       return `${capitalizeWords(persona.nombres)} ${capitalizeWords(
         persona.apellidos

@@ -1,5 +1,7 @@
 // src/pages/layouts/components/DistribucionFinal.jsx
 import React, { useMemo } from "react";
+import { getPersonaNameById } from "../../../services/espolUsers";
+
 
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
@@ -22,9 +24,12 @@ const money = (n) =>
  *  }
  */
 const DistribucionFinal = ({ data }) => {
+  console.log("DATA --->>>",data)
   const autores = Array.isArray(data?.autores) ? data.autores : [];
   const instituciones = Array.isArray(data?.instituciones) ? data.instituciones : [];
   const centros = Array.isArray(data?.centros) ? data.centros : [];
+
+  console.log("centros ---> ", centros)
 
   // Normaliza por si viniera como solo IDs (retrocompat):
   const institucionesNorm = useMemo(() => {
@@ -46,7 +51,8 @@ const DistribucionFinal = ({ data }) => {
         <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
 
         <div style={{ gridColumn: "1 / span 2", fontWeight: 600 }}>
-          {data?.codigoResolucion ?? "—"}
+        {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual de fecha XX del mes XX del año XXXX, y a la resolución ${data?.codigoResolucion ?? "—"} de fecha dd del mes mm del año aaaa, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
+          {/* {data?.codigoResolucion ?? "—"} */}
         </div>
 
         <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
@@ -59,8 +65,8 @@ const DistribucionFinal = ({ data }) => {
 
         {/* Autores */}
         {autores.map((a, i) => {
-          const label = a?.idPersona != null ? `ID AUTOR ${a.idPersona}` : `ID AUTOR ${i + 1}`;
-          const monto = a?.montoAutor ?? 0;
+          const label = a.idPersona;
+          const monto = a.montoAutor ?? 0;
           return (
             <React.Fragment key={`aut-${a?.idPersona ?? i}`}>
               <div>{label}</div>
@@ -78,7 +84,7 @@ const DistribucionFinal = ({ data }) => {
         {/* Instituciones */}
         {institucionesNorm.map((inst, i) => (
           <React.Fragment key={`inst-${inst?.idBenefInst ?? i}`}>
-            <div>{inst?.idBenefInst != null ? `idBenefInst${inst.idBenefInst}` : `idBenefInst${i + 1}`}</div>
+            <div>{inst.idBenefInst}</div>
             <div>{money(inst?.montoBenefInst ?? 0)}</div>
           </React.Fragment>
         ))}
@@ -89,7 +95,7 @@ const DistribucionFinal = ({ data }) => {
             <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
             {centros.map((c, i) => (
               <React.Fragment key={`cent-${c?.idUnidad ?? i}`}>
-                <div>{c?.idUnidad != null ? `idCentro${c.idUnidad}` : `idCentro${i + 1}`}</div>
+                <div>{c.idCentro}</div>
                 <div>{money(c?.montoCentro ?? 0)}</div>
               </React.Fragment>
             ))}

@@ -1,5 +1,5 @@
 // src/pages/layouts/components/ModalDistribucion.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import DistribucionFinal from "./DistribucionFinal";
 import { useComputeDistribucionTablaMutation } from "../../../services/distribucionPagoOrchestratorApi";
 
@@ -19,10 +19,19 @@ const money = (n) =>
  * - onBack: opcional, volver al paso anterior
  * - onConfirmDistribucion: acción para confirmar
  */
-const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, onConfirmDistribucion }) => {
+const ModalDistribucion = ({
+  item,
+  resumenPago,
+  facturas = [],
+  onClose,
+  onBack,
+  onConfirmDistribucion,
+}) => {
   const stop = (e) => e.stopPropagation();
 
-  const total = resumenPago?.totalPago || facturas.reduce((acc, f) => acc + (f?.monto ?? 0), 0);
+  const total =
+    resumenPago?.totalPago ||
+    facturas.reduce((acc, f) => acc + (f?.monto ?? 0), 0);
   const cantidad = resumenPago?.totalFacturas || facturas.length;
 
   const rows = useMemo(() => {
@@ -33,25 +42,58 @@ const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, 
     }));
   }, [facturas]);
 
-  const [computeDistribucion, { isLoading, isError, error }] = useComputeDistribucionTablaMutation();
+  const [computeDistribucion, { isLoading, isError, error }] =
+    useComputeDistribucionTablaMutation();
   const [resultado, setResultado] = useState(null);
 
+  // ───────────────── Candados para ejecutar 1 sola vez ─────────────────
+  // Evita doble ejecución de useEffect en StrictMode y/o rerenders
+  const didRunRef = useRef(false);
+  // Evita llamadas concurrentes por si algo vuelve a disparar handleCalcular
+  const inFlightRef = useRef(false);
+
   const handleCalcular = async () => {
+    // Protección adicional por si algo intenta dispararlo 2 veces
+    if (inFlightRef.current) {
+      console.log("[MODAL] 🔒 Cálculo ya en vuelo. Ignorando llamada duplicada.");
+      return;
+    }
+    inFlightRef.current = true;
+
     try {
       const args = {
-        idTT: item?.id,                 // Ajusta si tu TT usa otra clave (p.ej., item.idTT)
-        montoTotalRegistroPago: total,  // total del registro de pago (todas las facturas)
+        idTT: item?.id, // Ajusta si tu TT usa otra clave (p.ej., item.idTT)
+        montoTotalRegistroPago: total, // total del registro de pago (todas las facturas)
         // idDistribucionResolucion: 2, // opcional: por defecto 2 en tu orquestador
       };
       console.log("[MODAL] ▶ Ejecutando orquestador con:", args);
       const data = await computeDistribucion(args).unwrap();
       console.log("[MODAL] ✅ Respuesta orquestador:", data);
-      setResultado(data);
+      setResultado((prev) => {
+        // Si ya había resultado, no re-renderizamos innecesariamente
+        if (prev) return prev;
+        return data;
+      });
     } catch (e) {
       console.error("[MODAL] ❌ Error al calcular distribución:", e);
       setResultado(null);
+    } finally {
+      inFlightRef.current = false;
     }
   };
+
+  // Dispara el cálculo una sola vez al montar el modal
+  useEffect(() => {
+    if (didRunRef.current) {
+      console.log("[MODAL] ⏭ Ya se ejecutó el cálculo previamente. Skip.");
+      return;
+    }
+    didRunRef.current = true;
+    handleCalcular();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← Intencionalmente vacío para que corra SOLO al montar
+
+  console.log("RESULTADO --> ", resultado);
 
   return (
     <div className="otri-modal-backdrop backdropStyle" onClick={onClose}>
@@ -63,7 +105,10 @@ const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, 
           </div>
         </header>
 
-        <section className="otri-modal-body bodyStyle" style={{ maxHeight: "60vh", overflow: "auto", display: "grid", gap: 12 }}>
+        <section
+          className="otri-modal-body bodyStyle"
+          style={{ maxHeight: "60vh", overflow: "auto", display: "grid", gap: 12 }}
+        >
           <div
             style={{
               border: "1px solid #e5e7eb",
@@ -76,16 +121,17 @@ const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, 
               gap: 8,
             }}
           >
-            <div><strong>Facturas:</strong> {cantidad}</div>
-            <div><strong>Total:</strong> {money(total)}</div>
+            {/* <div><strong>Facturas:</strong> {cantidad}</div>
+            <div><strong>Total:</strong> {money(total)}</div> */}
+            {/* Si quisieras botón manual en vez de auto-cálculo:
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               <button type="button" className="btn-primary" onClick={handleCalcular} disabled={isLoading}>
                 {isLoading ? "Calculando…" : "Calcular distribución"}
               </button>
-            </div>
+            </div> */}
           </div>
 
-          <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 }}>
+          {/* <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 }}>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Detalle de facturas</div>
             <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 140px", gap: 8, fontSize: 14, fontWeight: 600 }}>
               <div>#</div><div>Fecha</div><div>Monto</div>
@@ -98,26 +144,51 @@ const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, 
                 <div>{money(r.monto)}</div>
               </div>
             ))}
-          </div>
+          </div> */}
 
-          {/* Resultado de la distribución */}
+          {/* Errores */}
           {isError && (
-            <div style={{ color: "#b91c1c", border: "1px solid #fecaca", background: "#fff1f2", padding: 12, borderRadius: 8 }}>
+            <div
+              style={{
+                color: "#b91c1c",
+                border: "1px solid #fecaca",
+                background: "#fff1f2",
+                padding: 12,
+                borderRadius: 8,
+              }}
+            >
               Error al calcular: {String(error?.data || error?.message || "Desconocido")}
             </div>
           )}
 
-          {resultado && (
-            <DistribucionFinal data={resultado} />
-          )}
+          {/* Resultado de la distribución (se renderiza una sola vez porque el cálculo solo corre una vez) */}
+          {resultado && <DistribucionFinal data={resultado} />}
         </section>
 
-        <footer className="otri-modal-footer footerStyle" style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
-          <button type="button" onClick={onBack} className="btn-secondary">Atrás</button>
+        <footer
+          className="otri-modal-footer footerStyle"
+          style={{
+            display: "flex",
+            gap: 8,
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <button type="button" onClick={onBack} className="btn-secondary">
+            Atrás
+          </button>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" onClick={onClose} className="btn-tertiary">Cerrar</button>
-            <button type="button" onClick={onConfirmDistribucion} className="btn-primary" disabled={!resultado}>
-              Confirmar distribución
+            <button type="button" onClick={onClose} className="btn-tertiary">
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={onConfirmDistribucion}
+              className="btn-primary"
+              disabled={!resultado || isLoading}
+            >
+              {isLoading ? "Calculando…" : "Confirmar distribución"}
             </button>
           </div>
         </footer>

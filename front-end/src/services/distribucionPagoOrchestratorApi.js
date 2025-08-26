@@ -58,14 +58,14 @@ export const distribucionPagoOrchestratorApi = createApi({
             technologiesApi.endpoints.getTechnology.initiate(idTecnologia, { forceRefetch: true })
           ).unwrap();
           const nombreTecnologia = tec?.titulo ?? tec?.nombre ?? '—';
-          console.log('[ORQ] 2) Tecnología:', { idTecnologia, nombreTecnologia });
+          // console.log('[ORQ] 2) Tecnología:', { idTecnologia, nombreTecnologia });
 
           /* 3) Resolución (código) */
           const res = await api.dispatch(
             resolutionsApi.endpoints.getResolutionById.initiate(idResolucion, { forceRefetch: true })
           ).unwrap();
           const codigoResolucion = res?.codigo ?? res?.codigoResolucion ?? '—';
-          console.log('[ORQ] 3) Resolución:', { idResolucion, codigoResolucion });
+          // console.log('[ORQ] 3) Resolución:', { idResolucion, codigoResolucion });
 
           /* 4) Distribución por resolución */
           const distRes = await api.dispatch(
@@ -81,31 +81,31 @@ export const distribucionPagoOrchestratorApi = createApi({
             inst: distRes?.PorcSubtotalInstitut ?? distRes?.porcSubtotalInstitut,
           };
 
-          console.log('[ORQ] 4) DistribuciónResolución:', {
-            idDistribucionResolucion,
-            porcOriginales: porcOrig,
-            porcUsados: { porcSubtotalAutores, porcSubtotalInstit }
-          });
+          // console.log('[ORQ] 4) DistribuciónResolución:', {
+          //   idDistribucionResolucion,
+          //   porcOriginales: porcOrig,
+          //   porcUsados: { porcSubtotalAutores, porcSubtotalInstit }
+          // });
 
           /* 5) Subtotales (sin centavos) */
           const total = montoTotalRegistroPago;
           const subtotalAutores = total * porcSubtotalAutores;
           const subtotalInstituciones = total * porcSubtotalInstit;
-          console.log('[ORQ] 5) Subtotales:', { total, subtotalAutores, subtotalInstituciones });
+          // console.log('[ORQ] 5) Subtotales:', { total, subtotalAutores, subtotalInstituciones });
 
           
           const listaAutores = await buscarAutoresTecnologia(api, {
             idTecnologia,
             subtotalAutores, // el que ya calculaste
           });
-          console.log('[ORQ] ▶ Lista autores (desde servicio):', listaAutores);
+          // console.log('[ORQ] ▶ Lista autores (desde servicio):', listaAutores);
 
           const idsBenefInst = await buscarInstituciones(api, {
             idTransferencia: idTT,     // o transferencia: tt (si ya la tienes)
             // idDistribucionResolucion: si en algún momento ya lo tienes, puedes pasarlo aquí y omite el hardcode
             subtotalInstituciones,
           });
-          console.log('[ORQ] ▶ IDs BenefInstituciones (desde servicio):', idsBenefInst);
+          // console.log('[ORQ] ▶ IDs BenefInstituciones (desde servicio):', idsBenefInst);
 
           // idsBenefInst
 
@@ -115,7 +115,7 @@ export const distribucionPagoOrchestratorApi = createApi({
             subtotalInstituciones, // el que ya calculaste
             idsBenefInst
           });
-          console.log('[ORQ] ▶ Lista listaCentros (desde servicio):', listaCentros);
+          // console.log('[ORQ] ▶ Lista listaCentros (desde servicio):', listaCentros);
 
 
           /* 9) Respuesta (payload final) */

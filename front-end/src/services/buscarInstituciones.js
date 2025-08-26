@@ -44,12 +44,12 @@ export async function buscarInstituciones(api, params = {}) {
     subtotalInstituciones,
   } = params;
 
-  console.log('[BUSCAR-INST] ▶ params:', {
-    tieneItem: !!ttItemParam,
-    idTransferencia,
-    idDistribucionResolucionParam: idDistParam,
-    subtotalInstituciones,
-  });
+  // console.log('[BUSCAR-INST] ▶ params:', {
+  //   tieneItem: !!ttItemParam,
+  //   idTransferencia,
+  //   idDistribucionResolucionParam: idDistParam,
+  //   subtotalInstituciones,
+  // });
 
   if (!Number.isFinite(Number(subtotalInstituciones))) {
     throw new Error('subtotalInstituciones inválido');
@@ -62,7 +62,7 @@ export async function buscarInstituciones(api, params = {}) {
       ttItem = await api
         .dispatch(transfersApi.endpoints.getTransferById.initiate(idTransferencia, { forceRefetch: true }))
         .unwrap();
-      console.log('[BUSCAR-INST] 1) Transferencia obtenida por id:', ttItem);
+      // console.log('[BUSCAR-INST] 1) Transferencia obtenida por id:', ttItem);
     } catch (e) {
       console.warn('[BUSCAR-INST] Aviso: no se pudo obtener la transferencia por idTransferencia:', e);
     }
@@ -84,7 +84,7 @@ export async function buscarInstituciones(api, params = {}) {
     idDistribucionResolucion = 41;
   }
 
-  console.log('[BUSCAR-INST] idDistribucionResolucion a usar:', idDistribucionResolucion);
+  // console.log('[BUSCAR-INST] idDistribucionResolucion a usar:', idDistribucionResolucion);
 
   // 3) Traer TODOS los registros de DistribBenefInstituciones
   const all = await api
@@ -94,7 +94,7 @@ export async function buscarInstituciones(api, params = {}) {
     .unwrap();
 
   const lista = Array.isArray(all) ? all : [];
-  console.log('[BUSCAR-INST] Total registros distribBenefInstituciones:', lista.length);
+  // console.log('[BUSCAR-INST] Total registros distribBenefInstituciones:', lista.length);
 
   // 4) Filtrar por idDistribucionResolucion (tolerante a casing/nombres)
   const filtrados = lista.filter((x) => {
@@ -104,11 +104,11 @@ export async function buscarInstituciones(api, params = {}) {
     return String(idDistX) === String(idDistribucionResolucion);
   });
 
-  console.log('[BUSCAR-INST] Registros filtrados por idDistribucionResolucion:', {
-    idDistribucionResolucion,
-    total: filtrados.length,
-    items: filtrados,
-  });
+  // console.log('[BUSCAR-INST] Registros filtrados por idDistribucionResolucion:', {
+  //   idDistribucionResolucion,
+  //   total: filtrados.length,
+  //   items: filtrados,
+  // });
 
   // 5) Construir salida: id + porcentaje + montoBenefInst
   const out = filtrados
@@ -152,6 +152,6 @@ export async function buscarInstituciones(api, params = {}) {
     })
     .filter(Boolean);
 
-  console.log('[BUSCAR-INST] ✅ Resultado (id, porcentaje, monto):', out);
+  // console.log('[BUSCAR-INST] ✅ Resultado (id, porcentaje, monto):', out);
   return out;
 }

@@ -22,7 +22,7 @@ import { autoresApi } from './autoresApi';
 
 export async function buscarCentros(api, params = {}) {
   const { idTecnologia, subtotalInstituciones, idsBenefInst } = params || {};
-  console.log('[BUSCAR-CENTROS] ▶ params:', { idTecnologia, subtotalInstituciones, hasBenefList: Array.isArray(idsBenefInst) });
+  // console.log('[BUSCAR-CENTROS] ▶ params:', { idTecnologia, subtotalInstituciones, hasBenefList: Array.isArray(idsBenefInst) });
 
   if (!idTecnologia) throw new Error('idTecnologia es requerido');
   if (!Number.isFinite(Number(subtotalInstituciones))) throw new Error('subtotalInstituciones inválido');
@@ -52,7 +52,7 @@ export async function buscarCentros(api, params = {}) {
       )
       .unwrap();
     acuerdo = resp || null;
-    console.log('[BUSCAR-CENTROS] 1) Acuerdo por tecnología (directo):', acuerdo);
+    // console.log('[BUSCAR-CENTROS] 1) Acuerdo por tecnología (directo):', acuerdo);
   } catch (e) {
     console.warn('[BUSCAR-CENTROS] Aviso: getAcuerdoByTecnologiaId no disponible. Fallback a getAcuerdos…', e?.message || e);
   }
@@ -62,14 +62,14 @@ export async function buscarCentros(api, params = {}) {
       .dispatch(acuerdosDistribAutoresApi.endpoints.getAcuerdos.initiate(undefined, { forceRefetch: true }))
       .unwrap();
     const lista = Array.isArray(todos) ? todos : [];
-    console.log('[BUSCAR-CENTROS] Fallback: total acuerdos obtenidos:', lista.length);
+    // console.log('[BUSCAR-CENTROS] Fallback: total acuerdos obtenidos:', lista.length);
 
     acuerdo = lista.find(a => {
       const idTecA = a?.idTecnologia ?? a?.tecnologiaId ?? a?.idTec ?? a?.id_tec ?? null;
       return String(idTecA) === String(idTecnologia);
     }) || null;
 
-    console.log('[BUSCAR-CENTROS] Fallback: acuerdo encontrado:', acuerdo);
+    // console.log('[BUSCAR-CENTROS] Fallback: acuerdo encontrado:', acuerdo);
   }
 
   const acuerdoId = acuerdo?.id ?? acuerdo?.acuerdoId ?? acuerdo?.idAcuerdo ?? null;
@@ -84,11 +84,11 @@ export async function buscarCentros(api, params = {}) {
   console.log('[BUSCAR-CENTROS] Total autores obtenidos:', listaAutores.length);
 
   const autoresDelAcuerdo = listaAutores.filter(a => String(a?.idAcuerdoDistrib) === String(acuerdoId));
-  console.log('[BUSCAR-CENTROS] Autores filtrados por acuerdoId:', {
-    acuerdoId,
-    total: autoresDelAcuerdo.length,
-    autores: autoresDelAcuerdo
-  });
+  // console.log('[BUSCAR-CENTROS] Autores filtrados por acuerdoId:', {
+  //   acuerdoId,
+  //   total: autoresDelAcuerdo.length,
+  //   autores: autoresDelAcuerdo
+  // });
 
   // 3) Construir lista de centros (SIN normalizar 60↔0.6)
   const centros = autoresDelAcuerdo.map(a => {
@@ -102,6 +102,6 @@ export async function buscarCentros(api, params = {}) {
     };
   });
 
-  console.log('[BUSCAR-CENTROS] ✅ Centros (monto por unidad):', centros);
+  // console.log('[BUSCAR-CENTROS] ✅ Centros (monto por unidad):', centros);
   return centros;
 }

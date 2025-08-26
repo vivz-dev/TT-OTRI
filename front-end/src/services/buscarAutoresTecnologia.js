@@ -15,6 +15,8 @@
 
 import { acuerdosDistribAutoresApi } from './acuerdosDistribAutoresApi';
 import { autoresApi } from './autoresApi';
+import { getPersonaNameById } from "./espolUsers";
+
 
 /**
  * @param {any} api - objeto `api` que recibes dentro de queryFn de RTK Query (builder.mutation/query)
@@ -48,7 +50,7 @@ export async function buscarAutoresTecnologia(api, params) {
       )
       .unwrap();
     acuerdo = resp || null;
-    console.log('[BUSCAR-AUT] 1) Acuerdo por tecnología (directo):', acuerdo);
+    // console.log('[BUSCAR-AUT] 1) Acuerdo por tecnología (directo):', acuerdo);
   } catch (e) {
     console.warn('[BUSCAR-AUT] Aviso: getAcuerdoByTecnologiaId falló o no está disponible. Probando fallback…', e);
   }
@@ -60,7 +62,7 @@ export async function buscarAutoresTecnologia(api, params) {
       .unwrap();
 
     const lista = Array.isArray(todos) ? todos : [];
-    console.log('[BUSCAR-AUT] Fallback: total acuerdos obtenidos:', lista.length);
+    // console.log('[BUSCAR-AUT] Fallback: total acuerdos obtenidos:', lista.length);
 
     acuerdo = lista.find(a => {
       const idTecA =
@@ -68,7 +70,7 @@ export async function buscarAutoresTecnologia(api, params) {
       return String(idTecA) === String(idTecnologia);
     }) || null;
 
-    console.log('[BUSCAR-AUT] Fallback: acuerdo encontrado:', acuerdo);
+    // console.log('[BUSCAR-AUT] Fallback: acuerdo encontrado:', acuerdo);
   }
 
   const acuerdoId = acuerdo?.id ?? acuerdo?.acuerdoId ?? acuerdo?.idAcuerdo ?? null;
@@ -83,30 +85,42 @@ export async function buscarAutoresTecnologia(api, params) {
     
 
   const lista = Array.isArray(todos) ? todos : [];
-  console.log('[BUSCAR-AUT] Total autores obtenidos:', lista.length);
+  // console.log('[BUSCAR-AUT] Total autores obtenidos:', lista.length);
 
   // 2) Filtrar por acuerdoId (campo normalizado por toAutorItem: idAcuerdoDistrib)
   const autoresDelAcuerdo = lista.filter(a => String(a?.idAcuerdoDistrib) === String(acuerdoId));
-  console.log('[BUSCAR-AUT] Autores filtrados por acuerdoId:', {
-    acuerdoId,
-    total: autoresDelAcuerdo.length,
-    autores: autoresDelAcuerdo,
-  });
+  // console.log('[BUSCAR-AUT] Autores filtrados por acuerdoId:', {
+  //   acuerdoId,
+  //   total: autoresDelAcuerdo.length,
+  //   autores: autoresDelAcuerdo,
+  // });
 
 
   // 3) Construir lista con montos por autor (SIN normalizar 60↔0.6)
-  const listaMontos = autoresDelAcuerdo.map(a => {
+  // 3) Construir lista con montos por autor (SIN normalizar 60↔0.6)
+const listaMontos = await Promise.all(
+  autoresDelAcuerdo.map(async (a) => {
     const porcAutor =
       a?.porcAutor ?? a?.porcentaje ?? a?.porcentajeAutor ?? 0; // tal cual
-    const idPersona =
-      a?.idPersona ?? a?.personaId ?? a?.id_autor ?? null;
+
+    // const idPersona =
+    //   a?.idPersona ?? a?.personaId ?? a?.id_autor ?? null;
+
+    // ✅ Llamada correcta al servicio para obtener nombre completo
+    const idPersona = await getPersonaNameById(a.idPersona);
+    console.log("ID PERSONA --> ", a.idPersona)
+    console.log("NOMBRE PERSONA --> ",idPersona)
 
     const montoAutor = Number(subtotalAutores) * Number(porcAutor);
 
     return {
       idPersona,
+      porcAutor,
       montoAutor,     // subtotalAutores * porcAutor
     };
-  });
-  return listaMontos;
+  })
+);
+
+return listaMontos;
+  // return listaMontos;
 }
