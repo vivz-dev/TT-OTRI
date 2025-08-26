@@ -18,9 +18,8 @@ import { technologiesApi } from './technologiesApi';
 import { resolutionsApi } from './resolutionsApi';
 import { distribucionesApi } from './distribucionesApi';
 import { buscarAutoresTecnologia } from './buscarAutoresTecnologia';
-import { acuerdosDistribAutoresApi } from './acuerdosDistribAutoresApi';
-import { benefInstitucionesApi } from './benefInstitucionesApi';
-import { autoresApi } from './autoresApi';
+import { buscarInstituciones } from './buscarInstituciones';
+import { buscarCentros } from './buscarCentros';
 
 /* ───── helpers numéricos (sin centavos) ───── */
 
@@ -94,27 +93,45 @@ export const distribucionPagoOrchestratorApi = createApi({
           const subtotalInstituciones = total * porcSubtotalInstit;
           console.log('[ORQ] 5) Subtotales:', { total, subtotalAutores, subtotalInstituciones });
 
+          
+          const listaAutores = await buscarAutoresTecnologia(api, {
+            idTecnologia,
+            subtotalAutores, // el que ya calculaste
+          });
+          console.log('[ORQ] ▶ Lista autores (desde servicio):', listaAutores);
+
+          const idsBenefInst = await buscarInstituciones(api, {
+            idTransferencia: idTT,     // o transferencia: tt (si ya la tienes)
+            // idDistribucionResolucion: si en algún momento ya lo tienes, puedes pasarlo aquí y omite el hardcode
+            subtotalInstituciones,
+          });
+          console.log('[ORQ] ▶ IDs BenefInstituciones (desde servicio):', idsBenefInst);
+
+          // idsBenefInst
+
+
+          const listaCentros = await buscarCentros(api, {
+            idTecnologia,
+            subtotalInstituciones, // el que ya calculaste
+            idsBenefInst
+          });
+          console.log('[ORQ] ▶ Lista listaCentros (desde servicio):', listaCentros);
+
+
           /* 9) Respuesta (payload final) */
           const dataTabla = {
             nombreTecnologia,
             codigoResolucion,
             subtotalAutores,
+            autores: listaAutores,
+            instituciones: idsBenefInst,
+            centros: listaCentros,
             subtotalInstituciones,
             total: total,
           };
 
           console.log('[ORQ] ✅ Payload tabla:', dataTabla);
 
-        try {
-          const listaAutores = await buscarAutoresTecnologia(api, {
-            idTecnologia,
-            subtotalAutores, // el que ya calculaste
-          });
-          console.log('[ORQ] ▶ Lista autores (desde servicio):', listaAutores);
-          // si SOLO quieres log, no alteres el retorno; si quieres incluirlo en dataTabla, lo agregas.
-        } catch (e) {
-          console.warn('[ORQ] No fue posible obtener lista de autores:', e);
-        }
 
           return { data: dataTabla };
         } catch (err) {

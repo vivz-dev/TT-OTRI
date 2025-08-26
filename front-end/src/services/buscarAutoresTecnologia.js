@@ -104,17 +104,9 @@ export async function buscarAutoresTecnologia(api, params) {
     const montoAutor = Number(subtotalAutores) * Number(porcAutor);
 
     return {
-      acuerdoId,
       idPersona,
-      porcAutor,      // se mantiene como llega (ej. 60 se usa 60)
       montoAutor,     // subtotalAutores * porcAutor
-      debug: {
-        subtotalAutores,
-        formula: 'montoAutor = subtotalAutores * porcAutor (SIN normalizar)',
-      },
     };
   });
-
-  console.log('[BUSCAR-AUT] ✅ Lista final (sin normalizar):', listaMontos);
   return listaMontos;
 }

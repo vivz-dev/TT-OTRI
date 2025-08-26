@@ -1,5 +1,7 @@
 // src/pages/layouts/components/ModalDistribucion.jsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import DistribucionFinal from "./DistribucionFinal";
+import { useComputeDistribucionTablaMutation } from "../../../services/distribucionPagoOrchestratorApi";
 
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
@@ -31,6 +33,26 @@ const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, 
     }));
   }, [facturas]);
 
+  const [computeDistribucion, { isLoading, isError, error }] = useComputeDistribucionTablaMutation();
+  const [resultado, setResultado] = useState(null);
+
+  const handleCalcular = async () => {
+    try {
+      const args = {
+        idTT: item?.id,                 // Ajusta si tu TT usa otra clave (p.ej., item.idTT)
+        montoTotalRegistroPago: total,  // total del registro de pago (todas las facturas)
+        // idDistribucionResolucion: 2, // opcional: por defecto 2 en tu orquestador
+      };
+      console.log("[MODAL] ▶ Ejecutando orquestador con:", args);
+      const data = await computeDistribucion(args).unwrap();
+      console.log("[MODAL] ✅ Respuesta orquestador:", data);
+      setResultado(data);
+    } catch (e) {
+      console.error("[MODAL] ❌ Error al calcular distribución:", e);
+      setResultado(null);
+    }
+  };
+
   return (
     <div className="otri-modal-backdrop backdropStyle" onClick={onClose}>
       <div className="otri-modal modalStyle" onClick={stop}>
@@ -56,6 +78,11 @@ const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, 
           >
             <div><strong>Facturas:</strong> {cantidad}</div>
             <div><strong>Total:</strong> {money(total)}</div>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <button type="button" className="btn-primary" onClick={handleCalcular} disabled={isLoading}>
+                {isLoading ? "Calculando…" : "Calcular distribución"}
+              </button>
+            </div>
           </div>
 
           <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 }}>
@@ -73,27 +100,25 @@ const ModalDistribucion = ({ item, resumenPago, facturas = [], onClose, onBack, 
             ))}
           </div>
 
-          {/* Aquí puedes renderizar tu UI de distribución (porcentajes/actores/etc.) */}
-          <div
-            style={{
-              border: "1px dashed #e5e7eb",
-              borderRadius: 12,
-              padding: 16,
-              fontSize: 14,
-              opacity: 0.9,
-            }}
-          >
-            <em>
-              Coloca aquí el formulario/componente para repartir el total entre actores (inventores, unidades, universidad, etc.) con validaciones (suma 100%, reglas de mínimos, etc.).
-            </em>
-          </div>
+          {/* Resultado de la distribución */}
+          {isError && (
+            <div style={{ color: "#b91c1c", border: "1px solid #fecaca", background: "#fff1f2", padding: 12, borderRadius: 8 }}>
+              Error al calcular: {String(error?.data || error?.message || "Desconocido")}
+            </div>
+          )}
+
+          {resultado && (
+            <DistribucionFinal data={resultado} />
+          )}
         </section>
 
         <footer className="otri-modal-footer footerStyle" style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
           <button type="button" onClick={onBack} className="btn-secondary">Atrás</button>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" onClick={onClose} className="btn-tertiary">Cerrar</button>
-            <button type="button" onClick={onConfirmDistribucion} className="btn-primary">Confirmar distribución</button>
+            <button type="button" onClick={onConfirmDistribucion} className="btn-primary" disabled={!resultado}>
+              Confirmar distribución
+            </button>
           </div>
         </footer>
       </div>
