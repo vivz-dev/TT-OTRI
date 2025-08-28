@@ -36,4 +36,5 @@
 .card-description {
   color: #4b5563;
   margin-bottom: 16px;
+  text-transform: math-auto;
 }

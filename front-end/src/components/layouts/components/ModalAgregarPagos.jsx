@@ -84,6 +84,7 @@ const DistribucionStep = ({
   onBack,
   onClose,
   onConfirmDistribucion,
+  registroPagoId,
 }) => {
   return (
     <ModalDistribucion
@@ -93,6 +94,7 @@ const DistribucionStep = ({
       onClose={onClose}
       onBack={onBack}
       onConfirmDistribucion={onConfirmDistribucion}
+      registroPagoId={registroPagoId}
     />
   );
 };
@@ -342,7 +344,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
       },
     };
 
-    console.log("[ModalAgregarPagos] Payload a orquestador:", payload);
+    // console.log("[ModalAgregarPagos] Payload a orquestador:", payload);
 
     try {
       const result = await runOrq(payload).unwrap();
@@ -356,6 +358,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
         },
         facturas,
         orquestadorResult: result,
+        registroPagoId: result?.registroPagoId ?? null,
       });
 
       // ✅ Cambiar a pantalla "distribución"
@@ -391,7 +394,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
   // ⬇️ Cuando cambie a la pantalla de distribución y la data llegue, SOLO loguea
   useEffect(() => {
     if (step === "distribucion" && distribTabla) {
-      console.log("[Distribucion] Datos tabla listos:", distribTabla);
+      // console.log("[Distribucion] Datos tabla listos:", distribTabla);
     }
   }, [step, distribTabla]);
 
@@ -553,6 +556,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
                 // TODO: POST distribución
                 onClose?.();
               }}
+              registroPagoId={nextData?.registroPagoId}
             />
           )}
         </div>

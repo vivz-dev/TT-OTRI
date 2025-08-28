@@ -278,14 +278,14 @@ const DatosTecnologia = forwardRef((_, ref) => {
               <Components.GrowTextArea
                 id="tec-nombre" name="nombre" label="Nombre de la tecnología"
                 placeholder="Escribe el nombre…" value={nombre}
-                onChange={(e) => setNombre(e.target.value)} maxLength={100} rows={1} kind="text" required
+                onChange={(e) => setNombre(e.target.value)} maxLength={300} rows={1} kind="text" required
               />
             </label>
             <label className="input-group">
               <Components.GrowTextArea
                 id="tec-descripcion" name="descripcion" label="Descripción"
                 placeholder="Describe brevemente…" value={descripcion}
-                onChange={(e) => setDescripcion(e.target.value)} maxLength={200} rows={2} kind="alphanumeric" required
+                onChange={(e) => setDescripcion(e.target.value)} maxLength={300} rows={2} kind="alphanumeric" required
               />
             </label>
           </div>

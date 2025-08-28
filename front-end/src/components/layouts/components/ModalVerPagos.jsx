@@ -5,12 +5,18 @@ import ModalVerFacturas from "./ModalVerFacturas";
 import { FileText, Sheet } from "lucide-react";
 import * as Buttons from "../buttons/buttons_index";
 
+// ⬇️ RTK Query – archivos por entidad (lazy para hacer fetch onClick)
+import { useLazyGetArchivosByEntidadQuery } from "../../../services/storage/archivosApi";
+
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2,
   }).format(Number(n || 0));
+
+// ⚙️ Ajusta este código si tu backend usa otro identificador para Registro de Pago
+const ENTIDAD_REGISTRO = "SP";
 
 const ModalVerPagos = ({ item, onClose }) => {
   const { isLoading, error, refetch, makeSelector } =
@@ -20,6 +26,9 @@ const ModalVerPagos = ({ item, onClose }) => {
   // estado del wizard interno: 'pagos' | 'facturas'
   const [step, setStep] = useState("pagos");
   const [selectedRegistro, setSelectedRegistro] = useState(null);
+
+  // control de loading por botón (idRegistroPago)
+  const [loadingArchivoId, setLoadingArchivoId] = useState(null);
 
   const stop = (e) => e.stopPropagation();
 
@@ -51,12 +60,70 @@ const ModalVerPagos = ({ item, onClose }) => {
 
   const isBusy = isLoading;
 
-  // console.log("REGISTROS DE PAGO --> ", registros)
+  // ─────────────────────────────────────────────────────
+  // Lazy fetch de archivos por entidad para un registro
+  // ─────────────────────────────────────────────────────
+const [triggerGetArchivosByEntidad] = useLazyGetArchivosByEntidadQuery();
+
+const handleOpenArchivoRegistro = useCallback(
+  async (registro) => {
+
+    console.log("REGISTRO A CONSULTAR -->", registro)
+    try {
+      const idEntidad = registro?.idRegistroPago ?? registro?.id;
+      if (!idEntidad) {
+        alert("No hay id del registro para consultar archivos.");
+        return;
+      }
+
+      setLoadingArchivoId(idEntidad);
+
+      // ⬇️ Usa los nombres que espera tu endpoint: { idTEntidad, tipoEntidad }
+      const res = await triggerGetArchivosByEntidad({
+        idTEntidad: idEntidad,
+        tipoEntidad: ENTIDAD_REGISTRO,
+      }).unwrap();
+
+      console.log(
+        `Archivos (${ENTIDAD_REGISTRO}) ➜ idTEntidad:`,
+        idEntidad,
+        " ➜ data:",
+        res
+      );
+
+      const archivos = Array.isArray(res) ? res : [];
+      if (archivos.length === 0) {
+        alert("No se encontraron archivos para este registro.");
+        return;
+      }
+
+      // Tomamos el primer archivo con alguna URL reconocida
+      const a0 = archivos[0] || {};
+      const url = a0.url || a0.downloadUrl || a0.publicUrl || a0.fileUrl;
+      if (!url) {
+        alert("El archivo no tiene una URL disponible.");
+        return;
+      }
+
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error("Error al obtener archivos del registro:", err);
+      alert("No se pudieron obtener los archivos del registro.");
+    } finally {
+      setLoadingArchivoId(null);
+    }
+  },
+  [triggerGetArchivosByEntidad]
+);
+
+  // console.log("REGISTROS DE PAGO --> ", registros);
+  // console.log("ITEM TT --> ", item);
 
   return (
     <div className="otri-modal-backdrop" onClick={onClose}>
       <div className="otri-modal" onClick={stop}>
-        {step === "pagos" ? (
+        <div className="otri-modal-container">
+          {step === "pagos" ? (
           <>
             <section
               className="otri-modal-body"
@@ -73,7 +140,8 @@ const ModalVerPagos = ({ item, onClose }) => {
                   <div className="pago-summary" style={{ marginBottom: 12 }}>
                     <h1 className="titulo-principal-form">Pagos realizados</h1>
                     <p>
-                      <strong>Total pagado hasta la fecha:</strong> {money(total || 0)}
+                      <strong>Total pagado hasta la fecha:</strong>{" "}
+                      {money(total || 0)}
                     </p>
                     <p>
                       <strong>Cantidad de pagos registrados:</strong>{" "}
@@ -97,43 +165,62 @@ const ModalVerPagos = ({ item, onClose }) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {registros.map((registro) => (
-                          <tr className="autor-monto" key={registro.idRegistroPago}>
-                            <td>
-                              {registro.createdAt
-                                ? new Date(
-                                    registro.createdAt
-                                  ).toLocaleDateString()
-                                : "-"}
-                            </td>
-                            <td>
-                              {registro.nombrePersona
-                                ? `${registro.nombrePersona}`
-                                : "No hay datos"}
-                            </td>
-                            <td>{money(registro.totalPago ?? 0)}</td>
-                            <td
-                              style={{
-                                display: "flex",
-                                gap: 6,
-                                justifyContent: "center",
-                              }}
-                            >
-                              {/* Botón que cambia al modal de FACTURAS */}
-                              <button
-                                className="btn-add-archivo"
-                                onClick={() => handleOpenFacturas(registro)}
-                                title="Ver Facturas"
+                        {registros.map((registro) => {
+                          const idBtn = registro?.idRegistroPago ?? registro?.id;
+                          const loadingThis = loadingArchivoId === idBtn;
+
+                          return (
+                            <tr className="autor-monto" key={registro.idRegistroPago}>
+                              <td>
+                                {registro.createdAt
+                                  ? new Date(registro.createdAt).toLocaleDateString()
+                                  : "-"}
+                              </td>
+                              <td>
+                                {registro.nombrePersona
+                                  ? `${registro.nombrePersona}`
+                                  : "No hay datos"}
+                              </td>
+                              <td>{money(registro.totalPago ?? 0)}</td>
+                              <td
+                                style={{
+                                  display: "flex",
+                                  gap: 6,
+                                  justifyContent: "center",
+                                }}
                               >
-                                <FileText />
-                              </button>
-                              {/* Botón para, p.ej., ver distribución/documentos (a futuro) */}
-                              <button className="btn-add-archivo">
-                                <Sheet />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                                {/* Botón que cambia al modal de FACTURAS */}
+                                <button
+                                  className="btn-add-archivo"
+                                  onClick={() => handleOpenFacturas(registro)}
+                                  title="Ver Facturas"
+                                  aria-label="Ver Facturas"
+                                >
+                                  <FileText />
+                                </button>
+
+                                {/* Botón que abre el primer archivo (URL) asociado al registro */}
+                                <button
+                                  className="btn-add-archivo"
+                                  onClick={() => handleOpenArchivoRegistro(registro)}
+                                  disabled={loadingThis}
+                                  title={
+                                    loadingThis
+                                      ? "Buscando archivo…"
+                                      : "Abrir archivo del registro"
+                                  }
+                                  aria-label={
+                                    loadingThis
+                                      ? "Buscando archivo…"
+                                      : "Abrir archivo del registro"
+                                  }
+                                >
+                                  <Sheet />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
 
                         <tr className="fila-subtotal-titulo">
                           <td className="subtotal" colSpan={2}>
@@ -141,7 +228,8 @@ const ModalVerPagos = ({ item, onClose }) => {
                           </td>
                           <td>{money(total || 0)}</td>
                           <td style={{ textAlign: "center" }}>
-                            <button className="btn-add-archivo">
+                            {/* Botón general (si quisieras abrir un resumen global, puedes reutilizar handleOpenArchivoRegistro con un objeto sintético) */}
+                            <button className="btn-add-archivo" title="Documentos o resumen">
                               <Sheet />
                             </button>
                           </td>
@@ -159,10 +247,7 @@ const ModalVerPagos = ({ item, onClose }) => {
             </section>
 
             <footer className="otri-modal-footer">
-              <Buttons.RegisterButton
-              onClick={onClose}
-              text={"Cerrar"}
-              />
+              <Buttons.RegisterButton onClick={onClose} text={"Cerrar"} />
             </footer>
           </>
         ) : (
@@ -173,6 +258,9 @@ const ModalVerPagos = ({ item, onClose }) => {
             onClose={onClose}
           />
         )}
+
+        </div>
+        
       </div>
     </div>
   );

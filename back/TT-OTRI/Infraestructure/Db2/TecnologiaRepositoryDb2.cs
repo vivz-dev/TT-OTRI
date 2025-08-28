@@ -128,8 +128,8 @@ WHERE IDOTRITTTECNOLOGIA = @id";
         cmd.Parameters.Add(new DB2Parameter("@idPersona", DB2Type.Integer) { Value = t.IdPersona });
         cmd.Parameters.Add(new DB2Parameter("@completado", DB2Type.SmallInt) { Value = BoolToSmallInt(t.Completado) });
         cmd.Parameters.Add(new DB2Parameter("@cotitularidad", DB2Type.SmallInt) { Value = BoolToSmallInt(t.Cotitularidad) });
-        cmd.Parameters.Add(new DB2Parameter("@titulo", DB2Type.VarGraphic, 100) { Value = t.Titulo });
-        cmd.Parameters.Add(new DB2Parameter("@descripcion", DB2Type.VarGraphic, 100) { Value = t.Descripcion });
+        cmd.Parameters.Add(new DB2Parameter("@titulo", DB2Type.VarGraphic, 300) { Value = t.Titulo });
+        cmd.Parameters.Add(new DB2Parameter("@descripcion", DB2Type.VarGraphic, 300) { Value = t.Descripcion });
         cmd.Parameters.Add(new DB2Parameter("@estado", DB2Type.Char, 1) { Value = t.Estado.ToString() });
         cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) { Value = t.Id });
 

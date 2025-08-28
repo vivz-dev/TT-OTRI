@@ -153,8 +153,8 @@ WHERE IDOTRITTRESOLUCION = @id";
         cmd.Parameters.Add(new DB2Parameter("@idusuario",  DB2Type.Integer)  { Value = r.IdUsuario });
         cmd.Parameters.Add(new DB2Parameter("@completado", DB2Type.SmallInt) { Value = BoolToSmallInt(r.Completed) });
         cmd.Parameters.Add(new DB2Parameter("@codigo",     DB2Type.VarChar)  { Value = (object)r.Codigo ?? string.Empty });
-        cmd.Parameters.Add(new DB2Parameter("@titulo",     DB2Type.VarChar)  { Value = (object)r.Titulo ?? string.Empty });
-        cmd.Parameters.Add(new DB2Parameter("@descripcion",DB2Type.VarChar)  { Value = (object)r.Descripcion ?? string.Empty });
+        cmd.Parameters.Add(new DB2Parameter("@titulo",     DB2Type.VarGraphic)  { Value = (object)r.Titulo ?? string.Empty });
+        cmd.Parameters.Add(new DB2Parameter("@descripcion",DB2Type.VarGraphic)  { Value = (object)r.Descripcion ?? string.Empty });
         cmd.Parameters.Add(new DB2Parameter("@estado",     DB2Type.Char)     { Value = (char)r.Estado });
         cmd.Parameters.Add(new DB2Parameter("@fresol", DB2Type.Date)
         {

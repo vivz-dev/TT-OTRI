@@ -34,6 +34,7 @@ public sealed class LicenciamientoService
         {
             IdTransferTecnologica = dto.IdTransferTecnologica,
             SubLicenciamiento = dto.SubLicenciamiento,
+            LicenciaExclusiva = dto.LicenciaExclusiva,
             FechaLimite = dto.FechaLimite
         };
 
@@ -47,12 +48,14 @@ public sealed class LicenciamientoService
         if (existing == null)
             return false;
 
-        // Aplicar cambios parciales
         if (dto.IdTransferTecnologica.HasValue)
             existing.IdTransferTecnologica = dto.IdTransferTecnologica.Value;
 
         if (dto.SubLicenciamiento.HasValue)
             existing.SubLicenciamiento = dto.SubLicenciamiento.Value;
+
+        if (dto.LicenciaExclusiva.HasValue)
+            existing.LicenciaExclusiva = dto.LicenciaExclusiva.Value;
 
         if (dto.FechaLimite.HasValue)
             existing.FechaLimite = dto.FechaLimite.Value;
@@ -78,6 +81,7 @@ public sealed class LicenciamientoService
             Id = licenciamiento.Id,
             IdTransferTecnologica = licenciamiento.IdTransferTecnologica,
             SubLicenciamiento = licenciamiento.SubLicenciamiento,
+            LicenciaExclusiva = licenciamiento.LicenciaExclusiva,
             FechaLimite = licenciamiento.FechaLimite,
             CreatedAt = licenciamiento.CreatedAt,
             UpdatedAt = licenciamiento.UpdatedAt

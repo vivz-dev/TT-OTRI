@@ -37,17 +37,18 @@ public sealed class TransferTecnologicaService
 
         var entity = new TransferTecnologica
         {
-            IdPersona    = dto.IdPersona,
-            IdResolucion = dto.IdResolucion,
-            IdTecnologia = dto.IdTecnologia,
-            Monto        = dto.Monto,
-            Pago         = dto.Pago ?? false,
-            Completed    = dto.Completed ?? false,
-            Titulo       = dto.Titulo ?? string.Empty,
-            Descripcion  = dto.Descripcion ?? string.Empty,
-            Estado       = estadoChar == 'V' ? TransferStatus.Vigente : TransferStatus.Finalizada,
-            FechaInicio  = dto.FechaInicio,
-            FechaFin     = dto.FechaFin
+            IdPersona                = dto.IdPersona,
+            IdResolucion             = dto.IdResolucion,
+            IdTecnologia             = dto.IdTecnologia,
+            IdDistribucionResolucion = dto.IdDistribucionResolucion,
+            Monto                    = dto.Monto,
+            Pago                     = dto.Pago ?? false,
+            Completed                = dto.Completed ?? false,
+            Titulo                   = dto.Titulo ?? string.Empty,
+            Descripcion              = dto.Descripcion ?? string.Empty,
+            Estado                   = estadoChar == 'V' ? TransferStatus.Vigente : TransferStatus.Finalizada,
+            FechaInicio              = dto.FechaInicio,
+            FechaFin                 = dto.FechaFin
         };
 
         return await _repo.CreateAsync(entity, ct);
@@ -59,22 +60,23 @@ public sealed class TransferTecnologicaService
 
         void Set(string col, object? val) { changes[col] = val; }
 
-        if (dto.IdPersona.HasValue)    Set("IDPERSONA", dto.IdPersona.Value);
-        if (dto.IdResolucion.HasValue) Set("IDOTRITTRESOLUCION", dto.IdResolucion.Value);
-        if (dto.IdTecnologia.HasValue) Set("IDOTRITTTECNOLOGIA", dto.IdTecnologia.Value);
-        if (dto.Monto.HasValue)        Set("MONTO", dto.Monto.Value);
-        if (dto.Pago.HasValue)         Set("PAGO", dto.Pago.Value ? 1 : 0);
-        if (dto.Completed.HasValue)    Set("COMPLETADO", dto.Completed.Value ? 1 : 0);
-        if (dto.Titulo is not null)    Set("TITULO", dto.Titulo);
-        if (dto.Descripcion is not null) Set("DESCRIPCION", dto.Descripcion);
+        if (dto.IdPersona.HasValue)                Set("IDPERSONA", dto.IdPersona.Value);
+        if (dto.IdResolucion.HasValue)             Set("IDOTRITTRESOLUCION", dto.IdResolucion.Value);
+        if (dto.IdTecnologia.HasValue)             Set("IDOTRITTTECNOLOGIA", dto.IdTecnologia.Value);
+        if (dto.IdDistribucionResolucion.HasValue) Set("IDOTRITTDISTRIBUCIONRESOLUCION", dto.IdDistribucionResolucion.Value);
+        if (dto.Monto.HasValue)                    Set("MONTO", dto.Monto.Value);
+        if (dto.Pago.HasValue)                     Set("PAGO", dto.Pago.Value ? 1 : 0);
+        if (dto.Completed.HasValue)                Set("COMPLETADO", dto.Completed.Value ? 1 : 0);
+        if (dto.Titulo is not null)                Set("TITULO", dto.Titulo);
+        if (dto.Descripcion is not null)           Set("DESCRIPCION", dto.Descripcion);
         if (dto.Estado.HasValue)
         {
             var e = char.ToUpperInvariant(dto.Estado.Value);
             if (e != 'V' && e != 'F') throw new ArgumentException("Estado inválido. Use 'V' o 'F'.", nameof(dto.Estado));
             Set("ESTADO", e);
         }
-        if (dto.FechaInicio.HasValue)  Set("FECHAINICIO", dto.FechaInicio.Value.Date);
-        if (dto.FechaFin.HasValue)     Set("FECHAFIN", dto.FechaFin.Value.Date);
+        if (dto.FechaInicio.HasValue)              Set("FECHAINICIO", dto.FechaInicio.Value.Date);
+        if (dto.FechaFin.HasValue)                 Set("FECHAFIN", dto.FechaFin.Value.Date);
 
         if (changes.Count == 0) return true; // nada que actualizar
 
@@ -84,19 +86,20 @@ public sealed class TransferTecnologicaService
     /* ------------------- mapper ------------------- */
     private static TransferTecnologicaReadDto ToReadDto(TransferTecnologica e) => new()
     {
-        Id           = e.Id,
-        IdPersona    = e.IdPersona,
-        IdResolucion = e.IdResolucion,
-        IdTecnologia = e.IdTecnologia,
-        Monto        = e.Monto,
-        Pago         = e.Pago,
-        Completed    = e.Completed,
-        Titulo       = e.Titulo,
-        Descripcion  = e.Descripcion,
-        Estado       = e.Estado.ToString(), // Cambio clave aquí: usar ToString() en lugar de (char)
-        FechaInicio  = e.FechaInicio,
-        FechaFin     = e.FechaFin,
-        CreatedAt    = e.CreatedAt,
-        UpdatedAt    = e.UpdatedAt
+        Id                          = e.Id,
+        IdPersona                   = e.IdPersona,
+        IdResolucion                = e.IdResolucion,
+        IdTecnologia                = e.IdTecnologia,
+        IdDistribucionResolucion    = e.IdDistribucionResolucion,
+        Monto                       = e.Monto,
+        Pago                        = e.Pago,
+        Completed                   = e.Completed,
+        Titulo                      = e.Titulo,
+        Descripcion                 = e.Descripcion,
+        Estado                      = e.Estado.ToString(), // 'V' o 'F' como string
+        FechaInicio                 = e.FechaInicio,
+        FechaFin                    = e.FechaFin,
+        CreatedAt                   = e.CreatedAt,
+        UpdatedAt                   = e.UpdatedAt
     };
 }

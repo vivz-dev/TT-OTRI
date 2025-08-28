@@ -42,7 +42,7 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
   const transfersData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    console.log("TransferenciaTecnologicaPage data:", data, "error:", error);
+    // console.log("TransferenciaTecnologicaPage data:", data, "error:", error);
 
     return data.map((transfer) => ({
       id: transfer.id,

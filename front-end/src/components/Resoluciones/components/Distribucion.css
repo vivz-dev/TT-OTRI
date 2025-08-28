@@ -95,7 +95,8 @@
 }
 
 .total-ok    { color: #15803d; }  /* verde */
-.total-error { color: #dc2626; }  /* rojo  */
+.total-error { color: #dc2626;
+text-align: center;}  /* rojo  */
 
 /* columna del icono */
 .delete-col {

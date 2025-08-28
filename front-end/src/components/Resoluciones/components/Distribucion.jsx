@@ -328,7 +328,7 @@ const montosValidos = () => minimoValido() && maximoValido();
 
         <tbody>
           {/* ------- fila autores -------- */}
-          <tr>
+          <tr className='autor-name'>
             <td className="nombre-col">Autores/Inventores beneficiarios</td>
             <td className="input-col">
               <input
@@ -345,7 +345,7 @@ const montosValidos = () => minimoValido() && maximoValido();
             <td />
           </tr>
 
-          <tr className="fila-subtotal">
+          <tr className="fila-subtotal autor-name">
             <td>Subtotal de autores/inventores beneficiarios</td>
             <td className="subtotal" colSpan={3}>
               {pctAutores === '' ? '-%' : `${pctAutores}%`}
@@ -354,7 +354,7 @@ const montosValidos = () => minimoValido() && maximoValido();
 
           {/* ------- filas centros -------- */}
           {centros.map((c, idx) => (
-            <tr key={idx}>
+            <tr key={idx} className='autor-name'>
               <td className="input-select">
                 <select
                   value={c.institucionId === '' ? '' : String(c.institucionId)}
@@ -408,9 +408,9 @@ const montosValidos = () => minimoValido() && maximoValido();
         </tbody>
 
         <tfoot>
-          <tr>
-            <td className="total-label">Porcentaje total</td>
-            <td className={`total-valor ${totalClass}`} colSpan={3}>
+          <tr className='fila-subtotal-titulo'>
+            <td className="">Porcentaje total</td>
+            <td className={`${totalClass}`} colSpan={3}>
               {total}%
             </td>
           </tr>

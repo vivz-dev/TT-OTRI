@@ -43,7 +43,7 @@ export const distribucionPagoOrchestratorApi = createApi({
           ).unwrap();
 
           // 🔎 Log completo de la TT por idTT (para depuración)
-          console.log('[ORQ] 1) TT por idTT (objeto completo):', tt);
+          // console.log('[ORQ] 1) TT por idTT (objeto completo):', tt);
 
           const idTecnologia =
             tt?.idTecnologia ?? tt?.idTechnology ?? tt?.tecnologiaId ?? tt?.id_tec ?? null;
@@ -72,7 +72,7 @@ export const distribucionPagoOrchestratorApi = createApi({
             distribucionesApi.endpoints.getDistributionById.initiate(idDistribucionResolucion, { forceRefetch: true })
           ).unwrap();
 
-          console.log('Distribucion por resolucion ---> ', distRes);
+          // console.log('Distribucion por resolucion ---> ', distRes);
 
           // Mantengo la lógica original (sin normalizar ni convertir 60↔0.6)
           const porcSubtotalAutores = distRes.porcSubtotalAutores;

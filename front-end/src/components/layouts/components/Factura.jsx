@@ -32,66 +32,69 @@ const Factura = ({ factura = {} }) => {
   );
   const tipoEntidad = "F";
 
-  // GET /archivos y filtra por idEntidad + tipoEntidad
+  // GET /archivos por entidad
   const { data: archivos = [], isLoading, isError } = useGetArchivosByEntidadQuery(
     { idTEntidad: idEntidad, tipoEntidad },
     { skip: !idEntidad }
   );
 
-  // Preparar campos para mostrar
   const fechaStr = formatDate(factura?.fechaFactura ?? factura?.FechaFactura);
   const montoStr = formatMoney(factura?.monto ?? factura?.valor ?? factura?.Valor);
 
-  // Elegir el primer archivo con URL disponible (normaliza url/Url)
-  const bestArchivo = useMemo(() => {
-    if (!Array.isArray(archivos)) return null;
-    return archivos.find((a) => (a?.url ?? a?.Url)) ?? null;
+  // Normalizar estructura de archivos
+  const archivosNorm = useMemo(() => {
+    if (!Array.isArray(archivos)) return [];
+    return archivos
+      .filter(Boolean)
+      .map((a, idx) => ({
+        key: a?.id ?? a?.Id ?? idx,
+        id: a?.id ?? a?.Id ?? null,
+        nombre: a?.nombre ?? a?.Nombre ?? `Archivo ${idx + 1}`,
+        url: a?.url ?? a?.Url ?? "",
+        formato: a?.formato ?? a?.Formato ?? "",
+      }));
   }, [archivos]);
 
-  const archivoUrl = bestArchivo?.url ?? bestArchivo?.Url ?? "";
-  const archivoNombre = bestArchivo?.nombre ?? bestArchivo?.Nombre ?? "No ha subido archivo";
-
-  const handleOpenArchivo = () => {
-    if (!archivoUrl) {
-      console.warn("No hay URL de archivo para esta factura", { idEntidad, archivos });
-      return;
-    }
+  const handleOpenArchivo = (url) => {
+    if (!url) return;
     try {
-      window.open(archivoUrl, "_blank", "noopener,noreferrer");
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
       console.error("No se pudo abrir el archivo", e);
     }
   };
 
-  // Debug opcional
-  console.log("ARCHIVOS (filtrados) -> ", archivos);
-  console.log("Archivo elegido -> ", bestArchivo);
-
   return (
     <tr className="autor-name">
       <td>{fechaStr}</td>
       <td>{montoStr}</td>
-      <td>{archivoNombre}</td>
       <td>
-        <button
-          className="btn-add-archivo"
-          onClick={handleOpenArchivo}
-          disabled={isLoading || isError || !archivoUrl}
-          title={
-            isLoading
-              ? "Cargando adjuntos…"
-              : isError
-              ? "Error al cargar adjuntos"
-              : archivoUrl
-              ? "Ver Factura"
-              : "Sin adjuntos"
-          }
-          aria-label="Ver factura adjunta"
-        >
-          <FileText />
-        </button>
+        {isLoading && <em>Cargando adjuntos…</em>}
+        {isError && <em>Error al cargar adjuntos</em>}
+        {!isLoading && !isError && (
+          archivosNorm.length > 0 ? (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+              {archivosNorm.map((a) => (
+                <li key={a.key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span>{a.nombre}</span>
+                  <button
+                    className="btn-add-archivo"
+                    onClick={() => handleOpenArchivo(a.url)}
+                    disabled={!a.url}
+                    title={a.url ? "Ver Factura" : "Sin URL"}
+                    aria-label={`Ver adjunto ${a.nombre}`}
+                    type="button"
+                  >
+                    <FileText />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span>Sin adjuntos</span>
+          )
+        )}
       </td>
-      
     </tr>
   );
 };

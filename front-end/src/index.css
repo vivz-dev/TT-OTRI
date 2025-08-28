@@ -246,7 +246,8 @@ input:disabled {
 }
 
 .otri-modal-container {
-  /* overflow-y: scroll; */
+  padding: 20px;
+  overflow-y: scroll;
   max-height: inherit;
 }
 
@@ -399,4 +400,54 @@ input:disabled {
 
 .tecnologia-name{
   text-align: center;
+}
+
+.porcentaje-total{
+  text-align: right;
+  padding-right: 50px;
+}
+
+
+/* VISUALIZACION  */
+
+.information-row{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  
+}
+
+.information-input-row{
+  display: flex;
+  flex-direction: row;
+  /* justify-content: space-between; */
+  margin-left: auto;
+  margin-right: auto;
+  gap: 150px;
+}
+
+.information-card{
+  background-color: #f1f1f5;
+}
+
+.information-row-title{
+  font-weight: bold;
+
+}
+
+.item-wrapper{
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  width: 250px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.information-card{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
 }

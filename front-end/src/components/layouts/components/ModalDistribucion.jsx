@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import ReactPDF from "@react-pdf/renderer";
 import DistribucionFinal from "./DistribucionFinal";
 import { useComputeDistribucionTablaMutation } from "../../../services/distribucionPagoOrchestratorApi";
-import * as Buttons from '../buttons/buttons_index'
+import * as Buttons from "../buttons/buttons_index";
 
 // 🆕 PDF document component
 import DistribucionFinalPdf from "./DistribucionFinalPdf";
@@ -36,8 +36,11 @@ const ModalDistribucion = ({
   facturas = [],
   onClose,
   onBack,
+  registroPagoId,
 }) => {
   const stop = (e) => e.stopPropagation();
+
+  // console.log("📌 RegistroPagoID recién creado:", registroPagoId);
 
   const total =
     resumenPago?.totalPago ||
@@ -133,7 +136,7 @@ const ModalDistribucion = ({
 
       const meta = {
         titulo: fileName,
-        idTEntidad: item?.id ?? idTec, // usa id de la TT si existe; fallback: idTecnologia
+        idTEntidad: registroPagoId, // usa id deL REGISTRO DEL PAGO
         tipoEntidad: "SP", // requerido (no modificar)
         // nombresAutor / identificacion se toman del JWT por el orquestador
       };
@@ -206,7 +209,6 @@ const ModalDistribucion = ({
               onClick={handleGuardarYVerPdf}
               disabled={!resultado || isLoading}
               text={isLoading ? "Calculando…" : "Cerrar y ver archivo PDF"}
-
             />
           </div>
         </footer>

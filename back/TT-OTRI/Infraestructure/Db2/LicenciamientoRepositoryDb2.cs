@@ -2,7 +2,6 @@
 // Infrastructure/Repositories/LicenciamientoRepositoryDb2.cs
 // ============================================================================
 using System.Data;
-using System.Data.Common;
 using IBM.Data.Db2;
 using TT_OTRI.Domain;
 using TT_OTRI.Application.Interfaces;
@@ -32,8 +31,13 @@ public sealed class LicenciamientoRepositoryDb2 : ILicenciamientoRepository
 
         var sql = $@"
 SELECT
-  IDOTRITTLICENCIAMIENTO, IDOTRITTTRANSFERTECNOLOGICA, SUBLICENCIAMIENTO,
-  FECHALIMITE, FECHACREACION, ULTIMO_CAMBIO
+  IDOTRITTLICENCIAMIENTO,
+  IDOTRITTTRANSFERTECNOLOGICA,
+  SUBLICENCIAMIENTO,
+  LICENCIAEXCLUSIVA,
+  FECHALIMITE,
+  FECHACREACION,
+  ULTIMO_CAMBIO
 FROM {FQN}
 ORDER BY IDOTRITTLICENCIAMIENTO DESC";
 
@@ -53,8 +57,13 @@ ORDER BY IDOTRITTLICENCIAMIENTO DESC";
 
         var sql = $@"
 SELECT
-  IDOTRITTLICENCIAMIENTO, IDOTRITTTRANSFERTECNOLOGICA, SUBLICENCIAMIENTO,
-  FECHALIMITE, FECHACREACION, ULTIMO_CAMBIO
+  IDOTRITTLICENCIAMIENTO,
+  IDOTRITTTRANSFERTECNOLOGICA,
+  SUBLICENCIAMIENTO,
+  LICENCIAEXCLUSIVA,
+  FECHALIMITE,
+  FECHACREACION,
+  ULTIMO_CAMBIO
 FROM {FQN}
 WHERE IDOTRITTLICENCIAMIENTO = @id";
 
@@ -77,20 +86,24 @@ WHERE IDOTRITTLICENCIAMIENTO = @id";
         {
             var insert = $@"
 INSERT INTO {FQN}
-( IDOTRITTTRANSFERTECNOLOGICA, SUBLICENCIAMIENTO, FECHALIMITE, FECHACREACION, ULTIMO_CAMBIO )
+( IDOTRITTTRANSFERTECNOLOGICA, SUBLICENCIAMIENTO, LICENCIAEXCLUSIVA, FECHALIMITE, FECHACREACION, ULTIMO_CAMBIO )
 VALUES
-( @idTransfer, @subLicenciamiento, @fechaLimite, CURRENT TIMESTAMP, CURRENT TIMESTAMP )";
+( @idTransfer, @subLicenciamiento, @licenciaExclusiva, @fechaLimite, CURRENT TIMESTAMP, CURRENT TIMESTAMP )";
 
             using (var cmd = new DB2Command(insert, conn))
             {
                 cmd.Transaction = tx;
-                cmd.Parameters.Add(new DB2Parameter("@idTransfer", DB2Type.Integer) 
-                { 
-                    Value = licenciamiento.IdTransferTecnologica 
+                cmd.Parameters.Add(new DB2Parameter("@idTransfer", DB2Type.Integer)
+                {
+                    Value = licenciamiento.IdTransferTecnologica
                 });
-                cmd.Parameters.Add(new DB2Parameter("@subLicenciamiento", DB2Type.SmallInt) 
-                { 
-                    Value = BoolToSmallInt(licenciamiento.SubLicenciamiento) 
+                cmd.Parameters.Add(new DB2Parameter("@subLicenciamiento", DB2Type.SmallInt)
+                {
+                    Value = BoolToSmallInt(licenciamiento.SubLicenciamiento)
+                });
+                cmd.Parameters.Add(new DB2Parameter("@licenciaExclusiva", DB2Type.SmallInt)
+                {
+                    Value = BoolToSmallInt(licenciamiento.LicenciaExclusiva)
                 });
                 cmd.Parameters.Add(new DB2Parameter("@fechaLimite", DB2Type.Date)
                 {
@@ -100,7 +113,6 @@ VALUES
                 await cmd.ExecuteNonQueryAsync(ct);
             }
 
-            // Obtener ID autogenerado
             using (var idCmd = new DB2Command("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1", conn))
             {
                 idCmd.Transaction = tx;
@@ -110,7 +122,6 @@ VALUES
 
             await tx.CommitAsync(ct);
 
-            // Leer los timestamps reales tras commit
             var back = await GetByIdAsync(licenciamiento.Id, ct);
             if (back != null)
             {
@@ -138,35 +149,39 @@ VALUES
 UPDATE {FQN} SET
   IDOTRITTTRANSFERTECNOLOGICA = @idTransfer,
   SUBLICENCIAMIENTO = @subLicenciamiento,
+  LICENCIAEXCLUSIVA = @licenciaExclusiva,
   FECHALIMITE = @fechaLimite,
   ULTIMO_CAMBIO = CURRENT TIMESTAMP
 WHERE IDOTRITTLICENCIAMIENTO = @id";
 
         using var cmd = new DB2Command(sql, conn);
-        cmd.Parameters.Add(new DB2Parameter("@idTransfer", DB2Type.Integer) 
-        { 
-            Value = licenciamiento.IdTransferTecnologica 
+        cmd.Parameters.Add(new DB2Parameter("@idTransfer", DB2Type.Integer)
+        {
+            Value = licenciamiento.IdTransferTecnologica
         });
-        cmd.Parameters.Add(new DB2Parameter("@subLicenciamiento", DB2Type.SmallInt) 
-        { 
-            Value = BoolToSmallInt(licenciamiento.SubLicenciamiento) 
+        cmd.Parameters.Add(new DB2Parameter("@subLicenciamiento", DB2Type.SmallInt)
+        {
+            Value = BoolToSmallInt(licenciamiento.SubLicenciamiento)
+        });
+        cmd.Parameters.Add(new DB2Parameter("@licenciaExclusiva", DB2Type.SmallInt)
+        {
+            Value = BoolToSmallInt(licenciamiento.LicenciaExclusiva)
         });
         cmd.Parameters.Add(new DB2Parameter("@fechaLimite", DB2Type.Date)
         {
             Value = licenciamiento.FechaLimite?.Date ?? (object)DBNull.Value
         });
-        cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) 
-        { 
-            Value = licenciamiento.Id 
+        cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer)
+        {
+            Value = licenciamiento.Id
         });
 
         var rows = await cmd.ExecuteNonQueryAsync(ct);
-        if (rows == 0) 
+        if (rows == 0)
             throw new KeyNotFoundException($"Licenciamiento {licenciamiento.Id} no existe.");
 
-        // Sincronizar UpdatedAt real
         var back = await GetByIdAsync(licenciamiento.Id, ct);
-        if (back != null) 
+        if (back != null)
             licenciamiento.UpdatedAt = back.UpdatedAt;
     }
 
@@ -196,6 +211,7 @@ WHERE IDOTRITTLICENCIAMIENTO = @id";
             Id = rec.GetInt32(Ord("IDOTRITTLICENCIAMIENTO")),
             IdTransferTecnologica = rec.GetInt32(Ord("IDOTRITTTRANSFERTECNOLOGICA")),
             SubLicenciamiento = Convert.ToInt16(rec.GetValue(Ord("SUBLICENCIAMIENTO"))) != 0,
+            LicenciaExclusiva = Convert.ToInt16(rec.GetValue(Ord("LICENCIAEXCLUSIVA"))) != 0,
             FechaLimite = rec.IsDBNull(Ord("FECHALIMITE")) ? null : rec.GetDateTime(Ord("FECHALIMITE")),
             CreatedAt = rec.GetDateTime(Ord("FECHACREACION")),
             UpdatedAt = rec.GetDateTime(Ord("ULTIMO_CAMBIO"))

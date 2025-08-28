@@ -10,7 +10,7 @@ namespace TT_OTRI.Controllers;
 
 [ApiController]
 [Route("api/licenciamientos")]
-[Authorize] // Protegido con el JWT de la app (config por defecto en Program.cs)
+[Authorize]
 public sealed class LicenciamientoController : ControllerBase
 {
     private readonly LicenciamientoService _service;
@@ -20,9 +20,6 @@ public sealed class LicenciamientoController : ControllerBase
         _service = service;
     }
 
-    /// <summary>
-    /// Obtiene todos los registros de licenciamiento
-    /// </summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<LicenciamientoReadDto>>> GetAll(CancellationToken ct)
     {
@@ -30,9 +27,6 @@ public sealed class LicenciamientoController : ControllerBase
         return Ok(licenciamientos);
     }
 
-    /// <summary>
-    /// Obtiene un licenciamiento por su ID
-    /// </summary>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<LicenciamientoReadDto>> GetById(int id, CancellationToken ct)
     {
@@ -40,68 +34,26 @@ public sealed class LicenciamientoController : ControllerBase
         return licenciamiento is null ? NotFound() : Ok(licenciamiento);
     }
 
-    /// <summary>
-    /// Crea un nuevo registro de licenciamiento
-    /// </summary>
     [HttpPost]
-    public async Task<ActionResult<LicenciamientoReadDto>> Create(
-        [FromBody] LicenciamientoCreateDto dto, 
-        CancellationToken ct)
+    public async Task<ActionResult<LicenciamientoReadDto>> Create([FromBody] LicenciamientoCreateDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        try
-        {
-            var createdLicenciamiento = await _service.CreateAsync(dto, ct);
-            return CreatedAtAction(
-                nameof(GetById), 
-                new { id = createdLicenciamiento.Id }, 
-                createdLicenciamiento);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var created = await _service.CreateAsync(dto, ct);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    /// <summary>
-    /// Actualiza parcialmente un licenciamiento existente (PATCH)
-    /// </summary>
     [HttpPatch("{id:int}")]
-    public async Task<ActionResult> Patch(
-        int id,
-        [FromBody] LicenciamientoPatchDto dto,
-        CancellationToken ct)
+    public async Task<ActionResult> Patch(int id, [FromBody] LicenciamientoPatchDto dto, CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        try
-        {
-            var updated = await _service.UpdateAsync(id, dto, ct);
-            return updated ? NoContent() : NotFound();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var ok = await _service.UpdateAsync(id, dto, ct);
+        return ok ? NoContent() : NotFound();
     }
 
-    /// <summary>
-    /// Elimina un licenciamiento por su ID
-    /// </summary>
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> Delete(int id, CancellationToken ct)
     {
-        try
-        {
-            var deleted = await _service.DeleteAsync(id, ct);
-            return deleted ? NoContent() : NotFound();
-        }
-        catch (KeyNotFoundException)
-        {
-            return NotFound();
-        }
+        var ok = await _service.DeleteAsync(id, ct);
+        return ok ? NoContent() : NotFound();
     }
 }

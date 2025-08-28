@@ -79,8 +79,7 @@ const ModalVerFacturas = ({ registroPago, onBack, onClose }) => {
               <tr className="fila-subtotal-titulo">
                 <td>Fecha</td>
                 <td>Monto</td>
-                <td>Nombre de archivo</td>
-                <td></td>
+                <td>Archivo(s) adjuntos</td>
               </tr>
 
               {/* Estados de carga / error / sin id */}

@@ -144,10 +144,12 @@ export const {
   useGetArchivosQuery,
   useGetArchivoByIdQuery,
   useGetArchivosByEntidadQuery,
+  useLazyGetArchivosByEntidadQuery, // 👈 AÑADIDO
 
   usePatchArchivoMutation,
   useDeleteArchivoMutation,
 } = archivosApi;
+
 
 /* -----------------------------------------------------------
  * (Opcional) Helper imperativo para usar dentro de thunks/orquestadores:

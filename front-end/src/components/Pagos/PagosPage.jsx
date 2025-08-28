@@ -23,12 +23,12 @@ const fmtFecha = (iso) =>
 const PagosPage = ({ onRegister }) => {
   const { data = [], isLoading, error } = useGetTransfersQuery();
 
-  console.log("Admin. contratos TT data:", data, "error:", error);
+  // console.log("Admin. contratos TT data:", data, "error:", error);
 
   const transfersData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    console.log("contratos TT data:", data, "error:", error);
+    // console.log("contratos TT data:", data, "error:", error);
 
     return data
       .filter(

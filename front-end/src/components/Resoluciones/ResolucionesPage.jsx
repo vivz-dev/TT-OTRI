@@ -10,6 +10,12 @@ import { PageHeader, ActionBar, CardScroll } from '../layouts/components';
 import { useGetResolutionsQuery } from '../../services/resolutionsApi';
 import { ModalProvider } from "../layouts/components/ModalProvider";
 
+const formatName = (nombre) => {
+  if (!nombre) return "Sin archivo cargado";
+  // buscamos la extensión (ej. .pdf)
+  const truncated = nombre.substring(0, 170) + "...";
+  return truncated
+};
 
 const fmtFecha = (iso) =>
   iso ? new Date(iso).toLocaleDateString('es-EC', {
@@ -24,17 +30,20 @@ const ResolucionesPage = ({ onRegister }) => {
   const items = useMemo(
     () =>
       (error ? [] : data).map((r) => ({
+        ...r,
         id:          r.id,
         estado:      r.estado,
         completed:   r.completed,
-        titulo:      r.codigo || 'Sin título',
-        descripcion: r.descripcion || 'Sin descripción',
-        fecha:       fmtFecha(r.fechaResolucion),
+        titulo:      r.descripcion || 'Sin título',
+        descripcion: formatName(r.titulo) || 'Sin descripción',
+        fecha:       fmtFecha(r.fechaVigencia),
         usuario:     r.idUsuario || 'Usuario no disponible',
         tipo:        'resolucion',                 // 👈 importante
       })),
     [data, error]
   );
+
+  console.log("DESDE INICIO RESOLUCION --> ", items)
 
   const [filter, setFilter]       = useState('todas');
   const [searchText, setSearch]   = useState('');
@@ -67,7 +76,9 @@ const ResolucionesPage = ({ onRegister }) => {
         filter={filter}
         searchText={searchText}
         dummyData={items}
-        cardButtons={['ver-resolucion', 'editar-resolucion']}            // botón específico
+        cardButtons={['ver-resolucion',
+          // 'editar-resolucion'
+        ]}            // botón específico
         />
       </ModalProvider>
     </main>

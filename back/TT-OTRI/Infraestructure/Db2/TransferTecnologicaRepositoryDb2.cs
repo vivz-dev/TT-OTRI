@@ -19,6 +19,7 @@ public sealed class TransferTecnologicaRepositoryDb2 : ITransferTecnologicaRepos
 
     public TransferTecnologicaRepositoryDb2(IConfiguration cfg)
     {
+        // Ajusta si usas IConfiguration (por simplicidad queda literal como antes)
         _connString = "Server=192.168.254.53:50000;Database=SAAC;UserID=USROTRI;Password=wL8QUtS9FbprI;";
         _schema = "SOTRI";
     }
@@ -33,6 +34,7 @@ public sealed class TransferTecnologicaRepositoryDb2 : ITransferTecnologicaRepos
         var sql = $@"
 SELECT
   IDOTRITTTRANSFERTECNOLOGICA, IDPERSONA, IDOTRITTRESOLUCION, IDOTRITTTECNOLOGIA,
+  IDOTRITTDISTRIBUCIONRESOLUCION,      -- NEW
   MONTO, PAGO, COMPLETADO, TITULO, DESCRIPCION, ESTADO,
   FECHAINICIO, FECHAFIN, FECHACREACION, ULTIMO_CAMBIO
 FROM {FQN}
@@ -55,6 +57,7 @@ ORDER BY IDOTRITTTRANSFERTECNOLOGICA DESC";
         var sql = $@"
 SELECT
   IDOTRITTTRANSFERTECNOLOGICA, IDPERSONA, IDOTRITTRESOLUCION, IDOTRITTTECNOLOGIA,
+  IDOTRITTDISTRIBUCIONRESOLUCION,      -- NEW
   MONTO, PAGO, COMPLETADO, TITULO, DESCRIPCION, ESTADO,
   FECHAINICIO, FECHAFIN, FECHACREACION, ULTIMO_CAMBIO
 FROM {FQN}
@@ -79,10 +82,12 @@ WHERE IDOTRITTTRANSFERTECNOLOGICA = @id";
         {
             var sql = $@"
 INSERT INTO {FQN}
-( IDPERSONA, IDOTRITTRESOLUCION, IDOTRITTTECNOLOGIA, MONTO, PAGO, COMPLETADO,
+( IDPERSONA, IDOTRITTRESOLUCION, IDOTRITTTECNOLOGIA, IDOTRITTDISTRIBUCIONRESOLUCION,
+  MONTO, PAGO, COMPLETADO,
   TITULO, DESCRIPCION, ESTADO, FECHAINICIO, FECHAFIN, FECHACREACION, ULTIMO_CAMBIO )
 VALUES
-( @idpersona, @idres, @idtec, @monto, @pago, @completo,
+( @idpersona, @idres, @idtec, @iddist,
+  @monto, @pago, @completo,
   @titulo, @desc, @estado, @ini, @fin, CURRENT TIMESTAMP, CURRENT TIMESTAMP )";
 
             using (var cmd = new DB2Command(sql, conn))
@@ -91,11 +96,16 @@ VALUES
                 cmd.Parameters.Add(new DB2Parameter("@idpersona", DB2Type.Integer)  { Value = e.IdPersona });
                 cmd.Parameters.Add(new DB2Parameter("@idres",     DB2Type.Integer)  { Value = e.IdResolucion });
                 cmd.Parameters.Add(new DB2Parameter("@idtec",     DB2Type.Integer)  { Value = e.IdTecnologia });
+                cmd.Parameters.Add(new DB2Parameter("@iddist",    DB2Type.Integer)  { Value = (object?)e.IdDistribucionResolucion ?? DBNull.Value });
+
                 cmd.Parameters.Add(new DB2Parameter("@monto",     DB2Type.Decimal)  { Value = (object?)e.Monto ?? DBNull.Value, Precision=15, Scale=2 });
                 cmd.Parameters.Add(new DB2Parameter("@pago",      DB2Type.SmallInt) { Value = BoolToSmallInt(e.Pago) });
                 cmd.Parameters.Add(new DB2Parameter("@completo",  DB2Type.SmallInt) { Value = BoolToSmallInt(e.Completed) });
-                cmd.Parameters.Add(new DB2Parameter("@titulo",    DB2Type.VarChar)  { Value = (object?)e.Titulo ?? string.Empty });
-                cmd.Parameters.Add(new DB2Parameter("@desc",      DB2Type.VarChar)  { Value = (object?)e.Descripcion ?? string.Empty });
+
+                // VARGRAPHIC(100) -> usar VarGraphic para exactitud
+                cmd.Parameters.Add(new DB2Parameter("@titulo",    DB2Type.VarGraphic) { Value = (object?)e.Titulo ?? string.Empty, Size = 100 });
+                cmd.Parameters.Add(new DB2Parameter("@desc",      DB2Type.VarGraphic) { Value = (object?)e.Descripcion ?? string.Empty, Size = 100 });
+
                 cmd.Parameters.Add(new DB2Parameter("@estado",    DB2Type.Char)     { Value = (char)e.Estado });
                 cmd.Parameters.Add(new DB2Parameter("@ini",       DB2Type.Date)     { Value = e.FechaInicio.HasValue ? e.FechaInicio.Value.Date : DBNull.Value });
                 cmd.Parameters.Add(new DB2Parameter("@fin",       DB2Type.Date)     { Value = e.FechaFin.HasValue ? e.FechaFin.Value.Date : DBNull.Value });
@@ -113,7 +123,7 @@ VALUES
 
             await tx.CommitAsync(ct);
 
-            // Refrescar timestamps reales
+            // Refrescar timestamps
             var back = await GetByIdAsync(e.Id, ct);
             if (back != null)
             {
@@ -140,10 +150,11 @@ VALUES
     {
         if (changes.Count == 0) return true;
 
-        // Asegurar columnas válidas (whitelist)
+        // Whitelist de columnas actualizables
         var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "IDPERSONA","IDOTRITTRESOLUCION","IDOTRITTTECNOLOGIA",
+            "IDOTRITTDISTRIBUCIONRESOLUCION", // NEW
             "MONTO","PAGO","COMPLETADO","TITULO","DESCRIPCION","ESTADO","FECHAINICIO","FECHAFIN"
         };
 
@@ -159,23 +170,28 @@ VALUES
             // Tipado por columna
             DB2Parameter MakeParam(string col, object? val) => col.ToUpperInvariant() switch
             {
-                "IDPERSONA"           => new DB2Parameter(pname, DB2Type.Integer)  { Value = val ?? DBNull.Value },
-                "IDOTRITTRESOLUCION"  => new DB2Parameter(pname, DB2Type.Integer)  { Value = val ?? DBNull.Value },
-                "IDOTRITTTECNOLOGIA"  => new DB2Parameter(pname, DB2Type.Integer)  { Value = val ?? DBNull.Value },
-                "MONTO"               => new DB2Parameter(pname, DB2Type.Decimal)  { Value = val ?? DBNull.Value, Precision=15, Scale=2 },
-                "PAGO"                => new DB2Parameter(pname, DB2Type.SmallInt) { Value = (val is int i) ? i : (val is bool b ? BoolToSmallInt(b) : 0) },
-                "COMPLETADO"          => new DB2Parameter(pname, DB2Type.SmallInt) { Value = (val is int i2) ? i2 : (val is bool b2 ? BoolToSmallInt(b2) : 0) },
-                "TITULO"              => new DB2Parameter(pname, DB2Type.VarChar)  { Value = val ?? string.Empty },
-                "DESCRIPCION"         => new DB2Parameter(pname, DB2Type.VarChar)  { Value = val ?? string.Empty },
-                "ESTADO"              => new DB2Parameter(pname, DB2Type.Char) 
-                { 
-                    Value = val is TransferStatus status ? (char)status : 
-                           (val is string str && str.Length > 0 ? str[0] : 
-                           (val is char c ? c : 'V')) 
+                "IDPERSONA"                        => new DB2Parameter(pname, DB2Type.Integer)     { Value = val ?? DBNull.Value },
+                "IDOTRITTRESOLUCION"               => new DB2Parameter(pname, DB2Type.Integer)     { Value = val ?? DBNull.Value },
+                "IDOTRITTTECNOLOGIA"               => new DB2Parameter(pname, DB2Type.Integer)     { Value = val ?? DBNull.Value },
+                "IDOTRITTDISTRIBUCIONRESOLUCION"   => new DB2Parameter(pname, DB2Type.Integer)     { Value = val ?? DBNull.Value },
+
+                "MONTO"                            => new DB2Parameter(pname, DB2Type.Decimal)     { Value = val ?? DBNull.Value, Precision=15, Scale=2 },
+                "PAGO"                             => new DB2Parameter(pname, DB2Type.SmallInt)    { Value = (val is int i) ? i : (val is bool b ? BoolToSmallInt(b) : 0) },
+                "COMPLETADO"                       => new DB2Parameter(pname, DB2Type.SmallInt)    { Value = (val is int i2) ? i2 : (val is bool b2 ? BoolToSmallInt(b2) : 0) },
+
+                // VARGRAPHIC(100)
+                "TITULO"                           => new DB2Parameter(pname, DB2Type.VarGraphic)  { Value = val ?? string.Empty, Size = 100 },
+                "DESCRIPCION"                      => new DB2Parameter(pname, DB2Type.VarGraphic)  { Value = val ?? string.Empty, Size = 100 },
+
+                "ESTADO"                           => new DB2Parameter(pname, DB2Type.Char)
+                {
+                    Value = val is TransferStatus status ? (char)status :
+                           (val is string str && str.Length > 0 ? str[0] :
+                           (val is char c ? c : 'V'))
                 },
-                "FECHAINICIO"         => new DB2Parameter(pname, DB2Type.Date)     { Value = val ?? DBNull.Value },
-                "FECHAFIN"            => new DB2Parameter(pname, DB2Type.Date)     { Value = val ?? DBNull.Value },
-                _ => throw new InvalidOperationException("Columna no permitida.")
+                "FECHAINICIO"                      => new DB2Parameter(pname, DB2Type.Date)        { Value = val ?? DBNull.Value },
+                "FECHAFIN"                         => new DB2Parameter(pname, DB2Type.Date)        { Value = val ?? DBNull.Value },
+                _                                  => throw new InvalidOperationException("Columna no permitida.")
             };
 
             sets.Add($"{kv.Key} = @{pname}");
@@ -241,20 +257,23 @@ WHERE IDOTRITTTRANSFERTECNOLOGICA = @id";
 
         return new TransferTecnologica
         {
-            Id = GetInt32Safe(rec, Ord("IDOTRITTTRANSFERTECNOLOGICA")),
-            IdPersona = GetInt32Safe(rec, Ord("IDPERSONA")),
-            IdResolucion = GetInt32Safe(rec, Ord("IDOTRITTRESOLUCION")),
-            IdTecnologia = GetInt32Safe(rec, Ord("IDOTRITTTECNOLOGIA")),
-            Monto = GetNullableDecimal(rec, Ord("MONTO")),
-            Pago = GetBoolFromSmallInt(rec, Ord("PAGO")),
-            Completed = GetBoolFromSmallInt(rec, Ord("COMPLETADO")),
-            Titulo = GetStringSafe(rec, Ord("TITULO")),
-            Descripcion = GetStringSafe(rec, Ord("DESCRIPCION")),
-            Estado = (TransferStatus)GetCharSafe(rec, Ord("ESTADO"), 'V'), // Convertir char a enum
-            FechaInicio = GetNullableDate(rec, Ord("FECHAINICIO")),
-            FechaFin = GetNullableDate(rec, Ord("FECHAFIN")),
-            CreatedAt = GetDateTimeSafe(rec, Ord("FECHACREACION"), nowUtc),
-            UpdatedAt = GetDateTimeSafe(rec, Ord("ULTIMO_CAMBIO"), nowUtc),
+            Id                          = GetInt32Safe(rec, Ord("IDOTRITTTRANSFERTECNOLOGICA")),
+            IdPersona                   = GetInt32Safe(rec, Ord("IDPERSONA")),
+            IdResolucion                = GetInt32Safe(rec, Ord("IDOTRITTRESOLUCION")),
+            IdTecnologia                = GetInt32Safe(rec, Ord("IDOTRITTTECNOLOGIA")),
+            IdDistribucionResolucion    = rec.IsDBNull(Ord("IDOTRITTDISTRIBUCIONRESOLUCION"))
+                                            ? (int?)null
+                                            : GetInt32Safe(rec, Ord("IDOTRITTDISTRIBUCIONRESOLUCION")),
+            Monto                       = GetNullableDecimal(rec, Ord("MONTO")),
+            Pago                        = GetBoolFromSmallInt(rec, Ord("PAGO")),
+            Completed                   = GetBoolFromSmallInt(rec, Ord("COMPLETADO")),
+            Titulo                      = GetStringSafe(rec, Ord("TITULO")),
+            Descripcion                 = GetStringSafe(rec, Ord("DESCRIPCION")),
+            Estado                      = (TransferStatus)GetCharSafe(rec, Ord("ESTADO"), 'V'),
+            FechaInicio                 = GetNullableDate(rec, Ord("FECHAINICIO")),
+            FechaFin                    = GetNullableDate(rec, Ord("FECHAFIN")),
+            CreatedAt                   = GetDateTimeSafe(rec, Ord("FECHACREACION"), nowUtc),
+            UpdatedAt                   = GetDateTimeSafe(rec, Ord("ULTIMO_CAMBIO"), nowUtc),
         };
     }
 

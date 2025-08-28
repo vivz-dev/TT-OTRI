@@ -50,8 +50,8 @@ const RegistrarFactura = ({ idTT, onChange, showErrors = false }) => {
     return out;
   }, [joinRows]);
 
-  console.log("JOIN ROWS ->", joinRows);
-  console.log("TIPOS (desde JOIN) ->", tiposParaRender);
+  // console.log("JOIN ROWS ->", joinRows);
+  // console.log("TIPOS (desde JOIN) ->", tiposParaRender);
 
   /**
    * tiposState = { [idTipo]: { checked, montoStr, archivos: [{id, selected:{hasFile, fileName, file?}}] } }
