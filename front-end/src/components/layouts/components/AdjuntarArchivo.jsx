@@ -59,7 +59,7 @@ const AdjuntarArchivo = forwardRef(({
 
   const validMsg = useMemo(() => {
     if (!file) return 'Selecciona un archivo PDF (máx 6 MB).';
-    if (!isValidPdf(file)) return 'Archivo inválido: debe ser PDF y pesar ≤ 6 MB.';
+    if (!isValidPdf(file)) return 'Archivo inválido: debe ser PDF y pesar menos de 6 MB.';
     return '';
   }, [file, entityId]);
 
@@ -87,7 +87,7 @@ const AdjuntarArchivo = forwardRef(({
   };
 
   const doUpload = async (eid) => {
-    if (!file || !isValidPdf(file)) throw new Error('Archivo inválido: debe ser PDF y pesar ≤ 6 MB.');
+    if (!file || !isValidPdf(file)) throw new Error('Archivo inválido: debe ser PDF y pesar menos de 6 MB.');
     if (eid == null || eid === '') throw new Error('No hay id de entidad (idTEntidad).');
 
     if (onBeforeUpload) onBeforeUpload();

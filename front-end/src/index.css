@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
 
 /* COLORES DE ESPOL */
 
@@ -7,29 +6,29 @@
 :root {
   /* Facultades / institucionales */
   --esp-azul-institucional: #243165; /* Azul ESPOL */
-  --esp-fadcom:            #E02185;  /* FADCOM */
-  --esp-fcnm:              #5B007B;  /* FCNM */
-  --esp-fcsh:              #FFDD00;  /* FCSH */
-  --esp-fcv:               #52AE32;  /* FCV */
-  --esp-fict:              #436035;  /* FICT */
-  --esp-fiec:              #7196AB;  /* FIEC */
-  --esp-fimcm:             #00B4C1;  /* FIMCM */
-  --esp-fimcp:             #1D6DB3;  /* FIMCP */
+  --esp-fadcom: #e02185; /* FADCOM */
+  --esp-fcnm: #5b007b; /* FCNM */
+  --esp-fcsh: #ffdd00; /* FCSH */
+  --esp-fcv: #52ae32; /* FCV */
+  --esp-fict: #436035; /* FICT */
+  --esp-fiec: #7196ab; /* FIEC */
+  --esp-fimcm: #00b4c1; /* FIMCM */
+  --esp-fimcp: #1d6db3; /* FIMCP */
 
   /* Neutros y complementarios */
-  --esp-gris-contorno:     #DBDBDB;
-  --esp-comp-1:            #a9c7e0;
-  --esp-comp-2:            #0094C8;
-  --esp-comp-3:            #28BED1;
-  --esp-comp-4:            #6CC427;
-  --esp-comp-5:            #EEC427;
-  --esp-comp-6:            #FF938C;
-  --esp-comp-7:            #CA83C0;
+  --esp-gris-contorno: #dbdbdb;
+  --esp-comp-1: #a9c7e0;
+  --esp-comp-2: #0094c8;
+  --esp-comp-3: #28bed1;
+  --esp-comp-4: #6cc427;
+  --esp-comp-5: #eec427;
+  --esp-comp-6: #ff938c;
+  --esp-comp-7: #ca83c0;
 
   --amarillo-espol: #fbbf24;
 
   /* Botones */
-  --sidebar-btn-hover:     #e3ecff;
+  --sidebar-btn-hover: #e3ecff;
   --button-page-active: rgb(17, 30, 61);
   --button-page-hover: #92aeeb;
 
@@ -39,16 +38,22 @@
   --bullet-verde-bg: #adf79a;
   --bullet-verde-text: #2d9114;
   --bullet-rojo-bg: #ffcfcb;
-  --bullet-rojo-text: #8A1F0F;
-
+  --bullet-rojo-text: #8a1f0f;
 }
 
 /* (Opcional) helpers de texto y fondo para que no tengas que repetir var() */
-.text-azul       { color: var(--esp-azul-institucional); }
-.bg-azul         { background-color: var(--esp-azul-institucional); }
-.border-gris     { border-color: var(--esp-gris-contorno); }
+.text-azul {
+  color: var(--esp-azul-institucional);
+}
+.bg-azul {
+  background-color: var(--esp-azul-institucional);
+}
+.border-gris {
+  border-color: var(--esp-gris-contorno);
+}
 
-html, body {
+html,
+body {
   font-family: "Nunito", sans-serif;
 }
 
@@ -73,7 +78,7 @@ html, body {
   color: var(--gris-texto);
   margin-top: 0.5rem;
 }
-.form-fieldsets{
+.form-fieldsets {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -117,7 +122,7 @@ html, body {
   flex-direction: column;
   gap: 0.5rem;
 }
-.input-group input{
+.input-group input {
   padding: 0.8rem 1rem;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -126,7 +131,7 @@ html, body {
   color: black;
   resize: none;
 }
-.input-group textarea{
+.input-group textarea {
   padding: 0.8rem 1rem;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -145,12 +150,24 @@ textarea.error {
   background-color: var(--error-background);
 }
 @keyframes shake {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(-5px); }
-  40% { transform: translateX(5px); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(5px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 .form-card.shake {
   animation: shake 0.4s ease-in-out;
@@ -164,7 +181,7 @@ textarea.error {
     flex: 1;
   }
 }
-input:disabled{
+input:disabled {
   background: rgb(221, 221, 221);
 }
 
@@ -204,45 +221,71 @@ input:disabled{
 }
 
 /* MODALES  */
-.backdropStyle{
-  position: "fixed";
+
+/* Fondo + centrado */
+.otri-modal-backdrop {
+  position: fixed;
   inset: 0;
-  background: "rgba(0,0,0,.45)";
-  display: "flex";
-  align-items: "center";
-  justify-content: "center";
-  z-index: 9999;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* por encima de casi todo */
 }
 
-.modalStyle {
-    background: "#fff";
-    color: "#111";
-    width: "min(720px, 92vw)";
-    max-height: "90vh";
-    border-radius: 16;
-    box-shadow: "0 10px 30px rgba(0,0,0,.25)";
-    overflow: "auto";
-  };
+/* Caja del modal */
+.otri-modal {
+  background: #fff;
+  color: #111;
+  width: min(1080px, 92vw);
+  max-height: 90vh;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  padding: 20px;
+  overflow: hidden;
+}
 
-.headerStyle {
-    display: "flex";
-    align-items: "center";
-    justify-content: "space-between";
-    padding: "16px 20px";
-    border-bottom: "1px solid #eee";
-  };
+.otri-modal-container {
+  /* overflow-y: scroll; */
+  max-height: inherit;
+}
 
+/* Header / body / footer */
+.otri-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
 
-.bodyStyle{ padding: "16px 20px" };
+.otri-close-btn {
+  font-size: 22px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
 
-.footerStyle{
-    padding: "12px 20px";
-    border-top: "1px solid #eee";
-    text-align: "right";
-  };
-.rowStyle { display: "flex"; gap: 8; margin: "6px 0" };
-.mtStyle{ margin-top: 14 };
+.otri-modal-body {
+  padding: 16px 20px;
+}
+.otri-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #eee;
+  text-align: right;
+}
 
+.row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+}
+.mt {
+  margin-top: 14px;
+}
+.pre-wrap {
+  white-space: pre-wrap;
+}
 
 /* DELETE BUTTON */
 .btn-delete-top {
@@ -258,38 +301,102 @@ input:disabled{
   color: #dc2626;
 }
 
+/* AÑADIRR ARCHIVO */
+.btn-add-archivo {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+  background: #d9e2ff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  gap: 10px;
+  transition: background 0.25s;
+}
 
-/* #243165  Azul institucional
- 
-#E02185 -FADCOM
- 
-#5B007B -FCNM
- 
-#FFDD00 -FCSH
- 
-#52AE32 -FCV
- 
-#436035 -FICT
- 
-#7196AB -FIEC
- 
-#00B4C1 -FIMCM
- 
-#1D6DB3 -FIMCP
- 
-#DBDBDB Gris para contornos de tablas
-Colores complementarios para usar
- 
-#006EC8
- 
-#0094C8
- 
-#28BED1
- 
-#6CC427
- 
-#EEC427
- 
-#FF938C
- 
-#CA83C0 */
+.btn-add-archivo:hover {
+  background: #b6c7ff;
+}
+
+/* ELIMINAR ARCHIVO */
+.btn-remove-archivo {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  color: #9ca3af;
+  transition: color 0.2s;
+}
+
+.btn-remove-archivo:hover {
+  color: #dc2626;
+}
+
+/* TABLA DE DISTIBUCION */
+.fila-subtotal {
+  background: #e6e6e6; /* azul neutro, elegante */
+  font-weight: bold;
+  border: 1px solid black;
+}
+
+.fila-subtotal-titulo {
+  background: #d9e2ff; /* azul neutro, elegante */
+  font-weight: bolder;
+  border: 1px solid black;
+}
+
+.autor-name{
+  border: 1px solid black;
+}
+
+.autor-monto{
+  border: 1px solid black;
+}
+
+.subtotal {
+  text-align: right;
+  color: #364b6e;
+}
+
+.tabla-titulo {
+  text-align: center;
+  margin: 0.5rem 0 1rem;
+  font-weight: bold;
+  font-size: large;
+}
+
+.tabla-distribucion {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: medium;
+}
+
+.tabla-distribucion th,
+.tabla-distribucion td {
+  padding: 0.9rem 0.8rem;
+}
+
+.beneficiarios {
+  background: var(--esp-azul-institucional);
+  color: white;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  text-align: center;
+  border-bottom: 1px solid #dcdcdc;
+  border: 1px solid black;
+}
+
+.nombre-col {
+  width: 60%;
+}
+
+
+.tecnologia-name{
+  text-align: center;
+}

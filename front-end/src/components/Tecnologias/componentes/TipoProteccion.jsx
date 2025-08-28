@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { Trash2, FilePlus, FileX } from 'lucide-react';
 import * as Components from '../../layouts/components/index';
 import './TipoProteccion.css';
 
@@ -151,18 +151,17 @@ const TipoProteccion = ({
                   onSelectedChange={(v) => handleChangeBridge(v, idx)}
                 />
                 <button
-                  type="button"
                   className="btn-remove-archivo"
                   onClick={() => handleRemoveArchivo(idx)}
+                  disabled={archivos.length === 1}
                   title="Eliminar archivo"
                 >
-                  <Trash2 size={16} />
+                  <FileX />
                 </button>
               </div>
             ))}
-
             <button type="button" className="btn-add-archivo" onClick={handleAddArchivo}>
-              <PlusCircle size={18} style={{ marginRight: '6px' }} />
+              <FilePlus size={16} />
               Añadir archivo
             </button>
           </div>

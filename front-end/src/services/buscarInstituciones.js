@@ -8,18 +8,19 @@
  *     transferencia: ttItem,           // (opcional) objeto TT
  *     idTransferencia: 123,            // (opcional) si no tienes el item
  *     // idDistribucionResolucion: 41  // (opcional) si ya lo conoces
- *     subtotalInstituciones: 1000,     // (requerido) monto para multiplicar por porcentaje
+ *     total: 1000,     // (requerido) monto para multiplicar por porcentaje
  *   });
  *
  * - NO crea endpoints nuevos.
  * - Obtiene idDistribucionResolucion desde la TT (cuando exista).
  * - Mientras no exista, lo reemplaza por 41 (hardcode) y lo LOGUEA.
  * - Hace GET ALL a distribBenefInstituciones y filtra por idDistribucionResolucion.
- * - Devuelve [{ idBenefInst, montoBenefInst, porcentaje }].
+ * - Devuelve [{ idBenefInst, montoBenefInst, porcentaje, nombreBenef }].
  * - NO normaliza porcentajes (60 se usa 60).
  */
 
 import { distribBenefInstitucionesApi } from './distribBenefInstitucionesApi';
+import { benefInstitucionesApi } from './benefInstitucionesApi';
 import { transfersApi } from './transfersApi'; // para resolver la TT cuando solo envías id
 
 /** Helper: lectura tolerante a casing/nombres */
@@ -32,27 +33,20 @@ const getAny = (obj, ...keys) =>
  *   transferencia?: any,
  *   idTransferencia?: number|string,
  *   idDistribucionResolucion?: number|string,
- *   subtotalInstituciones: number
+ *   total: number
  * }} params
- * @returns {Promise<Array<{idBenefInst: number|string, montoBenefInst: number, porcentaje: number}>>}
+ * @returns {Promise<Array<{idBenefInst: number|string, montoBenefInst: number, porcentaje: number, nombreBenef: string}>>}
  */
 export async function buscarInstituciones(api, params = {}) {
   const {
     transferencia: ttItemParam,
     idTransferencia,
     idDistribucionResolucion: idDistParam,
-    subtotalInstituciones,
+    total,
   } = params;
 
-  // console.log('[BUSCAR-INST] ▶ params:', {
-  //   tieneItem: !!ttItemParam,
-  //   idTransferencia,
-  //   idDistribucionResolucionParam: idDistParam,
-  //   subtotalInstituciones,
-  // });
-
-  if (!Number.isFinite(Number(subtotalInstituciones))) {
-    throw new Error('subtotalInstituciones inválido');
+  if (!Number.isFinite(Number(total))) {
+    throw new Error('total inválido');
   }
 
   // 1) Resolver TT si solo pasaron idTransferencia (opcional)
@@ -62,7 +56,6 @@ export async function buscarInstituciones(api, params = {}) {
       ttItem = await api
         .dispatch(transfersApi.endpoints.getTransferById.initiate(idTransferencia, { forceRefetch: true }))
         .unwrap();
-      // console.log('[BUSCAR-INST] 1) Transferencia obtenida por id:', ttItem);
     } catch (e) {
       console.warn('[BUSCAR-INST] Aviso: no se pudo obtener la transferencia por idTransferencia:', e);
     }
@@ -84,8 +77,6 @@ export async function buscarInstituciones(api, params = {}) {
     idDistribucionResolucion = 41;
   }
 
-  // console.log('[BUSCAR-INST] idDistribucionResolucion a usar:', idDistribucionResolucion);
-
   // 3) Traer TODOS los registros de DistribBenefInstituciones
   const all = await api
     .dispatch(
@@ -94,7 +85,6 @@ export async function buscarInstituciones(api, params = {}) {
     .unwrap();
 
   const lista = Array.isArray(all) ? all : [];
-  // console.log('[BUSCAR-INST] Total registros distribBenefInstituciones:', lista.length);
 
   // 4) Filtrar por idDistribucionResolucion (tolerante a casing/nombres)
   const filtrados = lista.filter((x) => {
@@ -104,14 +94,8 @@ export async function buscarInstituciones(api, params = {}) {
     return String(idDistX) === String(idDistribucionResolucion);
   });
 
-  // console.log('[BUSCAR-INST] Registros filtrados por idDistribucionResolucion:', {
-  //   idDistribucionResolucion,
-  //   total: filtrados.length,
-  //   items: filtrados,
-  // });
-
-  // 5) Construir salida: id + porcentaje + montoBenefInst
-  const out = filtrados
+  // 5) Construir salida base: id + porcentaje + montoBenefInst
+  const base = filtrados
     .map((x) => {
       const idBenefInst = getAny(
         x,
@@ -123,7 +107,6 @@ export async function buscarInstituciones(api, params = {}) {
         'IdBenefInst'
       );
 
-      // porcentaje tal cual (sin normalizar). Buscamos claves comunes.
       const porcentajeRaw = getAny(
         x,
         'porcentaje',
@@ -139,19 +122,42 @@ export async function buscarInstituciones(api, params = {}) {
       );
 
       const porcentaje = Number(porcentajeRaw ?? 0);
-      const montoBenefInst = Number(subtotalInstituciones) * porcentaje;
+      const montoBenefInst = Number(total) * porcentaje;
 
       if (idBenefInst == null) return null;
 
       return {
         idBenefInst,
+        porcentaje,
         montoBenefInst,
-        // opcional: debug
-        // debug: { subtotalInstituciones, formula: 'montoBenefInst = subtotalInstituciones * porcentaje (SIN normalizar)' }
       };
     })
     .filter(Boolean);
 
-  // console.log('[BUSCAR-INST] ✅ Resultado (id, porcentaje, monto):', out);
+  // 6) Enriquecer con nombreBenef (lookup por cada idBenefInst)
+  const uniqueIds = Array.from(new Set(base.map((i) => String(i.idBenefInst))));
+  const nombreMap = {};
+
+  // Buscamos nombres en paralelo (tolerante a errores; si falla, queda '—')
+  await Promise.all(
+    uniqueIds.map(async (idStr) => {
+      const id = isNaN(Number(idStr)) ? idStr : Number(idStr);
+      try {
+        const nombre = await api
+          .dispatch(benefInstitucionesApi.endpoints.getNombreBenefById.initiate(id, { forceRefetch: true }))
+          .unwrap();
+        nombreMap[idStr] = typeof nombre === 'string' && nombre.trim() ? nombre : '—';
+      } catch (_e) {
+        nombreMap[idStr] = '—';
+      }
+    })
+  );
+
+  const out = base.map((item) => ({
+    ...item,
+    nombreBenef: nombreMap[String(item.idBenefInst)] ?? '—',
+  }));
+
+  // console.log('[BUSCAR-INST] ✅ Resultado (id, porcentaje, monto, nombreBenef):', out);
   return out;
 }

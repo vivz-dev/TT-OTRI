@@ -136,6 +136,8 @@ const ModalVerResolucion = ({ item, onClose }) => {
   return (
     <div className="otri-modal-backdrop" onClick={onClose}>
       <div className="otri-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="otri-modal-container">
+        <>
         <section className="otri-modal-body">
           {/* Cabecera */}
           <div className="form-header">
@@ -354,9 +356,12 @@ const ModalVerResolucion = ({ item, onClose }) => {
           </div>
         </section>
 
+        </>
+
         <footer className="otri-modal-footer">
           <button onClick={onClose}>Cerrar</button>
         </footer>
+        </div>
       </div>
     </div>
   );

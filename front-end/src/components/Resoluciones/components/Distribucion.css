@@ -39,36 +39,7 @@
 }
 
 /* -------- Tabla distribución -------- */
-.tabla-titulo {
-  text-align: center;
-  margin: 0.5rem 0 1rem;
-  font-weight: bold;
-  font-size: large;
-}
 
-.tabla-distribucion {
-  width: 100%;
-  border-collapse: collapse;
-  font-size:medium;
-}
-
-.tabla-distribucion th,
-.tabla-distribucion td {
-  padding: 0.9rem 0.8rem;
-}
-
-.beneficiarios {
-  background: var(--esp-azul-institucional);
-  color: white;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  text-align: center;
-  border-bottom: 1px solid #dcdcdc;
-}
-
-.nombre-col {
-  width: 60%;
-}
 
 .input-col input {
   width: 100%;
@@ -84,16 +55,6 @@
   border: 1px solid #c7c7c7;
   border-radius: 8px;
   background: #fff;
-}
-
-.fila-subtotal {
-  background: #d9e2ff;          /* azul neutro, elegante */
-  font-weight: 500;
-}
-
-.subtotal {
-  text-align: right;
-  color: #364b6e;
 }
 
 .simbolo {

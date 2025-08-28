@@ -1,357 +1,298 @@
+// src/pages/layouts/components/RegistrarFactura.jsx
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { useGetTiposTransferenciaQuery } from "../../../services/tipoTransferenciaApi";
+import { skipToken } from "@reduxjs/toolkit/query";
+import { useGetTiposTransferenciaTecnoJoinByTTQuery } from "../../../services/tipoTransferenciaTecnoApi";
 import AdjuntarArchivo from "./AdjuntarArchivo";
 import { FileX, FilePlus } from "lucide-react";
-import RegisterButton from "../buttons/RegisterButton";
 
 const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-const RegistrarFactura = ({ onChange }) => {
+function parseIdTT(idTT) {
+  if (idTT == null) return NaN;
+  if (typeof idTT === "object") {
+    const cand = Number(idTT.id ?? idTT.Id ?? idTT.ID);
+    if (Number.isFinite(cand)) return cand;
+  }
+  const n = Number(idTT);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+const RegistrarFactura = ({ idTT, onChange, showErrors = false }) => {
   // Campos generales
   const [fechaFactura, setFechaFactura] = useState("");
   const [valorStr, setValorStr] = useState("");
 
-  // RTK Query: tipos de TT
+  const idNum = parseIdTT(idTT);
+  const shouldSkip = !Number.isFinite(idNum) || idNum <= 0;
+
+  // JOIN {relacion, tipo} por TT
   const {
-    data: tipos = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useGetTiposTransferenciaQuery();
+    data: joinRows = [],
+    isLoading: isLoadingJoin,
+    isError: isErrorJoin,
+    error: errorJoin,
+    refetch: refetchJoin,
+  } = useGetTiposTransferenciaTecnoJoinByTTQuery(shouldSkip ? skipToken : idNum);
+
+  // TIPOS (array plano) deduplicado por tipo.id, derivado del JOIN
+  const tiposParaRender = useMemo(() => {
+    if (!Array.isArray(joinRows)) return [];
+    const seen = new Set();
+    const out = [];
+    for (const row of joinRows) {
+      const tipo = row?.tipo;
+      if (!tipo) continue;
+      const tipoId = tipo.id;
+      if (tipoId == null || seen.has(tipoId)) continue;
+      seen.add(tipoId);
+      out.push(tipo);
+    }
+    return out;
+  }, [joinRows]);
+
+  console.log("JOIN ROWS ->", joinRows);
+  console.log("TIPOS (desde JOIN) ->", tiposParaRender);
 
   /**
    * tiposState = { [idTipo]: { checked, montoStr, archivos: [{id, selected:{hasFile, fileName, file?}}] } }
    */
   const [tiposState, setTiposState] = useState({});
 
-  // Inicializa estructura cuando llegan los tipos
+  // Inicializa estructura de estado a partir de los TIPOS del JOIN
   useEffect(() => {
-    if (!tipos || tipos.length === 0) return;
+    if (tiposParaRender.length === 0) return;
     setTiposState((prev) => {
       const next = { ...prev };
       let changed = false;
-      for (const t of tipos) {
-        if (!next[t.id]) {
-          next[t.id] = {
+      for (const tipo of tiposParaRender) {
+        const tipoId = tipo.id;
+        if (!next[tipoId]) {
+          next[tipoId] = {
             checked: false,
             montoStr: "",
-            archivos: [
-              { id: makeId(), selected: { hasFile: false, fileName: null } },
-            ],
+            archivos: [{ id: makeId(), selected: { hasFile: false, fileName: null } }],
           };
           changed = true;
         }
       }
       return changed ? next : prev;
     });
-  }, [tipos]);
+  }, [tiposParaRender]);
 
-  // Helpers de dinero
-  const parseMoneyStr = useCallback((s) => {
-    if (!s || !s.trim()) return null;
-    const n = Number(s);
-    return Number.isFinite(n) ? Number(n.toFixed(2)) : null;
-  }, []);
-  const formatMoneyInput = useCallback((raw) => {
-    let cleaned = (raw || "").replace(/[^\d.]/g, "");
-    const parts = cleaned.split(".");
-    if (parts.length > 2) cleaned = parts[0] + "." + parts.slice(1).join("");
-    const [ent, dec = ""] = cleaned.split(".");
-    const dec2 = dec.slice(0, 2);
-    return dec.length ? `${ent}.${dec2}` : ent;
+  /* ========================
+   * Helpers de dinero (strict)
+   * ======================== */
+  const parseMoneyFlexible = useCallback((raw) => {
+    if (raw == null) return null;
+    const s = String(raw).trim();
+    if (!s) return null;
+
+    const clean = s.replace(/[^\d.,]/g, "");
+    const lastComma = clean.lastIndexOf(",");
+    const lastDot = clean.lastIndexOf(".");
+
+    let normalized = clean;
+    if (lastComma !== -1 && lastDot !== -1) {
+      const decimalIsComma = lastComma > lastDot;
+      normalized = decimalIsComma ? clean.replace(/\./g, "").replace(",", ".") : clean.replace(/,/g, "");
+    } else if (lastComma !== -1) {
+      normalized = clean.replace(/\./g, "").replace(",", ".");
+    } else {
+      normalized = clean;
+    }
+
+    const n = Number(normalized);
+    return Number.isFinite(n) ? n : null;
   }, []);
 
   // Campos generales handlers
   const handleFecha = (e) => setFechaFactura(e.target.value);
-  const valorNumber = useMemo(
-    () => parseMoneyStr(valorStr),
-    [valorStr, parseMoneyStr]
-  );
-  const onValorChange = (e) => setValorStr(formatMoneyInput(e.target.value));
+  const onValorChange = (e) => setValorStr((e.target.value || "").replace(/[^\d.,]/g, ""));
   const onValorBlur = () => {
-    if (valorStr === "") return;
-    if (valorNumber !== null) setValorStr(valorNumber.toFixed(2));
+    if (!valorStr?.trim()) return;
+    const n = parseMoneyFlexible(valorStr);
+    if (n != null) setValorStr(n.toFixed(2));
+  };
+  const valorNumber = useMemo(() => {
+    const n = parseMoneyFlexible(valorStr);
+    return n != null ? Number(n.toFixed(2)) : null;
+  }, [valorStr, parseMoneyFlexible]);
+
+  // Handlers por tipo (clave = tipoId)
+  const toggleTipo = (tipoId) => {
+    setTiposState((prev) => ({ ...prev, [tipoId]: { ...prev[tipoId], checked: !prev[tipoId]?.checked } }));
   };
 
-  // Handlers por tipo
-  const toggleTipo = (idTipo) => {
-    setTiposState((prev) => ({
-      ...prev,
-      [idTipo]: { ...prev[idTipo], checked: !prev[idTipo]?.checked },
-    }));
-  };
-  const handleMontoTipo = (idTipo, raw) => {
-    const cleaned = formatMoneyInput(raw);
-    setTiposState((prev) => ({
-      ...prev,
-      [idTipo]: { ...prev[idTipo], montoStr: cleaned },
-    }));
-  };
-  const handleMontoTipoBlur = (idTipo) => {
+  const addArchivo = (tipoId) => {
     setTiposState((prev) => {
-      const curr = prev[idTipo];
-      if (!curr) return prev;
-      const num = parseMoneyStr(curr.montoStr);
+      const curr = prev[tipoId];
       return {
         ...prev,
-        [idTipo]: {
+        [tipoId]: {
           ...curr,
-          montoStr: num !== null ? num.toFixed(2) : curr.montoStr,
+          archivos: [...curr.archivos, { id: makeId(), selected: { hasFile: false, fileName: null } }],
         },
       };
     });
   };
-  const addArchivo = (idTipo) => {
+
+  const removeArchivo = (tipoId, adjId) => {
     setTiposState((prev) => {
-      const curr = prev[idTipo];
-      return {
-        ...prev,
-        [idTipo]: {
-          ...curr,
-          archivos: [
-            ...curr.archivos,
-            { id: makeId(), selected: { hasFile: false, fileName: null } },
-          ],
-        },
-      };
-    });
-  };
-  const removeArchivo = (idTipo, adjId) => {
-    setTiposState((prev) => {
-      const curr = prev[idTipo];
-      const nextArch =
-        curr.archivos.length > 1
-          ? curr.archivos.filter((a) => a.id !== adjId)
-          : curr.archivos;
-      return { ...prev, [idTipo]: { ...curr, archivos: nextArch } };
+      const curr = prev[tipoId];
+      const nextArch = curr.archivos.length > 1 ? curr.archivos.filter((a) => a.id !== adjId) : curr.archivos;
+      return { ...prev, [tipoId]: { ...curr, archivos: nextArch } };
     });
   };
 
-  // Guarda tal cual lo que emite AdjuntarArchivo (para no perder el File real)
-  const handleSelectedChange = (idTipo, adjId) => (selPayload) => {
+  const handleSelectedChange = (tipoId, adjId) => (selPayload) => {
     setTiposState((prev) => {
-      const curr = prev[idTipo];
-      const nextArch = curr.archivos.map((a) =>
-        a.id === adjId ? { ...a, selected: selPayload } : a
-      );
-      return { ...prev, [idTipo]: { ...curr, archivos: nextArch } };
+      const curr = prev[tipoId];
+      const nextArch = curr.archivos.map((a) => (a.id === adjId ? { ...a, selected: selPayload } : a));
+      return { ...prev, [tipoId]: { ...curr, archivos: nextArch } };
     });
   };
 
   // Payload hacia el padre
   const tiposSeleccionadosIds = useMemo(
-    () =>
-      Object.entries(tiposState)
-        .filter(([_, v]) => v.checked)
-        .map(([idStr]) => Number(idStr)),
+    () => Object.entries(tiposState).filter(([_, v]) => v.checked).map(([idStr]) => Number(idStr)),
     [tiposState]
   );
 
   const payload = useMemo(() => {
-    const tiposSeleccionados = tiposSeleccionadosIds.map((idTipo) => {
-      const v = tiposState[idTipo];
-      const monto = parseMoneyStr(v?.montoStr || "");
-
-      // 🔵 Para cada adjunto, conservamos el File real en varias claves (_file, file, rawFile)
+    const tiposSeleccionados = tiposSeleccionadosIds.map((tipoId) => {
+      const v = tiposState[tipoId];
       const archivos = (v?.archivos || [])
         .filter((a) => a?.selected?.hasFile)
         .map((a) => {
           const f =
-            a?.selected?.file ||
-            a?.selected?.rawFile ||
-            a?.selected?._file ||
-            a?.file ||
-            a?.rawFile ||
-            null;
+            a?.selected?.file || a?.selected?.rawFile || a?.selected?._file || a?.file || a?.rawFile || null;
+          const nombre = a?.selected?.fileName || a?.fileName || (f && f.name) || null;
+          const tamanio = a?.selected?.size || (f && f.size) || a?.size || null;
 
-          const nombre =
-            a?.selected?.fileName ||
-            a?.fileName ||
-            (f && f.name) ||
-            null;
-
-          const tamanio =
-            a?.selected?.size ||
-            (f && f.size) ||
-            a?.size ||
-            null;
-
-          return {
-            idTipoTransferencia: idTipo, // redundante pero útil
-            fileName: nombre,            // compat: lo que ya usabas
-            nombre,                      // 🆕 para backend/inspección
-            tamanio,                     // 🆕 tamaño numérico
-            formato: "pdf",              // 🆕 default como pediste
-            // referencias al File real para que el padre pueda extraerlo:
-            _file: f,
-            file: f,
-            rawFile: f,
-            selected: a.selected,        // conservamos por compatibilidad
-          };
+          return { idTipoTransferencia: tipoId, fileName: nombre, nombre, tamanio, formato: "pdf", _file: f, file: f, rawFile: f, selected: a.selected };
         });
 
-      return {
-        idTipoTransferencia: idTipo,
-        valorUsd: monto, // número o null
-        archivos,
-      };
+      return { idTipoTransferencia: tipoId, archivos };
     });
 
     return {
+      idTT: Number.isFinite(idNum) ? idNum : null,
       fechaFactura: fechaFactura || null,
-      valorTotalUsd: valorNumber, // número o null
+      valorTotalUsd: valorNumber,
       tiposSeleccionadosIds,
       tiposSeleccionados,
     };
-  }, [
-    fechaFactura,
-    valorNumber,
-    tiposSeleccionadosIds,
-    tiposState,
-    parseMoneyStr,
-  ]);
+  }, [idNum, fechaFactura, valorNumber, tiposSeleccionadosIds, tiposState]);
 
   useEffect(() => {
     onChange?.(payload);
-  }, [payload]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payload]);
 
-  // Render
-  if (isLoading) return <p>Cargando tipos de transferencia…</p>;
-  if (isError) {
+  // VALIDACIONES (no son hooks)
+  const fechaOk = !!fechaFactura;
+  const valorFormatoOk = !!valorStr && /^\d+(\.\d{1,2})?$/.test(valorStr);
+  const valorOk = valorNumber !== null && valorNumber > 0 && valorFormatoOk;
+  const archivosOk = useMemo(
+    () =>
+      Object.values(tiposState).some(
+        (t) => t?.checked && Array.isArray(t?.archivos) && t.archivos.some((a) => a?.selected?.hasFile)
+      ),
+    [tiposState]
+  );
+
+  const faltantes = [];
+  if (!fechaOk) faltantes.push("fecha");
+  if (!valorOk) faltantes.push("valor");
+  if (!archivosOk) faltantes.push("al menos un archivo");
+
+  const showBorderError = showErrors && faltantes.length > 0;
+
+  // ⬇️ Returns condicionales *después* de todos los hooks
+  if (isLoadingJoin) return <p>Cargando tipos asociados…</p>;
+  if (isErrorJoin) {
     return (
       <div>
-        <p>Error al cargar tipos de transferencia.</p>
-        <button type="button" onClick={() => refetch()}>
-          Reintentar
-        </button>
+        <p>Error al cargar tipos asociados.</p>
+        <pre style={{ fontSize: 12, color: "#ef4444" }}>{JSON.stringify(errorJoin, null, 2)}</pre>
+        <button type="button" onClick={() => refetchJoin()}>Reintentar</button>
       </div>
     );
   }
 
   return (
-    <>
+    <div
+      style={{
+        border: showBorderError ? "1px solid #ef4444" : "1px solid transparent",
+        borderRadius: 12,
+        padding: 10,
+      }}
+    >
       {/* Cabecera de factura */}
       <div className="input-row">
         <label className="input-group">
-          Fecha de la factura
-          <input
-            type="date"
-            value={fechaFactura}
-            onChange={handleFecha}
-            className=""
-          />
+          Fecha
+          <input type="date" value={fechaFactura} onChange={handleFecha} />
         </label>
 
-        <label className="input-group">
-          Valor total de la factura (USD)
+      <label className="input-group">
+          Valor $(USD)
           <input
             type="text"
             inputMode="decimal"
-            placeholder="0.00"
+            placeholder="$ 0.00"
             value={valorStr}
             onChange={onValorChange}
             onBlur={onValorBlur}
-            className=""
           />
         </label>
       </div>
 
-      {/* Tipos de transferencia */}
+      {/* Tipos de transferencia (derivados del JOIN) */}
       <div className="input-row" style={{ flexDirection: "column", gap: 12 }}>
-        {tipos.map((t) => {
-          const st = tiposState[t.id] || {
+        {tiposParaRender.map((tipo) => {
+          const tipoId = tipo.id;
+          const st = tiposState[tipoId] || {
             checked: false,
             montoStr: "",
-            archivos: [
-              { id: makeId(), selected: { hasFile: false, fileName: null } },
-            ],
+            archivos: [{ id: makeId(), selected: { hasFile: false, fileName: null } }],
           };
 
           return (
-            <div
-              key={t.id}
-              style={{
-                padding: 12,
-                marginBottom: 12,
-              }}
-            >
-              {/* fila checkbox + input */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <label
-                  className="input-group"
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!st.checked}
-                    onChange={() => toggleTipo(t.id)}
-                  />
+            <div key={tipoId} style={{ padding: 12, marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <label className="input-group" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <input type="checkbox" checked={!!st.checked} onChange={() => toggleTipo(tipoId)} />
                   <div className="texto-tipoTT" style={{ width: "200px" }}>
-                    {t.nombre || t.descripcion || `Tipo #${t.id}`}
+                    Pago por {tipo.nombre || tipo.descripcion || `Tipo #${tipoId}`}
                   </div>
-                  &nbsp;$
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    disabled={!st.checked}
-                    value={st.montoStr}
-                    onChange={(e) => handleMontoTipo(t.id, e.target.value)}
-                    onBlur={() => handleMontoTipoBlur(t.id)}
-                  />
                 </label>
               </div>
 
-              {/* Adjuntar archivos (múltiples) — SOLO si está checked */}
               {st.checked && (
                 <div style={{ marginTop: 10 }}>
                   <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
-                    {st.archivos.map((a, i) => (
-                      <div key={a.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {st.archivos.map((a) => (
+                      <div key={a.id} style={{ display: "flex", gap: 8 }}>
+                        <AdjuntarArchivo
+                          descripcion={`Factura para "${tipo.nombre || tipo.descripcion || `Tipo #${tipoId}`}"`}
+                          onSelectedChange={handleSelectedChange(tipoId, a.id)}
+                        />
                         <button
-                          type="button"
-                          onClick={() => removeArchivo(t.id, a.id)}
+                          onClick={() => removeArchivo(tipoId, a.id)}
                           disabled={st.archivos.length === 1}
-                          title={
-                            st.archivos.length === 1
-                              ? "Debe haber al menos uno"
-                              : "Quitar"
-                          }
-                          className="btn-delete-top eliminar-factura"
+                          title={"Eliminar Archivo"}
+                          className="btn-delete-top"
+                          type="button"
                         >
                           <FileX />
                         </button>
-
-                        <AdjuntarArchivo
-                          descripcion={`Adjunta PDF para "${
-                            t.nombre || t.descripcion || `Tipo #${t.id}`
-                          }"`}
-                          onSelectedChange={handleSelectedChange(t.id, a.id)}
-                        />
                       </div>
                     ))}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => addArchivo(t.id)}
-                    title="Añadir otro archivo"
-                    className="btn-delete-top eliminar-factura"
-                    style={{ marginTop: 8 }}
-                  >
-                    <FilePlus />
+                  <button onClick={() => addArchivo(tipoId)} title="Añadir otro archivo" className="btn-add-archivo" type="button">
+                    <FilePlus size={16} />
                     Añadir archivo
                   </button>
                 </div>
@@ -360,7 +301,13 @@ const RegistrarFactura = ({ onChange }) => {
           );
         })}
       </div>
-    </>
+
+      {showErrors && (
+        <p style={{ color: "#b91c1c", marginTop: 8 }}>
+          {faltantes.length > 0 ? `Falta: ${faltantes.join(", ")}.` : null}
+        </p>
+      )}
+    </div>
   );
 };
 

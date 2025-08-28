@@ -1,7 +1,19 @@
 // src/pages/layouts/components/ModalDistribucion.jsx
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import ReactPDF from "@react-pdf/renderer";
 import DistribucionFinal from "./DistribucionFinal";
 import { useComputeDistribucionTablaMutation } from "../../../services/distribucionPagoOrchestratorApi";
+import * as Buttons from '../buttons/buttons_index'
+
+// 🆕 PDF document component
+import DistribucionFinalPdf from "./DistribucionFinalPdf";
+
+// 🆕 Orquestador de archivos + endpoints
+import { uploadAndSaveArchivo } from "../../../services/storage/archivosOrchestrator";
+import {
+  useUploadToDspaceMutation,
+  useCreateArchivoMutation,
+} from "../../../services/storage/archivosApi";
 
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
@@ -12,12 +24,11 @@ const money = (n) =>
 
 /**
  * Props esperadas:
- * - item: TT seleccionada (id, titulo, etc.)
+ * - item: TT seleccionada (id, idTecnologia, titulo, etc.)
  * - resumenPago: { totalPago, totalFacturas }
  * - facturas: array con { index, fechaFactura, monto, ... }
  * - onClose: cerrar modal
  * - onBack: opcional, volver al paso anterior
- * - onConfirmDistribucion: acción para confirmar
  */
 const ModalDistribucion = ({
   item,
@@ -25,7 +36,6 @@ const ModalDistribucion = ({
   facturas = [],
   onClose,
   onBack,
-  onConfirmDistribucion,
 }) => {
   const stop = (e) => e.stopPropagation();
 
@@ -46,16 +56,17 @@ const ModalDistribucion = ({
     useComputeDistribucionTablaMutation();
   const [resultado, setResultado] = useState(null);
 
+  // 🆕 Mutations para orquestador de archivos
+  const [uploadToDspace] = useUploadToDspaceMutation();
+  const [createArchivo] = useCreateArchivoMutation();
+
   // ───────────────── Candados para ejecutar 1 sola vez ─────────────────
-  // Evita doble ejecución de useEffect en StrictMode y/o rerenders
   const didRunRef = useRef(false);
-  // Evita llamadas concurrentes por si algo vuelve a disparar handleCalcular
   const inFlightRef = useRef(false);
 
   const handleCalcular = async () => {
-    // Protección adicional por si algo intenta dispararlo 2 veces
     if (inFlightRef.current) {
-      console.log("[MODAL] 🔒 Cálculo ya en vuelo. Ignorando llamada duplicada.");
+      // console.log("[MODAL] 🔒 Cálculo ya en vuelo. Ignorando llamada duplicada.");
       return;
     }
     inFlightRef.current = true;
@@ -63,17 +74,12 @@ const ModalDistribucion = ({
     try {
       const args = {
         idTT: item?.id, // Ajusta si tu TT usa otra clave (p.ej., item.idTT)
-        montoTotalRegistroPago: total, // total del registro de pago (todas las facturas)
-        // idDistribucionResolucion: 2, // opcional: por defecto 2 en tu orquestador
+        montoTotalRegistroPago: total,
       };
-      console.log("[MODAL] ▶ Ejecutando orquestador con:", args);
+      // console.log("[MODAL] ▶ Ejecutando orquestador con:", args);
       const data = await computeDistribucion(args).unwrap();
-      console.log("[MODAL] ✅ Respuesta orquestador:", data);
-      setResultado((prev) => {
-        // Si ya había resultado, no re-renderizamos innecesariamente
-        if (prev) return prev;
-        return data;
-      });
+      // console.log("[MODAL] ✅ Respuesta orquestador:", data);
+      setResultado((prev) => prev || data);
     } catch (e) {
       console.error("[MODAL] ❌ Error al calcular distribución:", e);
       setResultado(null);
@@ -82,71 +88,99 @@ const ModalDistribucion = ({
     }
   };
 
-  // Dispara el cálculo una sola vez al montar el modal
   useEffect(() => {
     if (didRunRef.current) {
-      console.log("[MODAL] ⏭ Ya se ejecutó el cálculo previamente. Skip.");
+      // console.log("[MODAL] ⏭ Ya se ejecutó el cálculo previamente. Skip.");
       return;
     }
     didRunRef.current = true;
     handleCalcular();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← Intencionalmente vacío para que corra SOLO al montar
+  }, []);
 
-  console.log("RESULTADO --> ", resultado);
+  // 🆕 Guardar & Ver PDF
+  const savingRef = useRef(false);
+  const handleGuardarYVerPdf = async () => {
+    if (!resultado || savingRef.current) return;
+    savingRef.current = true;
+
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hoy = `${yyyy}_${mm}_${dd}`;
+
+    try {
+      // 1) Construir el documento PDF
+      const doc = <DistribucionFinalPdf data={resultado} />;
+      const blob = await ReactPDF.pdf(doc).toBlob();
+
+      // 2) Nombre de archivo solicitado
+      const idTec =
+        item?.id ??
+        item?.idTecnologia ??
+        item?.tecnologiaId ??
+        item?.id_tec ??
+        "NA";
+      const codResRaw = resultado?.codigoResolucion ?? "SIN-CODIGO";
+      const codRes = String(codResRaw)
+        .replace(/\s+/g, "-")
+        .replace(/[^\w.-]+/g, "_");
+      const fileName = `${hoy}_distribucion_pago_tecnologia_${idTec}_resolucion_${codRes}.pdf`;
+
+      // 3) Enviar al orquestador de archivos (tipo SP)
+      const file = new File([blob], fileName, { type: "application/pdf" });
+
+      const meta = {
+        titulo: fileName,
+        idTEntidad: item?.id ?? idTec, // usa id de la TT si existe; fallback: idTecnologia
+        tipoEntidad: "SP", // requerido (no modificar)
+        // nombresAutor / identificacion se toman del JWT por el orquestador
+      };
+
+      const res = await uploadAndSaveArchivo({
+        file,
+        meta,
+        uploadToDspace, // mutation trigger (retorna { data / error })
+        createArchivo, // mutation trigger (retorna { data / error })
+      });
+
+      // 4) Ver el PDF (preferimos la URL de DSpace; si no, el blob local)
+      const viewUrl = res?.urlDescargaServicio || res?.urlDspace;
+      if (viewUrl) {
+        window.open(viewUrl, "_blank", "noopener,noreferrer");
+      } else {
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      }
+
+      onClose();
+    } catch (e) {
+      console.error("[MODAL] ❌ Error generando/subiendo PDF:", e);
+      alert("No se pudo generar o guardar el PDF: " + String(e?.message || e));
+    } finally {
+      savingRef.current = false;
+    }
+  };
+
+  // console.log("RESULTADO --> ", resultado);
 
   return (
-    <div className="otri-modal-backdrop backdropStyle" onClick={onClose}>
-      <div className="otri-modal modalStyle" onClick={stop}>
-        <header className="otri-modal-header headerStyle">
-          <h3>Definir distribución de beneficios</h3>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>
-            TT: <strong>{item?.titulo || `#${item?.id}`}</strong>
-          </div>
+    <div className="otri-modal-backdrop" onClick={onClose}>
+      <div className="otri-modal" onClick={stop}>
+        <header className="otri-modal-header">
+          <h3>Distribución de beneficios económicos</h3>
         </header>
 
         <section
-          className="otri-modal-body bodyStyle"
-          style={{ maxHeight: "60vh", overflow: "auto", display: "grid", gap: 12 }}
+          className="otri-modal-body"
+          style={{
+            maxHeight: "60vh",
+            overflow: "auto",
+            display: "grid",
+            gap: 12,
+          }}
         >
-          <div
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: 12,
-              padding: 12,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            {/* <div><strong>Facturas:</strong> {cantidad}</div>
-            <div><strong>Total:</strong> {money(total)}</div> */}
-            {/* Si quisieras botón manual en vez de auto-cálculo:
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-              <button type="button" className="btn-primary" onClick={handleCalcular} disabled={isLoading}>
-                {isLoading ? "Calculando…" : "Calcular distribución"}
-              </button>
-            </div> */}
-          </div>
-
-          {/* <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 12 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Detalle de facturas</div>
-            <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 140px", gap: 8, fontSize: 14, fontWeight: 600 }}>
-              <div>#</div><div>Fecha</div><div>Monto</div>
-            </div>
-            <div style={{ height: 8 }} />
-            {rows.map((r) => (
-              <div key={r.index} style={{ display: "grid", gridTemplateColumns: "80px 1fr 140px", gap: 8, padding: "6px 0", borderTop: "1px dashed #eee" }}>
-                <div>Factura {r.index}</div>
-                <div>{r.fecha}</div>
-                <div>{money(r.monto)}</div>
-              </div>
-            ))}
-          </div> */}
-
-          {/* Errores */}
           {isError && (
             <div
               style={{
@@ -157,39 +191,23 @@ const ModalDistribucion = ({
                 borderRadius: 8,
               }}
             >
-              Error al calcular: {String(error?.data || error?.message || "Desconocido")}
+              Error al calcular:{" "}
+              {String(error?.data || error?.message || "Desconocido")}
             </div>
           )}
 
-          {/* Resultado de la distribución (se renderiza una sola vez porque el cálculo solo corre una vez) */}
+          {/* Vista HTML en pantalla */}
           {resultado && <DistribucionFinal data={resultado} />}
         </section>
 
-        <footer
-          className="otri-modal-footer footerStyle"
-          style={{
-            display: "flex",
-            gap: 8,
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <button type="button" onClick={onBack} className="btn-secondary">
-            Atrás
-          </button>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" onClick={onClose} className="btn-tertiary">
-              Cerrar
-            </button>
-            <button
-              type="button"
-              onClick={onConfirmDistribucion}
-              className="btn-primary"
+        <footer className="otri-modal-footer">
+          <div>
+            <Buttons.RegisterButton
+              onClick={handleGuardarYVerPdf}
               disabled={!resultado || isLoading}
-            >
-              {isLoading ? "Calculando…" : "Confirmar distribución"}
-            </button>
+              text={isLoading ? "Calculando…" : "Cerrar y ver archivo PDF"}
+
+            />
           </div>
         </footer>
       </div>

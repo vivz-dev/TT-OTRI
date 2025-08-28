@@ -3,6 +3,7 @@ import ModalVerTecnologia from "./ModalVerTecnologia"; // placeholder
 import ModalAgregarPagos from "./ModalAgregarPagos"; // placeholder
 import ModalVerPagos from "./ModalVerPagos";
 import ModalDistribucion from "./ModalDistribucion";
+import ModalVerFacturas from "./ModalVerFacturas";
 
 
 export const previewRegistry = {
@@ -10,6 +11,7 @@ export const previewRegistry = {
   tecnologia: ModalVerTecnologia,
   agregarPagos: ModalAgregarPagos,
   distribucion: ModalDistribucion,
-  verPagos: ModalVerPagos
+  verPagos: ModalVerPagos,
+  verFacturas: ModalVerFacturas
   // agrega más tipos aquí: 'acuerdo', 'licencia', etc.
 };

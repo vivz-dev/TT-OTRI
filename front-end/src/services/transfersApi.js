@@ -1,5 +1,12 @@
 /**
  * RTK Query – Transferencias Tecnológicas
+ * 
+ * Campos esperados (camelCase por ASP.NET JSON): 
+ * {
+ *   id, idPersona, idResolucion, idTecnologia, idDistribucionResolucion,
+ *   monto, pago, completed, titulo, descripcion, estado, 
+ *   fechaInicio, fechaFin, createdAt, updatedAt
+ * }
  */
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQuery';
@@ -32,7 +39,7 @@ export const transfersApi = createApi({
       query: (body) => ({
         url: '/transfers',
         method: 'POST',
-        body,
+        body, // puede incluir idDistribucionResolucion si aplica
       }),
       invalidatesTags: [{ type: 'Transfer', id: 'LIST' }],
     }),
@@ -42,7 +49,7 @@ export const transfersApi = createApi({
       query: ({ id, ...body }) => ({
         url: `/transfers/${id}`,
         method: 'PATCH',
-        body,
+        body, // acepta parches como { idDistribucionResolucion, ... }
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Transfer', id }],
     }),

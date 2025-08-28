@@ -1,5 +1,11 @@
 // src/pages/layouts/components/ModalAgregarPagos.jsx
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import RegistrarFactura from "./RegistrarFactura";
 import { CircleMinus } from "lucide-react";
 import RegisterButton from "../buttons/RegisterButton";
@@ -35,35 +41,42 @@ const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 // ⬇️ util para extraer File desde posibles campos (incluye nested selected.*)
 const extractFileFromAny = (a) => {
   if (!a) return null;
-  if (a instanceof File) return a;
-
-  if (a._file instanceof File) return a._file;
-  if (a.file instanceof File) return a.file;
-  if (a.rawFile instanceof File) return a.rawFile;
-  if (a.original instanceof File) return a.original;
-  if (a.fileObj instanceof File) return a.fileObj;
-  if (a.blob instanceof File) return a.blob;
-  if (a.data instanceof File) return a.data;
-
-  if (a.selected?.file instanceof File) return a.selected.file;
-  if (a.selected?.rawFile instanceof File) return a.selected.rawFile;
-  if (a.selected?._file instanceof File) return a.selected._file;
-  if (a.selected?.original instanceof File) return a.selected.original;
-  if (a.selected?.fileObj instanceof File) return a.selected.fileObj;
-  if (a.selected?.blob instanceof File) return a.selected.blob;
-  if (a.selected?.data instanceof File) return a.selected.data;
-
+  if (typeof File !== "undefined") {
+    if (a instanceof File) return a;
+    if (a._file instanceof File) return a._file;
+    if (a.file instanceof File) return a.file;
+    if (a.rawFile instanceof File) return a.rawFile;
+    if (a.original instanceof File) return a.original;
+    if (a.fileObj instanceof File) return a.fileObj;
+    if (a.blob instanceof File) return a.blob;
+    if (a.data instanceof File) return a.data;
+    if (a.selected?.file instanceof File) return a.selected.file;
+    if (a.selected?.rawFile instanceof File) return a.selected.rawFile;
+    if (a.selected?._file instanceof File) return a.selected._file;
+    if (a.selected?.original instanceof File) return a.selected.original;
+    if (a.selected?.fileObj instanceof File) return a.selected.fileObj;
+    if (a.selected?.blob instanceof File) return a.selected.blob;
+    if (a.selected?.data instanceof File) return a.selected.data;
+  }
   return null;
 };
 
-/** ───────────────────────── Paso 2: contenido de Distribución (inline) ───────────────────────── **/
-const money = (n) =>
-  new Intl.NumberFormat("es-EC", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  }).format(Number(n || 0));
+const hasAtLeastOneFile = (factura) => {
+  const tipos = Array.isArray(factura?.tiposSeleccionados)
+    ? factura.tiposSeleccionados
+    : [];
+  for (const t of tipos) {
+    const arr = Array.isArray(t?.archivos) ? t.archivos : [];
+    for (const a of arr) {
+      if (a?.selected?.hasFile) return true;
+      const f = extractFileFromAny(a);
+      if (f) return true;
+    }
+  }
+  return false;
+};
 
+/** ───────────────────────── Paso 2: contenido de Distribución (inline) ───────────────────────── */
 const DistribucionStep = ({
   item,
   resumenPago,
@@ -72,25 +85,19 @@ const DistribucionStep = ({
   onClose,
   onConfirmDistribucion,
 }) => {
-  // const total =
-  //   resumenPago?.totalPago ||
-  //   facturas.reduce((acc, f) => acc + (f?.monto ?? 0), 0);
-  // const cantidad = resumenPago?.totalFacturas || facturas.length;
-
   return (
-
     <ModalDistribucion
-    item={item}
-    resumenPago ={resumenPago}
-    facturas={facturas}
-    onClose={onClose}
-    onBack={onBack}
-    onConfirmDistribucion={onConfirmDistribucion}
+      item={item}
+      resumenPago={resumenPago}
+      facturas={facturas}
+      onClose={onClose}
+      onBack={onBack}
+      onConfirmDistribucion={onConfirmDistribucion}
     />
   );
 };
 
-/** ───────────────────────── Modal principal (wizard interno) ───────────────────────── **/
+/** ───────────────────────── Modal principal (wizard interno) ───────────────────────── */
 const ModalAgregarPagos = ({ item, onClose }) => {
   const [items, setItems] = useState(() => [{ id: makeId(), data: null }]);
   const [runOrq, { isLoading: isSaving }] =
@@ -105,6 +112,15 @@ const ModalAgregarPagos = ({ item, onClose }) => {
   // Estado de pasos: 'pagos' | 'distribucion'
   const [step, setStep] = useState("pagos");
   const [nextData, setNextData] = useState(null); // { resumenPago, facturas, orquestadorResult }
+
+  // Para mostrar errores al hacer click
+  const [triedSubmit, setTriedSubmit] = useState(false);
+
+  // refs para scrollear a la primera factura con error
+  const cardRefs = useRef({}); // { [id]: HTMLElement }
+  const setCardRef = (id) => (el) => {
+    if (el) cardRefs.current[id] = el;
+  };
 
   // ✅ ESC cierra el modal
   useEffect(() => {
@@ -148,34 +164,56 @@ const ModalAgregarPagos = ({ item, onClose }) => {
     () =>
       items.map((it) => ({
         ...(it.data || {}),
+        _id: it.id, // para tracking visual
       })),
     [items]
   );
 
-  // Facturas válidas: requieren fecha y monto > 0
-  const facturasValidas = useMemo(() => {
-    return payloadFacturas
-      .map((f) => {
-        if (!f) return null;
+  // helpers de validación por factura
+  const analyzeFactura = (f) => {
+    if (!f)
+      return { ok: false, missing: ["fecha", "valor", "al menos un archivo"] };
 
-        let montoNum =
-          typeof f?.valorTotalUsd === "number" && isFinite(f.valorTotalUsd)
-            ? f.valorTotalUsd
-            : null;
+    let montoNum =
+      typeof f?.valorTotalUsd === "number" && isFinite(f.valorTotalUsd)
+        ? f.valorTotalUsd
+        : null;
 
-        if (montoNum === null) {
-          const candidato = f?.monto ?? f?.valorStr ?? f?.valorTotalUsd;
-          const parsed = parseMoney(candidato);
-          if (Number.isFinite(parsed)) montoNum = parsed;
-        }
+    if (montoNum === null) {
+      const candidato = f?.monto ?? f?.valorStr ?? f?.valorTotalUsd;
+      const parsed = parseMoney(candidato);
+      if (Number.isFinite(parsed)) montoNum = parsed;
+    }
 
-        const fechaOk = !!f?.fechaFactura;
-        const montoOk = montoNum !== null && montoNum > 0;
-        if (!fechaOk || !montoOk) return null;
+    const fechaOk = !!f?.fechaFactura;
+    const montoOk = montoNum !== null && montoNum > 0;
+    const archivosOk = hasAtLeastOneFile(f);
 
-        return { ...f, monto: montoNum };
-      })
-      .filter(Boolean);
+    const missing = [];
+    if (!fechaOk) missing.push("fecha");
+    if (!montoOk) missing.push("valor");
+    if (!archivosOk) missing.push("al menos un archivo");
+
+    return {
+      ok: missing.length === 0,
+      missing,
+      monto: montoNum != null ? Number(montoNum.toFixed(2)) : null,
+    };
+  };
+
+  // Particiona válidas/ inválidas (para UI + orquestador)
+  const { facturasValidas, facturasInvalidas } = useMemo(() => {
+    const valids = [];
+    const invalids = [];
+    for (const f of payloadFacturas) {
+      const res = analyzeFactura(f);
+      if (res.ok) {
+        valids.push({ ...f, monto: res.monto });
+      } else {
+        invalids.push({ ...f, _missing: res.missing });
+      }
+    }
+    return { facturasValidas: valids, facturasInvalidas: invalids };
   }, [payloadFacturas]);
 
   const totalFacturas = facturasValidas.length;
@@ -188,9 +226,9 @@ const ModalAgregarPagos = ({ item, onClose }) => {
   const idPersona = getIdPersonaFromAppJwt();
   const idTT = item?.id ?? null;
 
-  const puedeGuardar = Boolean(
-    idPersona && idTT && totalFacturas > 0 && totalPago > 0 && !isSaving
-  );
+  // Ahora el botón permite click para validar (no bloqueamos por campos)
+  const puedeHacerClick =
+    items.length > 0 && !!idPersona && !!idTT && !isSaving;
 
   // ⬇️ construye filesByFacturaIndex desde tiposSeleccionados[*].archivos[*]
   const buildFilesByFacturaIndex = useCallback((facturas) => {
@@ -207,9 +245,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
         const arr = Array.isArray(t?.archivos) ? t.archivos : [];
         for (const a of arr) {
           const file = extractFileFromAny(a);
-          if (file instanceof File) {
-            files.push(file);
-          }
+          if (file) files.push(file);
         }
       }
 
@@ -220,7 +256,25 @@ const ModalAgregarPagos = ({ item, onClose }) => {
     return map;
   }, []);
 
+  const scrollToFirstInvalid = useCallback(() => {
+    const first = facturasInvalidas[0];
+    if (!first) return;
+    const id = first._id;
+    const node = cardRefs.current[id];
+    if (node && node.scrollIntoView) {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [facturasInvalidas]);
+
   const handleGuardar = useCallback(async () => {
+    setTriedSubmit(true); // activa mensajes en hijos
+
+    // Si hay inválidas, mostrar y NO avanzar
+    if (facturasInvalidas.length > 0) {
+      scrollToFirstInvalid();
+      return;
+    }
+
     // Normalizamos cada factura al esquema que pide el orquestador
     const facturas = facturasValidas.map((f, i) => {
       const {
@@ -230,6 +284,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
         fechaFactura,
         tiposSeleccionadosIds, // opcional
         tiposSeleccionados = [], // aquí vienen archivos agrupados por tipo
+        _id, // interno para UI
         ...resto
       } = f;
 
@@ -262,11 +317,9 @@ const ModalAgregarPagos = ({ item, onClose }) => {
         monto: Number(Number(monto).toFixed(2)),
         tiposSeleccionadosIds: Array.isArray(tiposSeleccionadosIds)
           ? tiposSeleccionadosIds
-          : (
-              tiposNormalizados
-                ?.map((x) => x.idTipoTransferencia)
-                .filter(Boolean) || []
-            ),
+          : tiposNormalizados
+              ?.map((x) => x.idTipoTransferencia)
+              .filter(Boolean) || [],
         tiposSeleccionados: tiposNormalizados,
         ...resto,
       };
@@ -323,14 +376,16 @@ const ModalAgregarPagos = ({ item, onClose }) => {
       console.error("[ModalAgregarPagos] Orquestador ERROR:", err);
     }
   }, [
+    facturasInvalidas.length,
+    facturasValidas,
     idPersona,
     idTT,
     totalPago,
     totalFacturas,
-    facturasValidas,
-    runOrq,
     buildFilesByFacturaIndex,
+    runOrq,
     computeDistribucionTabla,
+    scrollToFirstInvalid,
   ]);
 
   // ⬇️ Cuando cambie a la pantalla de distribución y la data llegue, SOLO loguea
@@ -342,135 +397,169 @@ const ModalAgregarPagos = ({ item, onClose }) => {
 
   if (!item) return null;
 
+  // resumen de errores para footer
+  const invalidSummaries = facturasInvalidas.map((f, idx) => {
+    const index = items.findIndex((it) => it.id === f._id);
+    const numero = index >= 0 ? index + 1 : "?";
+    return `#${numero}: falta ${f._missing.join(", ")}`;
+  });
+
   return (
     // ✅ Backdrop ahora SÍ cierra el modal
     <div
-      className="otri-modal-backdrop backdropStyle"
-      onClick={onClose}
+      className="otri-modal-backdrop"
       role="presentation"
       tabIndex={-1}
     >
       <div
-        className="otri-modal modalStyle"
+        className="otri-modal"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
       >
-        {step === "pagos" ? (
-          <>
-            <header className="otri-modal-header headerStyle">
-              <h3>Agregar pagos / facturas</h3>
-              <div className="headerActions">
-                <RegisterButton onClick={addFactura} text={"Añadir factura"} />
-              </div>
-            </header>
-
-            <section
-              className="otri-modal-body bodyStyle"
-              style={{ maxHeight: "60vh", overflow: "auto" }}
-            >
-              {items.map((it, idx) => (
-                <div
-                  key={it.id}
-                  className="facturaCard"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    className="facturaCardHeader"
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <strong>Factura #{idx + 1}</strong>
-                    <button
-                      type="button"
-                      onClick={() => removeFactura(it.id)}
-                      disabled={items.length === 1 || isSaving}
-                      title={
-                        items.length === 1
-                          ? "Debe haber al menos una"
-                          : "Quitar esta factura"
-                      }
-                      className="btn-delete-top"
-                    >
-                      <CircleMinus />
-                    </button>
-                  </div>
-
-                  <RegistrarFactura
-                    onChange={(payload) => handleChangeFactura(it.id, payload)}
+        <div className="otri-modal-container">
+          {step === "pagos" ? (
+            <>
+              <header className="otri-modal-header">
+                <h3>Agregar factura(s)</h3>
+                <div className="headerActions">
+                  <RegisterButton
+                    onClick={addFactura}
+                    text={"Añadir factura"}
                   />
                 </div>
-              ))}
-            </section>
+              </header>
 
-            <section
-              className="facturas-resumen"
-              style={{
-                borderTop: "1px dashed #e5e7eb",
-                padding: "10px 12px",
-                maxHeight: "18vh",
-                overflow: "auto",
+              <section
+                className="otri-modal-body"
+                style={{ maxHeight: "60vh", overflow: "auto" }}
+              >
+                {items.map((it, idx) => (
+                  <div
+                    key={it.id}
+                    ref={setCardRef(it.id)}
+                    className="facturaCard"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 12,
+                      padding: 12,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div
+                      className="facturaCardHeader"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <h2
+                        className="form-card-header"
+                        style={{
+                          textAlign: "center",
+                          marginLeft: "auto",
+                          marginRight: "auto",
+                        }}
+                      >
+                        Factura #{idx + 1}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={() => removeFactura(it.id)}
+                        disabled={items.length === 1 || isSaving}
+                        title={
+                          items.length === 1
+                            ? "Debe haber al menos una"
+                            : "Quitar esta factura"
+                        }
+                        className="btn-delete-top"
+                      >
+                        <CircleMinus />
+                      </button>
+                    </div>
+
+                    <RegistrarFactura
+                      idTT={item}
+                      showErrors={triedSubmit}
+                      onChange={(payload) =>
+                        handleChangeFactura(payload.idTT, payload)
+                      }
+                    />
+                  </div>
+                ))}
+              </section>
+
+              <section
+                className="facturas-resumen"
+                style={{
+                  borderTop: "1px dashed #e5e7eb",
+                  padding: "10px 12px",
+                  maxHeight: "18vh",
+                  overflow: "auto",
+                }}
+              >
+                <div style={{ marginBottom: 6, fontWeight: 600 }}>
+                  Facturas agregadas: {items.length} &nbsp;|&nbsp; Válidas para
+                  guardar: {totalFacturas}
+                </div>
+
+                {/* Lista resumida de errores por factura (tras click) */}
+                {triedSubmit && invalidSummaries.length > 0 && (
+                  <div style={{ color: "#b91c1c", fontSize: 13 }}>
+                    {invalidSummaries.map((txt, i) => (
+                      <div key={i}>• {txt}</div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <footer
+                className="otri-modal-footer"
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>
+                  Total del pago:&nbsp;
+                  {new Intl.NumberFormat("es-EC", {
+                    style: "currency",
+                    currency: "USD",
+                    minimumFractionDigits: 2,
+                  }).format(totalPago || 0)}
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <RegisterButton
+                    onClick={handleGuardar}
+                    text={isSaving ? "Guardando..." : "Siguiente"}
+                    disabled={!puedeHacerClick}
+                  />
+                </div>
+              </footer>
+            </>
+          ) : (
+            <DistribucionStep
+              item={item}
+              resumenPago={nextData?.resumenPago}
+              facturas={nextData?.facturas || []}
+              onBack={() => setStep("pagos")}
+              onClose={onClose}
+              onConfirmDistribucion={() => {
+                // TODO: POST distribución
+                onClose?.();
               }}
-            >
-              <div style={{ marginBottom: 6, fontWeight: 600 }}>
-                Facturas agregadas: {items.length} &nbsp;|&nbsp; Válidas para
-                guardar: {totalFacturas}
-              </div>
-            </section>
-
-            <footer
-              className="otri-modal-footer footerStyle"
-              style={{
-                display: "flex",
-                gap: 12,
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ fontWeight: 600 }}>
-                Total a pagar:{" "}
-                {new Intl.NumberFormat("es-EC", {
-                  style: "currency",
-                  currency: "USD",
-                  minimumFractionDigits: 2,
-                }).format(totalPago || 0)}
-              </div>
-
-              <div style={{ display: "flex", gap: 8 }}>
-                <RegisterButton
-                  onClick={handleGuardar}
-                  text={isSaving ? "Guardando..." : "Siguiente"}
-                  disabled={!puedeGuardar}
-                />
-              </div>
-            </footer>
-          </>
-        ) : (
-          <DistribucionStep
-            item={item}
-            resumenPago={nextData?.resumenPago}
-            facturas={nextData?.facturas || []}
-            onBack={() => setStep("pagos")}
-            onClose={onClose}
-            onConfirmDistribucion={() => {
-              // TODO: POST distribución
-              onClose?.();
-            }}
-          />
-        )}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

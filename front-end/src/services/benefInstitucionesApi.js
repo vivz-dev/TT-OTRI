@@ -23,6 +23,31 @@ import { ensureAppJwt } from './api';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+/* Helpers internos */
+const pickFirst = (obj, keys, fallback = undefined) =>
+  keys.reduce((acc, k) => (acc !== undefined ? acc : obj?.[k]), undefined) ?? fallback;
+
+const extractNombreBenef = (item) => {
+  // Tolerante a distintos campos en el backend
+  return (
+    pickFirst(item, [
+      'nombre',
+      'Nombre',
+      'name',
+      'Name',
+      'razonSocial',
+      'razon_social',
+      'RazonSocial',
+      'descripcion',
+      'Descripcion',
+      'denominacion',
+      'Denominacion',
+      'titulo',
+      'Titulo',
+    ]) ?? '—'
+  );
+};
+
 /* Base query con App JWT */
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -68,6 +93,34 @@ export const benefInstitucionesApi = createApi({
 
     getBenefInstitucion: builder.query({
       query: (id) => ({ url: `/benef-instituciones/${id}`, method: 'GET' }),
+      providesTags: (_res, _err, id) => [{ type: 'BenefInstitucion', id }],
+    }),
+
+    /* Nuevo: obtener SOLO el nombre del beneficiario por ID (con fallback a GET all) */
+    getNombreBenefById: builder.query({
+      // Devuelve: string (nombre) | '—'
+      async queryFn(id, _api, _extraOptions, baseQuery) {
+        // 1) Intento directo por ID
+        const byId = await baseQuery({ url: `/benef-instituciones/${id}`, method: 'GET' });
+        if (!byId.error && byId.data) {
+          const nombre = extractNombreBenef(byId.data);
+          return { data: nombre ?? '—' };
+        }
+
+        // 2) Fallback: traer todo y filtrar por ID
+        const all = await baseQuery({ url: '/benef-instituciones', method: 'GET' });
+        if (all.error) {
+          return { data: '—' }; // Preferimos no romper el flujo del orquestador
+        }
+
+        const list = Array.isArray(all.data) ? all.data : [];
+        const found =
+          list.find((u) => String(u?.id) === String(id)) ??
+          list.find((u) => String(u?.idBenefInstitucion ?? u?.IdBenefInstitucion) === String(id));
+
+        const nombre = found ? extractNombreBenef(found) : '—';
+        return { data: nombre ?? '—' };
+      },
       providesTags: (_res, _err, id) => [{ type: 'BenefInstitucion', id }],
     }),
 
@@ -165,6 +218,7 @@ export const {
   // Catálogo
   useGetBenefInstitucionesQuery,
   useGetBenefInstitucionQuery,
+  useGetNombreBenefByIdQuery,
   useCreateBenefInstitucionMutation,
   useDeleteBenefInstitucionMutation,
 

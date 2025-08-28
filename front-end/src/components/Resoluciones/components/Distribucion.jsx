@@ -312,7 +312,7 @@ const montosValidos = () => minimoValido() && maximoValido();
 
         {!noLimit && showErrors && !minimoValido() && !maximoValido() (
           <p className="monto-error">
-            Verifica los montos: ambos requeridos, no negativos y Mínimo ≤ Máximo.
+            Verifica los montos: ambos requeridos, no negativos y Mínimo menor que Máximo.
           </p>
         )}
       </div>

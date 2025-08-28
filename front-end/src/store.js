@@ -11,23 +11,30 @@ import { resolucionOrchestratorApi } from "./services/resolucionOrchestratorApi"
 import { archivosApi } from "./services/storage/archivosApi";
 import { distribBenefInstitucionesApi } from "./services/distribBenefInstitucionesApi";
 
-/** Nuevos (generados en la respuesta anterior) */
+/** Nuevos (ya existentes en tu proyecto) */
 import { acuerdosDistribAutoresApi } from "./services/acuerdosDistribAutoresApi";
 import { proteccionesApi } from "./services/proteccionesApi";
 import { cotitularidadInstApi } from "./services/cotitularidadInstApi";
 import { cotitularidadTecnoApi } from "./services/cotitularidadTecnoApi";
-
 import { technologyOrchestratorApi } from "./services/technologyOrchestratorApi";
 import { tipoTransferenciaApi } from "./services/tipoTransferenciaApi";
-
 import { cotitularidadOrchestratorApi } from "./services/cotitularidadOrchestratorApi";
-
 import { distribucionesApi } from "./services/distribucionesApi";
 import { pagosOrchestratorApi } from "./services/pagosOrchestratorApi";
 import { pagosFacturasApi } from "./services/pagosFacturasApi";
-
 import { distribucionPagoOrchestratorApi } from "./services/distribucionPagoOrchestratorApi";
-import {autoresApi} from "./services/autoresApi";
+import { autoresApi } from "./services/autoresApi";
+import { registroPagoApi } from "./services/registroPagoApi";
+
+/** NUEVOS: Cesiones, Sublicenciamientos, Regalias */
+import { cesionesApi } from "./services/cesionesApi";
+import { sublicenciamientosApi } from "./services/sublicenciamientosApi";
+import { regaliasApi } from "./services/regaliasApi";
+
+/** NUEVO: Unidades */
+import { unidadesApi } from "./services/unidadesApi";
+import { tipoTransferenciaTecnoApi } from "./services/tipoTransferenciaTecnoApi";
+
 
 export const store = configureStore({
   reducer: {
@@ -40,25 +47,32 @@ export const store = configureStore({
     [cotitularApi.reducerPath]: cotitularApi.reducer,
     [benefInstitucionesApi.reducerPath]: benefInstitucionesApi.reducer,
     [archivosApi.reducerPath]: archivosApi.reducer,
-    [distribBenefInstitucionesApi.reducerPath]:
-      distribBenefInstitucionesApi.reducer,
+    [distribBenefInstitucionesApi.reducerPath]: distribBenefInstitucionesApi.reducer,
     [resolucionOrchestratorApi.reducerPath]: resolucionOrchestratorApi.reducer,
 
-    // ---- Nuevos
+    // ---- Nuevos ya existentes
     [acuerdosDistribAutoresApi.reducerPath]: acuerdosDistribAutoresApi.reducer,
     [proteccionesApi.reducerPath]: proteccionesApi.reducer,
     [cotitularidadInstApi.reducerPath]: cotitularidadInstApi.reducer,
     [cotitularidadTecnoApi.reducerPath]: cotitularidadTecnoApi.reducer,
     [technologyOrchestratorApi.reducerPath]: technologyOrchestratorApi.reducer,
-    [tipoTransferenciaApi.reducerPath]: tipoTransferenciaApi.reducer,
-    [cotitularidadOrchestratorApi.reducerPath]:
-      cotitularidadOrchestratorApi.reducer,
+    
+    [cotitularidadOrchestratorApi.reducerPath]: cotitularidadOrchestratorApi.reducer,
     [pagosOrchestratorApi.reducerPath]: pagosOrchestratorApi.reducer,
-
     [pagosFacturasApi.reducerPath]: pagosFacturasApi.reducer,
     [distribucionPagoOrchestratorApi.reducerPath]: distribucionPagoOrchestratorApi.reducer,
     [autoresApi.reducerPath]: autoresApi.reducer,
-    
+    [registroPagoApi.reducerPath]: registroPagoApi.reducer,
+
+    // ---- NUEVOS
+    [cesionesApi.reducerPath]: cesionesApi.reducer,
+    [sublicenciamientosApi.reducerPath]: sublicenciamientosApi.reducer,
+    [regaliasApi.reducerPath]: regaliasApi.reducer,
+
+    // ---- NUEVO: Unidades
+    [unidadesApi.reducerPath]: unidadesApi.reducer,
+    [tipoTransferenciaApi.reducerPath]: tipoTransferenciaApi.reducer,
+    [tipoTransferenciaTecnoApi.reducerPath]: tipoTransferenciaTecnoApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -74,18 +88,27 @@ export const store = configureStore({
       .concat(distribBenefInstitucionesApi.middleware)
       .concat(resolucionOrchestratorApi.middleware)
 
-      // ---- Nuevos
+      // ---- Nuevos ya existentes
       .concat(acuerdosDistribAutoresApi.middleware)
       .concat(proteccionesApi.middleware)
       .concat(cotitularidadInstApi.middleware)
       .concat(cotitularidadTecnoApi.middleware)
-
       .concat(technologyOrchestratorApi.middleware)
-      .concat(tipoTransferenciaApi.middleware)
-
+      
       .concat(cotitularidadOrchestratorApi.middleware)
       .concat(pagosOrchestratorApi.middleware)
       .concat(pagosFacturasApi.middleware)
       .concat(distribucionPagoOrchestratorApi.middleware)
       .concat(autoresApi.middleware)
+      .concat(registroPagoApi.middleware)
+
+      // ---- NUEVOS
+      .concat(cesionesApi.middleware)
+      .concat(sublicenciamientosApi.middleware)
+      .concat(regaliasApi.middleware)
+
+      // ---- NUEVO: Unidades
+      .concat(unidadesApi.middleware)
+      .concat(tipoTransferenciaApi.middleware)
+      .concat(tipoTransferenciaTecnoApi.middleware)
 });

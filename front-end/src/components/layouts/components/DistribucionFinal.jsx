@@ -1,7 +1,5 @@
 // src/pages/layouts/components/DistribucionFinal.jsx
 import React, { useMemo } from "react";
-import { getPersonaNameById } from "../../../services/espolUsers";
-
 
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
@@ -24,12 +22,14 @@ const money = (n) =>
  *  }
  */
 const DistribucionFinal = ({ data }) => {
-  console.log("DATA --->>>",data)
+  // console.log("DATA --->>>",data)
   const autores = Array.isArray(data?.autores) ? data.autores : [];
-  const instituciones = Array.isArray(data?.instituciones) ? data.instituciones : [];
+  const instituciones = Array.isArray(data?.instituciones)
+    ? data.instituciones
+    : [];
   const centros = Array.isArray(data?.centros) ? data.centros : [];
 
-  console.log("centros ---> ", centros)
+  // console.log("centros ---> ", centros)
 
   // Normaliza por si viniera como solo IDs (retrocompat):
   const institucionesNorm = useMemo(() => {
@@ -41,73 +41,101 @@ const DistribucionFinal = ({ data }) => {
   }, [instituciones]);
 
   return (
-    <div style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-      <div style={{ fontWeight: 700, marginBottom: 12 }}>Distribución final</div>
+    <div className="form-card">
+      <table className="tabla-distribucion">
+        <thead>
+          <tr>
+            <th colSpan={4} className="beneficiarios">
+              FORMULARIO DE DISTRIBUCIÓN DE BENEFICIOS ECONÓMICOS DE LA ESPOL
+              POR EXPLOTACIÓN DE LA PROPIEDAD INTELECTUAL
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="fila-subtotal-titulo">
+            <td >
+              Nombre de la tecnología/<em>know-how</em> a transferir
+            </td>
+            <td className="subtotal" colSpan={3}>
+              {data?.nombreTecnologia ?? "No hay datos de la tecnología"}
+            </td>
+          </tr>
+          <tr className="autor-name">
+            <td className="" colSpan={2}>
+              {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual de fecha XX del mes XX del año XXXX, y a la resolución ${
+                data?.codigoResolucion ?? "—"
+              } de fecha dd del mes mm del año aaaa, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
+            </td>
+          </tr>
+        </tbody>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: 6 }}>
-        <div style={{ fontWeight: 600 }}>Nombre de la tecnología</div>
-        <div>{data?.nombreTecnologia ?? "—"}</div>
+        <thead>
+          <tr>
+            <th colSpan={4} className="beneficiarios">
+              LISTADO DE BENEFICIARIOS
+            </th>
+          </tr>
 
-        <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
+          <tr className="fila-subtotal-titulo">
+            <td>Autores/Inventores beneficiarios</td>
+            <td className="subtotal" colSpan={3}></td>
+          </tr>
 
-        <div style={{ gridColumn: "1 / span 2", fontWeight: 600 }}>
-        {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual de fecha XX del mes XX del año XXXX, y a la resolución ${data?.codigoResolucion ?? "—"} de fecha dd del mes mm del año aaaa, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
-          {/* {data?.codigoResolucion ?? "—"} */}
-        </div>
+          {autores.map((a, i) => {
+            const label = a.idPersona;
+            const monto = a.montoAutor ?? 0;
+            return (
+              <tr>
+                <td className="input-select autor-name">{label}</td>
 
-        <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
+                <td className="input-col autor-monto">{money(monto)}</td>
+              </tr>
+            );
+          })}
 
-        <div style={{ gridColumn: "1 / span 2", fontWeight: 700 }}>LISTADO DE BENEFICIARIOS</div>
+          <tr className="fila-subtotal">
+            <td className="subtotal autor-name">Subtotal de autores/inventores beneficiarios</td>
+            <td className="subtotal" colSpan={3}>
+              {money(data?.subtotalAutores)}
+            </td>
+          </tr>
 
-        {/* Subtotal Autores */}
-        <div style={{ fontWeight: 600 }}>Subtotal Autores/Inventores beneficiarios</div>
-        <div>{money(data?.subtotalAutores)}</div>
+          <tr className="fila-subtotal-titulo">
+            <td>Otros beneficiarios institucionales</td>
+            <td className="subtotal" colSpan={3}></td>
+          </tr>
 
-        {/* Autores */}
-        {autores.map((a, i) => {
-          const label = a.idPersona;
-          const monto = a.montoAutor ?? 0;
-          return (
-            <React.Fragment key={`aut-${a?.idPersona ?? i}`}>
-              <div>{label}</div>
-              <div>{money(monto)}</div>
-            </React.Fragment>
-          );
-        })}
+          {centros.map((c, i) => (
+            <tr>
+              <td className="input-select autor-name">{c.nombreCentro}</td>
+              <td className="input-col autor-monto">{money(c?.montoCentro ?? 0)}</td>
+            </tr>
+          ))}
 
-        <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
+          {institucionesNorm.map((inst, i) => (
+            <tr>
+              <td className="input-select autor-name">{inst.nombreBenef}</td>
+              <td className="input-col autor-monto">{money(inst?.montoBenefInst ?? 0)}</td>
+            </tr>
+          ))}
 
-        {/* Subtotal Instituciones */}
-        <div style={{ fontWeight: 600 }}>Subtotal Instituciones beneficiarios</div>
-        <div>{money(data?.subtotalInstituciones)}</div>
+          <tr className="fila-subtotal">
+            <td className="subtotal autor-name">Subtotal de beneficiarios institucionales</td>
+            <td className="subtotal" colSpan={3}>
+              {money(data?.subtotalInstituciones)}
+            </td>
+          </tr>
 
-        {/* Instituciones */}
-        {institucionesNorm.map((inst, i) => (
-          <React.Fragment key={`inst-${inst?.idBenefInst ?? i}`}>
-            <div>{inst.idBenefInst}</div>
-            <div>{money(inst?.montoBenefInst ?? 0)}</div>
-          </React.Fragment>
-        ))}
+          <tr className="fila-subtotal-titulo">
+            <td className="subtotal autor-name" >Total del pago realizado</td>
+            <td className="subtotal" colSpan={3}>
+              {money(data?.total)}
+            </td>
+          </tr>
+        </thead>
+      </table>
+      <div></div>
 
-        {/* Centros (unidades) */}
-        {centros.length > 0 && (
-          <>
-            <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
-            {centros.map((c, i) => (
-              <React.Fragment key={`cent-${c?.idUnidad ?? i}`}>
-                <div>{c.idCentro}</div>
-                <div>{money(c?.montoCentro ?? 0)}</div>
-              </React.Fragment>
-            ))}
-          </>
-        )}
-
-        <div style={{ gridColumn: "1 / span 2", borderTop: "1px dashed #eee", margin: "10px 0" }} />
-
-        {/* Total */}
-        <div style={{ fontWeight: 700 }}>PAGO TOTAL</div>
-        <div style={{ fontWeight: 700 }}>{money(data?.total)}</div>
-      </div>
     </div>
   );
 };

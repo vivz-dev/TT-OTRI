@@ -32,10 +32,8 @@ export const distribucionPagoOrchestratorApi = createApi({
 
     computeDistribucionTabla: builder.mutation({
       async queryFn(args, api) {
-        console.log('[ORQ] ▶ args recibidos:', args);
-
         try {
-          const { idTT, montoTotalRegistroPago, idDistribucionResolucion = 2 } = args || {};
+          const { idTT, montoTotalRegistroPago } = args || {};
           if (!idTT) throw new Error('idTT es requerido');
           if (!Number.isFinite(Number(montoTotalRegistroPago))) throw new Error('montoTotalRegistroPago inválido');
 
@@ -43,11 +41,15 @@ export const distribucionPagoOrchestratorApi = createApi({
           const tt = await api.dispatch(
             transfersApi.endpoints.getTransferById.initiate(idTT, { forceRefetch: true })
           ).unwrap();
+
+          // 🔎 Log completo de la TT por idTT (para depuración)
+          console.log('[ORQ] 1) TT por idTT (objeto completo):', tt);
+
           const idTecnologia =
             tt?.idTecnologia ?? tt?.idTechnology ?? tt?.tecnologiaId ?? tt?.id_tec ?? null;
           const idResolucion =
             tt?.idResolucion ?? tt?.resolucionId ?? tt?.id_res ?? null;
-          console.log('[ORQ] 1) Transferencia:', { tt, idTecnologia, idResolucion });
+          const idDistribucionResolucion = tt?.idDistribucionResolucion ?? null;
 
           if (!idTecnologia || !idResolucion) {
             throw new Error('La transferencia no contiene idTecnologia o idResolucion');
@@ -58,65 +60,52 @@ export const distribucionPagoOrchestratorApi = createApi({
             technologiesApi.endpoints.getTechnology.initiate(idTecnologia, { forceRefetch: true })
           ).unwrap();
           const nombreTecnologia = tec?.titulo ?? tec?.nombre ?? '—';
-          // console.log('[ORQ] 2) Tecnología:', { idTecnologia, nombreTecnologia });
 
           /* 3) Resolución (código) */
           const res = await api.dispatch(
             resolutionsApi.endpoints.getResolutionById.initiate(idResolucion, { forceRefetch: true })
           ).unwrap();
           const codigoResolucion = res?.codigo ?? res?.codigoResolucion ?? '—';
-          // console.log('[ORQ] 3) Resolución:', { idResolucion, codigoResolucion });
 
           /* 4) Distribución por resolución */
           const distRes = await api.dispatch(
             distribucionesApi.endpoints.getDistributionById.initiate(idDistribucionResolucion, { forceRefetch: true })
           ).unwrap();
 
+          console.log('Distribucion por resolucion ---> ', distRes);
+
           // Mantengo la lógica original (sin normalizar ni convertir 60↔0.6)
-          let porcSubtotalAutores = distRes.porcSubtotalAutores;
-          let porcSubtotalInstit  = distRes.porcSubtotalInstitut;
+          const porcSubtotalAutores = distRes.porcSubtotalAutores;
+          const porcSubtotalInstit  = distRes.porcSubtotalInstitut;
 
-          const porcOrig = {
-            autores: distRes?.PorcSubtotalAutores ?? distRes?.porcSubtotalAutores,
-            inst: distRes?.PorcSubtotalInstitut ?? distRes?.porcSubtotalInstitut,
-          };
-
-          // console.log('[ORQ] 4) DistribuciónResolución:', {
-          //   idDistribucionResolucion,
-          //   porcOriginales: porcOrig,
-          //   porcUsados: { porcSubtotalAutores, porcSubtotalInstit }
-          // });
-
-          /* 5) Subtotales (sin centavos) */
           const total = montoTotalRegistroPago;
           const subtotalAutores = total * porcSubtotalAutores;
           const subtotalInstituciones = total * porcSubtotalInstit;
-          // console.log('[ORQ] 5) Subtotales:', { total, subtotalAutores, subtotalInstituciones });
 
-          
+          /* 6) Autores */
           const listaAutores = await buscarAutoresTecnologia(api, {
             idTecnologia,
             subtotalAutores, // el que ya calculaste
           });
-          // console.log('[ORQ] ▶ Lista autores (desde servicio):', listaAutores);
 
+          /* 7) Instituciones (antes de filtrar id=1) */
           const idsBenefInst = await buscarInstituciones(api, {
-            idTransferencia: idTT,     // o transferencia: tt (si ya la tienes)
-            // idDistribucionResolucion: si en algún momento ya lo tienes, puedes pasarlo aquí y omite el hardcode
-            subtotalInstituciones,
+            idTransferencia: idTT,
+            total,
           });
-          // console.log('[ORQ] ▶ IDs BenefInstituciones (desde servicio):', idsBenefInst);
 
-          // idsBenefInst
-
-
+          /* 8) Centros (usa idsBenefInst para calcular monto base por centro) */
           const listaCentros = await buscarCentros(api, {
             idTecnologia,
-            subtotalInstituciones, // el que ya calculaste
             idsBenefInst
           });
           // console.log('[ORQ] ▶ Lista listaCentros (desde servicio):', listaCentros);
 
+          /* 8.1) Eliminar de idsBenefInst el item con idBenefInst === 1 */
+          const instituciones = Array.isArray(idsBenefInst)
+            ? idsBenefInst.filter(x => String(x?.idBenefInst) !== '1')
+            : [];
+          // console.log('[ORQ] ▶ Instituciones (sin idBenefInst=1):', instituciones);
 
           /* 9) Respuesta (payload final) */
           const dataTabla = {
@@ -124,14 +113,13 @@ export const distribucionPagoOrchestratorApi = createApi({
             codigoResolucion,
             subtotalAutores,
             autores: listaAutores,
-            instituciones: idsBenefInst,
+            instituciones,          // ← ya sin el item id=1
             centros: listaCentros,
             subtotalInstituciones,
             total: total,
           };
 
-          console.log('[ORQ] ✅ Payload tabla:', dataTabla);
-
+          // console.log('[ORQ] ✅ Payload tabla:', dataTabla);
 
           return { data: dataTabla };
         } catch (err) {
