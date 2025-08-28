@@ -1,8 +1,8 @@
 /**
  * Orquestador: crea RegistroPago + Facturas + Archivos por factura
  * Reglas:
- *   - Primero crea /api/registros-pago -> obtiene idRegistroPago
- *   - Luego crea cada /api/facturas con { IdRegistroPago, Monto, FechaFactura }
+ *   - Primero crea /registros-pago -> obtiene idRegistroPago
+ *   - Luego crea cada /facturas con { IdRegistroPago, Monto, FechaFactura }
  *   - Luego sube archivos por factura usando uploadAndSaveArchivo:
  *        meta: { idTEntidad: idFactura, tipoEntidad: 'F', idColeccion }
  * Consistencia:
@@ -109,13 +109,13 @@ export const pagosOrchestratorApi = createApi({
             normalizeId(resPago.data) ??
             resPago.data?.id ??
             resPago.data?.Id ??
-            resPago.data?.IdRegistroPago ??
+            resPago.data?.idRegistroPago ??
             null;
 
           const registroPagoId = Number(registroPagoIdRaw);
           if (!Number.isFinite(registroPagoId)) {
             await compensate();
-            return { error: { status: 500, data: 'No se obtuvo IdRegistroPago válido.' } };
+            return { error: { status: 500, data: 'No se obtuvo idRegistroPago válido.' } };
           }
           created.registroPagoId = registroPagoId;
 
@@ -126,7 +126,7 @@ export const pagosOrchestratorApi = createApi({
             const f = facturas[i] || {};
             const fecha = formatDateOnly(f.fechaFactura);
             const bodyFactura = {
-              IdRegistroPago: registroPagoId,
+              idRegistroPago: registroPagoId,
               Monto: Number(f.monto ?? 0),
               FechaFactura: fecha,
             };

@@ -1,17 +1,7 @@
 /**
  * RTK Query – RegistroPago / Facturas (JS + App JWT + reauth)
  * -----------------------------------------------------------
- *  • GET    /api/registros-pago
- *  • GET    /api/registros-pago/:id
- *  • POST   /api/registros-pago        -> transformResponse => { id }
- *  • PATCH  /api/registros-pago/:id
- *
- *  • GET    /api/facturas
- *  • GET    /api/facturas/:id
- *  • POST   /api/facturas              -> transformResponse => { id }
- *  • PATCH  /api/facturas/:id
- *
- *  TagTypes: RegistroPago | Factura
+ *  • GET    /facturas?idRegistroPago=:id   (filtrado en transformResponse)
  */
 
 import { createApi } from '@reduxjs/toolkit/query/react';
@@ -21,10 +11,14 @@ import { baseQueryWithReauth, normalizeId } from './baseQuery';
 const pickRegistroPagoId = (x) =>
   x?.id ?? x?.idRegistroPago ?? x?.IdRegistroPago;
 
+/* ✅ NUEVO: detectar FK idRegistroPago dentro de una factura (distintas variantes) */
+const pickFkRegistroPagoId = (f) =>
+  f?.idRegistroPago ?? f?.IdRegistroPago ?? f?.registroPagoId ?? f?.RegistroPagoId ?? f?.id_registro_pago;
+
+/* Si necesitas también IDs de factura */
 const pickFacturaId = (x) =>
   x?.id ?? x?.idFactura ?? x?.IdFactura;
 
-/* ---------------- API ---------------- */
 export const pagosFacturasApi = createApi({
   reducerPath: 'pagosFacturasApi',
   baseQuery: baseQueryWithReauth,
@@ -33,7 +27,7 @@ export const pagosFacturasApi = createApi({
 
     /* ---------- REGISTROS DE PAGO ---------- */
     getRegistrosPago: builder.query({
-      query: () => '/api/registros-pago',
+      query: () => '/registros-pago',
       providesTags: (result) =>
         result
           ? [
@@ -44,13 +38,13 @@ export const pagosFacturasApi = createApi({
     }),
 
     getRegistroPagoById: builder.query({
-      query: (id) => `/api/registros-pago/${id}`,
+      query: (id) => `/registros-pago/${id}`,
       providesTags: (_res, _err, id) => [{ type: 'RegistroPago', id }],
     }),
 
     createRegistroPago: builder.mutation({
       query: (body) => ({
-        url: '/api/registros-pago',
+        url: '/registros-pago',
         method: 'POST',
         body,
       }),
@@ -64,7 +58,7 @@ export const pagosFacturasApi = createApi({
 
     patchRegistroPago: builder.mutation({
       query: ({ id, body }) => ({
-        url: `/api/registros-pago/${id}`,
+        url: `/registros-pago/${id}`,
         method: 'PATCH',
         body,
       }),
@@ -76,7 +70,7 @@ export const pagosFacturasApi = createApi({
 
     /* ---------- FACTURAS ---------- */
     getFacturas: builder.query({
-      query: () => '/api/facturas',
+      query: () => '/facturas',
       providesTags: (result) =>
         result
           ? [
@@ -87,13 +81,13 @@ export const pagosFacturasApi = createApi({
     }),
 
     getFacturaById: builder.query({
-      query: (id) => `/api/facturas/${id}`,
+      query: (id) => `/facturas/${id}`,
       providesTags: (_res, _err, id) => [{ type: 'Factura', id }],
     }),
 
     createFactura: builder.mutation({
       query: (body) => ({
-        url: '/api/facturas',
+        url: '/facturas',
         method: 'POST',
         body,
       }),
@@ -107,7 +101,7 @@ export const pagosFacturasApi = createApi({
 
     patchFactura: builder.mutation({
       query: ({ id, body }) => ({
-        url: `/api/facturas/${id}`,
+        url: `/facturas/${id}`,
         method: 'PATCH',
         body,
       }),
@@ -115,6 +109,60 @@ export const pagosFacturasApi = createApi({
         { type: 'Factura', id },
         { type: 'Factura', id: 'LIST' },
       ],
+    }),
+
+    /* ---------- NUEVO: FACTURAS POR REGISTRO DE PAGO ---------- */
+/* ---------- NUEVO: FACTURAS POR REGISTRO DE PAGO (FILTRADO CLIENTE) ---------- */
+    getFacturasByRegistroPagoId: builder.query({
+      // Endpoint tipo: /facturas?idRegistroPago=:id (aunque el backend ignore el filtro)
+      query: (idRegistroPago) => {
+        // console.log('[getFacturasByRegistroPagoId] query → idRegistroPago =', idRegistroPago);
+        return `/facturas?idRegistroPago=${encodeURIComponent(idRegistroPago)}`;
+      },
+      transformResponse: (response, meta, arg) => {
+        const objetivo = Number(arg);
+        const lista = Array.isArray(response) ? response : [];
+
+        // console.log('[getFacturasByRegistroPagoId] transformResponse → arg(id):', arg, 'status:', meta?.response?.status);
+        // console.log('[getFacturasByRegistroPagoId] transformResponse → payload (raw):', response);
+
+        // ✅ Filtro lado cliente por idRegistroPago (tolerante a tipos/keys)
+        const filtradas = lista.filter((f) => {
+          const fk = Number(pickFkRegistroPagoId(f));
+          const ok = Number.isFinite(fk) && fk === objetivo;
+          if (!ok) {
+            // Log de depuración por cada factura descartada
+            // console.log('[getFacturasByRegistroPagoId] descartada (fk!=id):', {
+            //   facturaId: pickFacturaId(f),
+            //   fkRegistroPago: fk,
+            //   esperado: objetivo,
+            // });
+          }
+          return ok;
+        });
+
+        // console.log('[getFacturasByRegistroPagoId] transformResponse → filtradas:', filtradas);
+        return filtradas;
+      },
+      providesTags: (result) => {
+        // console.log('[getFacturasByRegistroPagoId] providesTags → result length:', Array.isArray(result) ? result.length : 0);
+        return result
+          ? [
+              ...result.map((x) => ({ type: 'Factura', id: pickFacturaId(x) })),
+              { type: 'Factura', id: 'LIST' },
+            ]
+          : [{ type: 'Factura', id: 'LIST' }];
+      },
+      onQueryStarted: async (arg, { queryFulfilled }) => {
+        // console.log('[getFacturasByRegistroPagoId] onQueryStarted → idRegistroPago =', arg);
+        try {
+          const { data, meta } = await queryFulfilled;
+          // console.log('[getFacturasByRegistroPagoId] onQueryStarted → fulfilled. status:', meta?.response?.status);
+          // console.log('[getFacturasByRegistroPagoId] onQueryStarted → data (filtradas):', data);
+        } catch (error) {
+          // console.log('[getFacturasByRegistroPagoId] onQueryStarted → error:', error);
+        }
+      },
     }),
 
   }),
@@ -130,4 +178,6 @@ export const {
   useGetFacturaByIdQuery,
   useCreateFacturaMutation,
   usePatchFacturaMutation,
+  /* NUEVO HOOK: */
+  useGetFacturasByRegistroPagoIdQuery,
 } = pagosFacturasApi;

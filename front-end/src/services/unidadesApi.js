@@ -1,8 +1,8 @@
 // RTK Query — Unidades API
 // ------------------------
 // Endpoints disponibles en backend:
-//  • GET /api/unidades
-//  • GET /api/unidades/{id:int}
+//  • GET /unidades
+//  • GET /unidades/{id:int}
 //
 // Nota: El API base de tu app suele incluir "/api" en REACT_APP_API_BASE_URL,
 // por eso aquí usamos rutas sin el prefijo "/api": "/unidades", "/unidades/:id"

@@ -1,19 +1,19 @@
 // RTK Query — Benef Instituciones API (EXTENDIDO)
 // -----------------------------------------------
 // Catálogo:
-//  • GET    /api/benef-instituciones
-//  • GET    /api/benef-instituciones/:id
-//  • POST   /api/benef-instituciones
-//  • DELETE /api/benef-instituciones/:id
+//  • GET    /benef-instituciones
+//  • GET    /benef-instituciones/:id
+//  • POST   /benef-instituciones
+//  • DELETE /benef-instituciones/:id
 //
 // Distribución por Tecnología (QP-only, SIN rutas anidadas):
-//  • GET /api/benef-instituciones?tecnologiaId=:id
-//  • GET /api/benef-instituciones?IdTecnologia=:id
-//  • fallback: GET /api/benef-instituciones  -> filtro en front
+//  • GET /benef-instituciones?tecnologiaId=:id
+//  • GET /benef-instituciones?IdTecnologia=:id
+//  • fallback: GET /benef-instituciones  -> filtro en front
 //
 // Distribución por Acuerdo (se mantienen ambas variantes):
-//  • GET /api/acuerdos-distrib-instituciones/:acuerdoId/instituciones
-//  • GET /api/benef-instituciones?acuerdoId=:acuerdoId
+//  • GET /acuerdos-distrib-instituciones/:acuerdoId/instituciones
+//  • GET /benef-instituciones?acuerdoId=:acuerdoId
 //
 // Requisitos:
 //  - ensureAppJwt() en src/services/api.js

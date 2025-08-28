@@ -1,5 +1,5 @@
 // RTK Query – Acuerdos de Distribución de Autores
-// Endpoints backend base: /api/acuerdos-distrib-autores
+// Endpoints backend base: /acuerdos-distrib-autores
 
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQuery';

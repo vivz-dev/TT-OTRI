@@ -26,7 +26,7 @@ export async function getPersonaIdByEmail(email) {
     if (Number.isFinite(n) && n > 0) return n;
   }
 
-  // 2) request a /api/espol-users/id?email=...
+  // 2) request a /espol-users/id?email=...
   const { data } = await api.get("/espol-users/id", { params: { email } });
   const id = Number(data?.idPersona ?? data?.IdPersona ?? data);
   if (!Number.isFinite(id) || id <= 0) {

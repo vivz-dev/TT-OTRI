@@ -11,7 +11,7 @@
  *
  *  Requisitos:
  *  - src/services/api.js con ensureAppJwt() (MSAL + /auth/exchange → { token }).
- *  - Backend expone /api/** y /api/auth/exchange.
+ *  - Backend expone /** y /auth/exchange.
  */
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';

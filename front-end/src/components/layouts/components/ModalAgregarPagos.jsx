@@ -406,11 +406,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
 
   return (
     // ✅ Backdrop ahora SÍ cierra el modal
-    <div
-      className="otri-modal-backdrop"
-      role="presentation"
-      tabIndex={-1}
-    >
+    <div className="otri-modal-backdrop" role="presentation" tabIndex={-1}>
       <div
         className="otri-modal"
         onClick={(e) => e.stopPropagation()}
@@ -487,7 +483,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
                       idTT={item}
                       showErrors={triedSubmit}
                       onChange={(payload) =>
-                        handleChangeFactura(payload.idTT, payload)
+                        handleChangeFactura(it.id, payload)
                       }
                     />
                   </div>

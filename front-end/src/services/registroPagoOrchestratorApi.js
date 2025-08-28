@@ -3,18 +3,43 @@
 /**
  * Orchestrator para Registros de Pago - Filtrado por Transferencia Tecnológica
  * ----------------------------------------------------------------------------
- * Uso fuera de componentes (por ejemplo en thunks/sagas/otros orquestadores):
- *
+ * Uso fuera de componentes:
  *   import { getRegistrosPagoByTT, getTotalPagosByTT } from './registroPagoOrchestratorApi';
  *   const rows = await getRegistrosPagoByTT(api, idTT);
  *   const total = await getTotalPagosByTT(api, idTT);
- *
- * Donde `api` es tu store RTK con .dispatch (el mismo que usas en otros orquestadores):
- *   api.dispatch(registroPagoApi.endpoints.X.initiate(...))
  */
 
-import { registroPagoApi, useGetRegistrosPagoQuery } from './registroPagoApi';
+import {
+  registroPagoApi,
+  useGetRegistrosPagoQuery,
+  useGetRegistrosPagoWithPersonaQuery
+} from './registroPagoApi';
 import { useMemo, useCallback } from 'react';
+
+// ⬇️ IMPORTA tu servicio existente (ajusta la ruta si es necesario)
+import { getPersonaNameById } from './espolUsers'; // <-- cambia a la ruta real si difiere
+
+/* ============================
+ *  Helpers de enriquecimiento
+ * ============================ */
+async function withNombrePersonaOne(rec) {
+  if (!rec || rec?.nombrePersona) return rec;
+  const id = Number(rec?.idPersona);
+  if (Number.isFinite(id) && id > 0) {
+    try {
+      const nombre = await getPersonaNameById(id);
+      return { ...rec, nombrePersona: nombre };
+    } catch {
+      return { ...rec, nombrePersona: 'Usuario no disponible' };
+    }
+  }
+  return { ...rec, nombrePersona: 'Usuario no disponible' };
+}
+
+async function withNombrePersonaMany(list) {
+  const arr = Array.isArray(list) ? list : [];
+  return Promise.all(arr.map(withNombrePersonaOne));
+}
 
 /* ============================
  *  Funciones puras (con api)
@@ -22,46 +47,41 @@ import { useMemo, useCallback } from 'react';
 
 /**
  * Obtiene y filtra registros de pago por ID de transferencia tecnológica
- * @param {any} api - Store RTK con .dispatch
- * @param {number|string} idTT - ID de la transferencia tecnológica
- * @returns {Promise<Array>} - Registros filtrados
+ * + añade nombrePersona
  */
 export async function getRegistrosPagoByTT(api, idTT) {
-  // Suscribir la query manualmente y poder hacer unwrap/unsubscribe
   const sub = api.dispatch(
     registroPagoApi.endpoints.getRegistrosPago.initiate(undefined, { forceRefetch: true })
   );
   try {
-    const data = await sub.unwrap(); // <-- aquí obtienes los datos
+    const data = await sub.unwrap();
     const lista = Array.isArray(data) ? data : [];
-
-    // normalizamos por si idTT viene como string/number
     const idNum = Number(idTT);
+
     const registrosFiltrados = lista.filter(
       (r) => Number(r?.idTransferTecnologica) === idNum
     );
 
-    // console.log(`[Orq-RegistrosPago] Registros de pago para TT ID ${idNum}:`, registrosFiltrados);
-    return registrosFiltrados;
+    // ⬇️ Enriquecer con nombrePersona SIN romper la forma original
+    const enriquecidos = await withNombrePersonaMany(registrosFiltrados);
+
+    // console.log(`[Orq-RegistrosPago] Registros (TT=${idNum})`, enriquecidos);
+    return enriquecidos;
   } catch (error) {
     console.error('[Orq-RegistrosPago] Error al obtener registros de pago:', error);
     throw error;
   } finally {
-    // Evita fugas de memoria
     sub.unsubscribe();
   }
 }
 
 /**
  * Suma total de pagos para una TT
- * @param {any} api - Store RTK con .dispatch
- * @param {number|string} idTT
- * @returns {Promise<number>}
  */
 export async function getTotalPagosByTT(api, idTT) {
   const registros = await getRegistrosPagoByTT(api, idTT);
   const total = registros.reduce((sum, r) => sum + Number(r?.totalPago ?? 0), 0);
-  console.log(`[Orq-RegistrosPago] Total de pagos para TT ID ${idTT}:`, total);
+  // console.log(`[Orq-RegistrosPago] Total de pagos para TT ID ${idTT}:`, total);
   return total;
 }
 
@@ -69,13 +89,12 @@ export async function getTotalPagosByTT(api, idTT) {
  *  Hook para usar dentro de componentes React
  * ========================================== */
 
-
 /**
  * Hook personalizado: trabaja con la cache de RTK Query
- * y expone helpers filtrados por TT.
+ * y expone helpers filtrados por TT. (No bloquea render)
  */
 export function useRegistroPagoOrchestrator() {
-  const { data: registros = [], isLoading, error, refetch } = useGetRegistrosPagoQuery();
+  const { data: registros = [], isLoading, error, refetch } = useGetRegistrosPagoWithPersonaQuery();
 
   const getRegistrosByTT = useCallback(
     (idTT) => {
@@ -86,11 +105,11 @@ export function useRegistroPagoOrchestrator() {
   );
 
   const getTotalByTT = useCallback(
-    (idTT) => getRegistrosByTT(idTT).reduce((sum, r) => sum + Number(r?.totalPago ?? 0), 0),
+    (idTT) =>
+      getRegistrosByTT(idTT).reduce((sum, r) => sum + Number(r?.totalPago ?? 0), 0),
     [getRegistrosByTT]
   );
 
-  // También puedes exponer una versión memoizada del último filtro si te sirve
   const makeSelector = useCallback(
     (idTT) => ({
       registros: getRegistrosByTT(idTT),

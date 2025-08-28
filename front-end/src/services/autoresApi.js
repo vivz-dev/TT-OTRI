@@ -1,6 +1,6 @@
 // src/services/autoresApi.js
 // RTK Query – Autores
-// Endpoints backend base (con baseQueryWithReauth): /api/autores
+// Endpoints backend base (con baseQueryWithReauth): /autores
 
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQuery';
@@ -29,7 +29,7 @@ export const autoresApi = createApi({
   tagTypes: ['Autor'],
   endpoints: (builder) => ({
 
-    /** GET /api/autores */
+    /** GET /autores */
     getAutores: builder.query({
       query: () => ({ url: 'autores', method: 'GET' }),
       transformResponse: (res) =>
@@ -43,14 +43,14 @@ export const autoresApi = createApi({
           : [{ type: 'Autor', id: 'LIST' }],
     }),
 
-    /** GET /api/autores/{id} */
+    /** GET /autores/{id} */
     getAutorById: builder.query({
       query: (id) => ({ url: `autores/${id}`, method: 'GET' }),
       transformResponse: (res) => toAutorItem(res),
       providesTags: (_res, _err, id) => [{ type: 'Autor', id }],
     }),
 
-    /** GET /api/autores/por-acuerdo/{idAcuerdoDistrib} */
+    /** GET /autores/por-acuerdo/{idAcuerdoDistrib} */
     getByAcuerdoDistrib: builder.query({
       query: (idAcuerdoDistrib) => ({
         url: `autores/por-acuerdo/${idAcuerdoDistrib}`,
@@ -67,7 +67,7 @@ export const autoresApi = createApi({
           : [{ type: 'Autor', id: 'LIST' }],
     }),
 
-    /** GET /api/autores/por-unidad/{idUnidad} */
+    /** GET /autores/por-unidad/{idUnidad} */
     getByUnidad: builder.query({
       query: (idUnidad) => ({
         url: `autores/por-unidad/${idUnidad}`,
@@ -84,7 +84,7 @@ export const autoresApi = createApi({
           : [{ type: 'Autor', id: 'LIST' }],
     }),
 
-    /** GET /api/autores/por-persona/{idPersona} */
+    /** GET /autores/por-persona/{idPersona} */
     getByPersona: builder.query({
       query: (idPersona) => ({
         url: `autores/por-persona/${idPersona}`,
@@ -101,7 +101,7 @@ export const autoresApi = createApi({
           : [{ type: 'Autor', id: 'LIST' }],
     }),
 
-    /** POST /api/autores */
+    /** POST /autores */
     createAutor: builder.mutation({
       query: (body) => ({
         url: 'autores',
@@ -112,7 +112,7 @@ export const autoresApi = createApi({
       invalidatesTags: [{ type: 'Autor', id: 'LIST' }],
     }),
 
-    /** PATCH /api/autores/{id} */
+    /** PATCH /autores/{id} */
     patchAutor: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `autores/${id}`,
@@ -125,7 +125,7 @@ export const autoresApi = createApi({
       ],
     }),
 
-    /** DELETE /api/autores/{id} */
+    /** DELETE /autores/{id} */
     deleteAutor: builder.mutation({
       query: (id) => ({
         url: `autores/${id}`,

@@ -226,6 +226,9 @@ const RegistrarFactura = ({ idTT, onChange, showErrors = false }) => {
         border: showBorderError ? "1px solid #ef4444" : "1px solid transparent",
         borderRadius: 12,
         padding: 10,
+        display: "flex",
+        flexDirection: "column",
+        gap: "20px"
       }}
     >
       {/* Cabecera de factura */}

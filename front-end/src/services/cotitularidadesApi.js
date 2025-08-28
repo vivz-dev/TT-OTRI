@@ -1,4 +1,4 @@
-// RTK Query para /api/tecnologias/{tecId}/cotitularidad y /api/cotitularidades
+// RTK Query para /tecnologias/{tecId}/cotitularidad y /cotitularidades
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const cotitularidadesApi = createApi({

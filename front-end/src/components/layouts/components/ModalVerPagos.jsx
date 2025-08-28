@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useRegistroPagoOrchestrator } from "../../../services/registroPagoOrchestratorApi";
 import ModalVerFacturas from "./ModalVerFacturas";
 import { FileText, Sheet } from "lucide-react";
+import * as Buttons from "../buttons/buttons_index";
 
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
@@ -50,15 +51,13 @@ const ModalVerPagos = ({ item, onClose }) => {
 
   const isBusy = isLoading;
 
+  // console.log("REGISTROS DE PAGO --> ", registros)
+
   return (
     <div className="otri-modal-backdrop" onClick={onClose}>
       <div className="otri-modal" onClick={stop}>
         {step === "pagos" ? (
           <>
-            <header className="otri-modal-header">
-              <h3>Registros de Pago - Transferencia #{item?.id}</h3>
-            </header>
-
             <section
               className="otri-modal-body"
               style={{ maxHeight: "60vh", overflow: "auto" }}
@@ -72,9 +71,9 @@ const ModalVerPagos = ({ item, onClose }) => {
               ) : (
                 <>
                   <div className="pago-summary" style={{ marginBottom: 12 }}>
-                    <h3>Pagos realizados</h3>
+                    <h1 className="titulo-principal-form">Pagos realizados</h1>
                     <p>
-                      <strong>Total Pagado:</strong> {money(total || 0)}
+                      <strong>Total pagado hasta la fecha:</strong> {money(total || 0)}
                     </p>
                     <p>
                       <strong>Cantidad de pagos registrados:</strong>{" "}
@@ -93,7 +92,7 @@ const ModalVerPagos = ({ item, onClose }) => {
                         <tr className="fila-subtotal-titulo">
                           <th>Fecha</th>
                           <th>Registrado por</th>
-                          <th>Monto pagado</th>
+                          <th>Monto total pagado</th>
                           <th style={{ width: 120 }}></th>
                         </tr>
                       </thead>
@@ -108,8 +107,8 @@ const ModalVerPagos = ({ item, onClose }) => {
                                 : "-"}
                             </td>
                             <td>
-                              {registro.idPersona
-                                ? `${registro.idPersona}`
+                              {registro.nombrePersona
+                                ? `${registro.nombrePersona}`
                                 : "No hay datos"}
                             </td>
                             <td>{money(registro.totalPago ?? 0)}</td>
@@ -160,9 +159,10 @@ const ModalVerPagos = ({ item, onClose }) => {
             </section>
 
             <footer className="otri-modal-footer">
-              <button type="button" onClick={onClose}>
-                Cerrar
-              </button>
+              <Buttons.RegisterButton
+              onClick={onClose}
+              text={"Cerrar"}
+              />
             </footer>
           </>
         ) : (
