@@ -269,6 +269,8 @@ const RegistrarResolucionPage = ({ onBack, onSuccess }) => {
 
       alert('¡Resolución registrada con éxito!');
       if (typeof onSuccess === 'function') onSuccess();
+      window.location.assign('/');
+      window.location.reload();
     } catch (err) {
       console.groupCollapsed('[FINALIZAR – ERROR]');
       console.error(err);

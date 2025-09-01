@@ -172,7 +172,7 @@ const ModalVerResolucion = ({ item, onClose }) => {
     <div className="otri-modal-backdrop" onClick={onClose}>
       <div className="otri-modal" onClick={(e) => e.stopPropagation()}>
         <div className="otri-modal-container">
-          <section className="otri-modal-body distribucion-body">
+          <section className="otri-modal-body">
             <div className="distribucion-section">
               <div className="form-header">
                 <h1 className="titulo-principal-form">

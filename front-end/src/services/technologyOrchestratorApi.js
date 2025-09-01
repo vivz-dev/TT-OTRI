@@ -1,237 +1,340 @@
-// src/services/technologyOrchestratorApi.js
-import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithReauth, normalizeId } from "./baseQuery";
-import { getIdPersonaFromAppJwt } from "./api";
+// src/services/tecnologiaOrquestrator.js
+// Orquestador End-to-End para crear Tecnología, Protecciones (con archivos),
+// Cotitularidad (delegada al orquestador de cotitularidad) y
+// Acuerdo de Distribución de Autores (con autores + archivo tipo 'D').
 
-const ID_NO_APLICA = 8;
-const DEBUG_ORCHESTRATOR = true;
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from './baseQuery';
+import { uploadAndSaveArchivo } from './storage/archivosOrchestrator';
+import { archivosApi } from './storage/archivosApi';
 
-const isNullish = (v) => v === null || v === undefined;
+const idOf = (obj) => obj?.id ?? obj?.Id ?? null;
+const toInt = (v) => { const n = Number(v); return Number.isFinite(n) ? Math.trunc(n) : null; };
+const isNonEmpty = (s) => typeof s === 'string' && s.trim().length > 0;
+const toShort01 = (v) => (v === true ? 1 : v === false ? 0 : Number(v) > 0 ? 1 : 0);
 
-const mapEstadoToCode = (v) => {
-  if (!v) return "D";
-  const s = String(v).trim();
-  if (s.toUpperCase() === "D") return "D";
-  if (s.toUpperCase() === "N") return "N";
-  if (/^dispon/i.test(s)) return "D";
-  if (/no\s*dispon/i.test(s)) return "N";
-  return "D";
+// ⚙️ Configurable (override vía options del mutation arg si tu backend usa otras rutas)
+const DEFAULT_ENDPOINTS = {
+  dspaceUpload: 'dspace/upload',    // POST: payload DSpace
+  archivos: 'archivos',             // POST: { nombre, formato, tamano, url, idTEntidad, tipoEntidad }
+  tecnologias: 'tecnologias',       // POST: tecnología
+  protecciones: '/protecciones',// POST: protección
+  cotitularidadOrch: 'cotitularidad-orch', // opcional (si deseas route dedic.); NO usada aquí
+  cotitularidadTecno: 'cotitularidad-tecno', // (lo usa el orquestador delegado)
+  acuerdosDistribAutores: 'acuerdos-distrib-autores', // POST: acuerdo
+  autores: 'autores',               // POST: autor
 };
 
-const resolveMaybePromise = async (fn) => {
-  try {
-    const v = fn();
-    return v && typeof v.then === "function" ? await v : v;
-  } catch {
-    return null;
-  }
-};
-
-/** ───────────── extractores del payload unificado ───────────── **/
-const extractTecnologia = (data) => {
-  if (data?.tecnologia) return data.tecnologia;
+// Normaliza body de creación de tecnología
+function buildCreateTecnologiaBody(tecnologia) {
+  if (!tecnologia) return null;
   return {
-    idPersona: data?.idPersona,
-    titulo: data?.titulo,
-    descripcion: data?.descripcion,
-    estado: data?.estado,
-    cotitularidad: data?.cotitularidad,
+    idPersona: tecnologia.idPersona,
+    titulo: tecnologia.titulo,
+    descripcion: tecnologia.descripcion,
+    estado: tecnologia.estado,           // 'D'/'N'
+    cotitularidad: !!tecnologia.cotitularidad,
+    // backend suele llamarlo "completado"
+    completado: !!tecnologia.completed,
   };
-};
+}
 
-const extractProtecciones = (data) => {
-  if (Array.isArray(data?.protecciones)) return data.protecciones;
-
-  const tiposSel = Array.isArray(data?.tiposSeleccionados) ? data.tiposSeleccionados : [];
-  const fechas = data?.fechasConcesion || {};
-  return tiposSel
-    .map((t) => Number(t))
-    .filter((t) => Number.isFinite(t) && t !== ID_NO_APLICA)
-    .map((idTipoProteccion) => ({
-      idTipoProteccion,
-      fechaSolicitud: fechas?.[String(idTipoProteccion)] ?? fechas?.[idTipoProteccion] ?? null,
-    }));
-};
-
-const extractArchivos = (data) => {
-  if (Array.isArray(data?.archivos)) return data.archivos;
-
-  // retrocompat: archivosPorProteccion + fechasConcesion
-  const map = data?.archivosPorProteccion || {};
-  const fechas = data?.fechasConcesion || {};
-  const out = [];
-  for (const [k, arr] of Object.entries(map)) {
-    const idTipoProteccion = Number(k);
-    if (!Number.isFinite(idTipoProteccion) || idTipoProteccion === ID_NO_APLICA) continue;
-    const items = Array.isArray(arr) ? arr : [];
-    for (const it of items) {
-      const file =
-        (typeof File !== "undefined" && it instanceof File) ? it
-        : it?.file || null;
-      const fecha = it?.fecha ?? fechas?.[String(idTipoProteccion)] ?? null;
-      out.push({ idTipoProteccion, file, fecha });
-    }
-  }
-  return out;
-};
-
-// Body correcto para TecnologiaCreate/Patch (camelCase)
-const buildTecnologiaBody = async (dataTecnologia, completadoFlag) => {
-  const idPersona =
-    dataTecnologia?.idPersona ?? (await resolveMaybePromise(getIdPersonaFromAppJwt));
-  const estado = mapEstadoToCode(dataTecnologia?.estado);
-
+// Construye body de protección
+function buildCreateProteccionBody(idTecnologia, p) {
   const body = {
-    idPersona: idPersona ?? null,
-    titulo: dataTecnologia?.titulo ?? "",
-    descripcion: dataTecnologia?.descripcion ?? "",
-    estado,
-    completado: !!completadoFlag, // DTO: Completado
-    cotitularidad: !!dataTecnologia?.cotitularidad,
+    idTecnologia: Number(idTecnologia),
+    idTipoProteccion: Number(p.idTipoProteccion),         // cabe en SMALLINT
+    fechaSolicitud: p.fechaSolicitud ?? null,             // ISO 'YYYY-MM-DD' ok
+    concesion: toShort01(p.concesion),                    // ← SHORT 0/1
+    solicitud: toShort01(p.solicitud ?? true),            // ← SHORT 0/1 (default 1)
+    fechaConcesion: p.concesion ? (p.fechaConcesion ?? null) : null,
   };
-
-  if (DEBUG_ORCHESTRATOR) console.log("[ORCH] Body /tecnologias =>", body);
   return body;
-};
+}
 
-const extractId = (obj) =>
-  normalizeId(obj) ?? obj?.id ?? obj?.Id ?? obj?.idTecnologia ?? obj?.idTecProteccion ?? null;
 
-/** ───────────── función común para crear/actualizar y crear protecciones ───────────── **/
-const runTechFlow = async ({ currentId, data, baseQuery, completedFlag }) => {
-  const doPost = (url, body) => baseQuery({ url, method: "POST", body });
-  const doPatch = (url, body) => baseQuery({ url, method: "PATCH", body });
+/**
+ * Sube y registra archivo usando *exclusivamente* el orquestador de archivos.
+ * - entityId: id de la entidad destino (protección, cotitularidadTecno, acuerdo, etc.)
+ * - tipoEntidad: 'PI' | 'CO' | 'D' | ...
+ * - metaDSpace: { idColeccion, titulo, identificacion }
+ */
+async function orqUploadArchivo({ api, file, entityId, tipoEntidad, metaDSpace = {} }) {
+  if (!file) return { ok: true, skipped: true };
 
-  const createdProtectionIds = [];
-  const compensateProtections = async () => {
-    for (const pid of createdProtectionIds.reverse()) {
-      try { await baseQuery({ url: `protecciones/${pid}`, method: "DELETE" }); } catch {}
+  // Envuelve los endpoints RTKQ como funciones que devuelven { data } | { error }
+  const uploadToDspace = async (payload) => {
+    try {
+      const data = await api.dispatch(archivosApi.endpoints.uploadToDspace.initiate(payload)).unwrap();
+      return { data };
+    } catch (error) {
+      return { error };
     }
   };
 
-  // 0) extraer payload
-  const tecnologia = extractTecnologia(data || {});
-  const protIn = extractProtecciones(data || {}); // [{ idTipoProteccion, fechaSolicitud }]
-
-  // 1) upsert tecnología con flag
-  const techBody = await buildTecnologiaBody(tecnologia, completedFlag);
-  let techId = currentId ?? null;
-
-  if (!techId) {
-    const resCreate = await doPost("tecnologias", techBody);
-    if (resCreate.error) return { error: resCreate.error };
-    techId = extractId(resCreate.data);
-    if (!techId) return { error: { status: 500, data: "No se obtuvo id de tecnología." } };
-  } else {
-    const resPatch = await doPatch(`tecnologias/${techId}`, techBody);
-    if (resPatch.error) return { error: resPatch.error };
-  }
-
-  if (isNullish(techId)) return { error: { status: 500, data: "Id de tecnología inválido." } };
-
-  // 2) crear protecciones si vienen y son válidas (solo si tenemos idTecnologia)
-  const proteccionesCreadas = [];
-  for (const p of protIn) {
-    const idTipoProteccion = Number(p?.idTipoProteccion);
-    if (!Number.isFinite(idTipoProteccion) || idTipoProteccion === ID_NO_APLICA) continue;
-
-    const fecha = p?.fechaSolicitud ?? null;
-    if (!fecha) {
-      await compensateProtections();
-      return { error: { status: 400, data: `Falta fecha para el tipo de protección ${idTipoProteccion}.` } };
+  const createArchivo = async (dto) => {
+    try {
+      const data = await api.dispatch(archivosApi.endpoints.createArchivo.initiate(dto)).unwrap();
+      return { data };
+    } catch (error) {
+      return { error };
     }
+  };
 
-    const protBody = {
-      idTecnologia: Number(techId),
-      idTipoProteccion,
-      fechaSolicitud: String(fecha),
-    };
+  // Metadatos; si en protecciones te llega identificacion numérica, no pasa nada:
+  // el orq de archivos ya la castea a string.
+  const meta = {
+    idTEntidad: entityId,
+    tipoEntidad,
+    idColeccion: metaDSpace.idColeccion ?? 155,
+    titulo: isNonEmpty(metaDSpace.titulo) ? metaDSpace.titulo : 'Documento',
+    identificacion: String(metaDSpace.identificacion) ?? "",
+  };
 
-    if (DEBUG_ORCHESTRATOR) console.log("[ORCH] Body POST /protecciones =>", protBody);
-    const resProt = await doPost("protecciones", protBody);
-    if (resProt.error) {
-      await compensateProtections();
-      return { error: resProt.error };
-    }
-
-    const protId = extractId(resProt.data);
-    if (protId) createdProtectionIds.push(protId);
-
-    proteccionesCreadas.push({
-      id: protId,
-      raw: resProt.data,
-      tipoId: idTipoProteccion,
-      fecha: String(fecha),
-    });
+  try {
+    const res = await uploadAndSaveArchivo({ file, meta, uploadToDspace, createArchivo });
+    return { ok: true, data: res };
+  } catch (e) {
+    return { ok: false, error: { status: 500, data: e?.message || 'Error subiendo archivo' } };
   }
+}
 
-  return { data: { id: techId, protecciones: proteccionesCreadas } };
-};
 
-/** ───────────── API ───────────── **/
 export const technologyOrchestratorApi = createApi({
-  reducerPath: "technologyOrchestratorApi",
+  reducerPath: 'technologyOrchestratorApi',
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     /**
-     * Guardar borrador: SOLO tecnología (legacy). Se deja por compatibilidad si lo llamas directo.
+     * Ejecuta el flujo completo contra el backend.
+     * args: {
+     *   payload: <payload gigante>,
+     *   options?: { endpoints?: Partial<DEFAULT_ENDPOINTS> }
+     * }
      */
-    saveTechnologyStep: builder.mutation({
-      async queryFn({ currentId, data }, _api, _extra, baseQuery) {
-        try {
-          const tecnologia = extractTecnologia(data || {});
-          const body = await buildTecnologiaBody(tecnologia, false);
+    createFullTechnologyFlow: builder.mutation({
+      async queryFn(args, _api, _extra, baseQuery) {
+        const payload = args?.payload ?? {};
+        const endpoints = { ...DEFAULT_ENDPOINTS, ...(args?.options?.endpoints || {}) };
 
-          if (!currentId) {
-            const resCreate = await baseQuery({ url: "tecnologias", method: "POST", body });
-            if (resCreate.error) return { error: resCreate.error };
-            const id = extractId(resCreate.data);
-            if (!id) return { error: { status: 500, data: "No se obtuvo id de tecnología en creación." } };
-            return { data: { id, raw: resCreate.data } };
+        // ───────────────────────── 1) Crear Tecnología ─────────────────────────
+        const techBody = buildCreateTecnologiaBody(payload.tecnologia);
+        if (!techBody) return { error: { status: 400, data: 'Falta bloque "tecnologia" en el payload.' } };
+
+        const resTec = await baseQuery({
+          url: endpoints.tecnologias,
+          method: 'POST',
+          body: techBody,
+        });
+        if (resTec.error) return { error: resTec.error };
+        const idTecnologia = toInt(idOf(resTec.data));
+        if (!idTecnologia) return { error: { status: 500, data: 'No se obtuvo idTecnologia.' } };
+
+        // ───────────────────────── 2) Protecciones + 3) Archivos PI ────────────
+        const protecciones = Array.isArray(payload.protecciones) ? payload.protecciones : [];
+        const proteccionResults = [];
+
+        for (const p of protecciones) {
+          // 2) Crear protección
+          const bodyProt = buildCreateProteccionBody(idTecnologia, p);
+          const resProt = await baseQuery({
+            url: endpoints.protecciones,
+            method: 'POST',
+            body: bodyProt,
+          });
+          if (resProt.error) return { error: resProt.error };
+          const idProteccion = toInt(idOf(resProt.data));
+          if (!idProteccion) return { error: { status: 500, data: 'No se obtuvo idProteccion.' } };
+
+          // 3) Subir archivos de la protección como tipoEntidad 'PI'
+          const archivos = Array.isArray(p.archivosProteccion) ? p.archivosProteccion : [];
+          for (const a of archivos) {
+            const file = a?.file ?? null;
+            const metaDS = a?.metadataDSpace ?? {};
+            const up = await orqUploadArchivo({
+              api: _api,
+              file,
+              entityId: idProteccion,
+              tipoEntidad: 'PI',
+              metaDSpace: metaDS,
+            });
+            if (!up.ok) return { error: up.error };
           }
 
-          const resPatch = await baseQuery({ url: `tecnologias/${currentId}`, method: "PATCH", body });
-          if (resPatch.error) return { error: resPatch.error };
-          return { data: { id: currentId, raw: resPatch.data } };
-        } catch (e) {
-          return { error: { status: 500, data: e?.message || "Error guardando tecnología." } };
+          proteccionResults.push({ idProteccion, body: bodyProt });
         }
-      },
-    }),
 
-    /**
-     * Nuevo: Upsert con protecciones (completed:false).
-     * Úsalo para "Guardar" y enviar TODO lo disponible si se pueden obtener IDs.
-     */
-    upsertTechnologyWithProtections: builder.mutation({
-      async queryFn({ currentId, data }, _api, _extra, baseQuery) {
-        try {
-          const result = await runTechFlow({ currentId, data, baseQuery, completedFlag: false });
-          return result;
-        } catch (e) {
-          return { error: { status: 500, data: e?.message || "Error guardando (upsert) tecnología." } };
-        }
-      },
-    }),
+        // ───────────────────────── 4–7) Delegar Cotitularidad ──────────────────
+        // Estandariza input para el orquestador de cotitularidad
+        const cotiBlock = payload?.cotitularidad || null;
+        let cotiResult = null;
 
-    /**
-     * Finalizar: Upsert con protecciones (completed:true).
-     */
-    finalizeTechnologyWithProtections: builder.mutation({
-      async queryFn({ currentId, data }, _api, _extra, baseQuery) {
-        try {
-          const result = await runTechFlow({ currentId, data, baseQuery, completedFlag: true });
-          return result;
-        } catch (e) {
-          return { error: { status: 500, data: e?.message || "Error al finalizar tecnología." } };
+        if (cotiBlock) {
+          // import dinámico para evitar ciclos si fuera el caso
+          const mod = await import('./cotitularidadOrchestratorApi');
+          const cotiApi = mod.cotitularidadOrchestratorApi;
+
+          // Ejecutamos calls vía baseQuery "manual" (sin hooks):
+          // - creamos CotitularidadTecno
+          const resCotiTec = await baseQuery({
+            url: endpoints.cotitularidadTecno,
+            method: 'POST',
+            body: { idTecnologia },
+          });
+          if (resCotiTec.error) return { error: resCotiTec.error };
+          const idCotitularidadTecno = toInt(idOf(resCotiTec.data));
+          if (!idCotitularidadTecno) return { error: { status: 500, data: 'No se obtuvo idCotitularidadTecno.' } };
+
+          // 6) Subimos archivo CO si existe
+          if (cotiBlock.archivoCotitularidad?.file) {
+            const upCO = await orqUploadArchivo({
+              api: _api,
+              file: cotiBlock.archivoCotitularidad.file,
+              entityId: idCotitularidadTecno,
+              tipoEntidad: 'CO',
+              metaDSpace: { titulo: 'Acuerdo de cotitularidad' },
+            });
+            if (!upCO.ok) return { error: upCO.error };
+          }
+
+          // 5 & 7) Creamos cotitularidadInst nuevas y luego cotitulares
+          // Reutilizamos el orquestador corregido: le pasamos el shape estándar
+          // Nota: el orquestador interno CREARÁ inst y cotitulares; aquí ya creamos cotiTecno.
+          const cotiPayload = {
+            idTecnologia,                   // para logging
+            idCotitularidadTecno,          // clave de trabajo
+            cotitulares: cotiBlock.cotitulares || [],
+            skipCreateCotitularidadTecno: true, // ya creado
+          };
+
+          // Ejecutamos la queryFn "a mano"
+          const resCoti = await cotiApi.endpoints.createFullCotitularidad.initiate(cotiPayload, { dispatch: _api.dispatch, subscribe: false, forceRefetch: true });
+          // resCoti es un subscription ref; mejor disparamos directamente con baseQuery? -> Usamos un "atajo":
+          // Para evitar dependencias del store, llamemos manualmente a la queryFn interna:
+          // => Simplificamos y movemos toda la lógica dentro de cotitularidadOrchestratorApi a baseQuery aquí:
+          // PERO para no duplicar lógica, hacemos una llamada HTTP ficticia: NO. Mejor replanteo:
+          // ------------------------------------------------------------------------------
+          // ✅ Simples llamados HTTP equivalentes, in-line:
+          const createdInstIds = [];
+          const createdCotIds = [];
+
+          const EXPECTS_PERCENT_FRACTION = true;
+          const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+          const pctToDb = (val) => {
+            const n = Number(val);
+            if (!Number.isFinite(n)) return null;
+            if (EXPECTS_PERCENT_FRACTION) return Number(clamp(n / 100, 0, 1).toFixed(4));
+            return Number(clamp(n, 0, 100).toFixed(2));
+          };
+
+          // 5) Crear cotitularidadInst para NO ESPOL y mapear
+          const instMap = new Map(); // key=index or object ref -> idInst
+          (cotiBlock.cotitulares || []).forEach((c, idx) => {
+            if (!c?.perteneceEspol && c?.cotitularInst) instMap.set(idx, null);
+          });
+
+          for (const [idx] of instMap) {
+            const ci = cotiBlock.cotitulares[idx].cotitularInst;
+            const resInst = await baseQuery({
+              url: 'cotitularidad-institucional',
+              method: 'POST',
+              body: { nombre: ci.nombre?.trim(), correo: ci.correo?.trim(), ruc: ci.ruc?.trim() },
+            });
+            if (resInst.error) return { error: resInst.error };
+            const idInst = toInt(idOf(resInst.data));
+            if (!idInst) return { error: { status: 500, data: 'No se obtuvo idCotitularidadInst.' } };
+            instMap.set(idx, idInst);
+            createdInstIds.push(idInst);
+          }
+
+          // 7) Crear cotitular
+          for (let i = 0; i < (cotiBlock.cotitulares || []).length; i++) {
+            const c = cotiBlock.cotitulares[i];
+            const porcentaje = pctToDb(c?.porcCotitularidad);
+            if (porcentaje == null) return { error: { status: 400, data: `Cotitular #${i + 1}: porcentaje inválido.` } };
+
+            const idCotitularidadInst = c?.perteneceEspol ? (toInt(c?.idCotitularInst) || 1) : toInt(instMap.get(i));
+            if (!idCotitularidadInst) return { error: { status: 500, data: `Cotitular #${i + 1}: idCotitularidadInst inválido.` } };
+
+            const idPersona = toInt(c?.idPersona);
+            if (!idPersona) return { error: { status: 400, data: `Cotitular #${i + 1}: idPersona requerido.` } };
+
+            const resCot = await baseQuery({
+              url: 'cotitulares',
+              method: 'POST',
+              body: { idCotitularidadTecno, idCotitularidadInst, idPersona, porcentaje },
+            });
+            if (resCot.error) return { error: resCot.error };
+            const idCot = toInt(idOf(resCot.data));
+            if (idCot) createdCotIds.push(idCot);
+          }
+
+          cotiResult = { idCotitularidadTecno, createdInstIds, createdCotIds };
         }
+
+        // ─────────────── 8–10) Acuerdo de Distribución + Autores + Archivo D ───────────────
+        const acu = payload?.acuerdoDistribAutores || null;
+        let acuerdoOut = null;
+
+        if (acu) {
+          // 8) Crear acuerdo con idTecnologia
+          const resAcuerdo = await baseQuery({
+            url: endpoints.acuerdosDistribAutores,
+            method: 'POST',
+            body: { idTecnologia },
+          });
+          if (resAcuerdo.error) return { error: resAcuerdo.error };
+          const idAcuerdo = toInt(idOf(resAcuerdo.data));
+          if (!idAcuerdo) return { error: { status: 500, data: 'No se obtuvo id del acuerdo de distribución.' } };
+
+          // 9) Crear autores
+          const autores = Array.isArray(acu.autores) ? acu.autores : [];
+          const autoresIds = [];
+          for (let i = 0; i < autores.length; i++) {
+            const a = autores[i];
+            const bodyAutor = {
+              idOtriTtAcuerdoDistribAutores: idAcuerdo,
+              idUnidad: a.idUnidad,
+              idPersona: a.idPersona,
+              porcAutor: Number(a.porcAutor),
+              porcUnidad: Number(a.porcUnidad),
+            };
+            const resAutor = await baseQuery({
+              url: endpoints.autores,
+              method: 'POST',
+              body: bodyAutor,
+            });
+            if (resAutor.error) return { error: resAutor.error };
+            const idAutor = toInt(idOf(resAutor.data));
+            if (idAutor) autoresIds.push(idAutor);
+          }
+
+          // 10) Subir archivo tipo 'D' del acuerdo
+          if (acu.archivo?.file) {
+            const upD = await orqUploadArchivo({
+              api: _api,
+              file: acu.archivo.file,
+              entityId: idAcuerdo,
+              tipoEntidad: 'D',
+              metaDSpace: { titulo: 'Acuerdo de distribución de autores' },
+            });
+            if (!upD.ok) return { error: upD.error };
+          }
+
+          acuerdoOut = { idAcuerdo, autoresIds };
+        }
+
+        // Resultado del orquestador
+        return {
+          data: {
+            tecnologia: { idTecnologia, raw: resTec.data },
+            protecciones: proteccionResults,
+            cotitularidad: cotiResult,
+            acuerdoDistribAutores: acuerdoOut,
+          },
+        };
       },
     }),
   }),
 });
 
-export const {
-  useSaveTechnologyStepMutation,
-  useUpsertTechnologyWithProtectionsMutation,
-  useFinalizeTechnologyWithProtectionsMutation,
-} = technologyOrchestratorApi;
+export const { useCreateFullTechnologyFlowMutation } = technologyOrchestratorApi;

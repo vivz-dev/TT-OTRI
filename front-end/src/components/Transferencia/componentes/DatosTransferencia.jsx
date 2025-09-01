@@ -22,6 +22,7 @@ const DatosTransferencia = ({
   shakeError,
 }) => {
   const [tiposOptions, setTiposOptions] = useState([]);
+  const [plazoDias, setPlazoDias] = useState("");
   const { data: tiposData, error, isLoading } = useGetTiposTransferenciaQuery();
 
   // Filtrar solo los tipos con ID 1 y 2
@@ -36,6 +37,19 @@ const DatosTransferencia = ({
       console.log("Tipos filtrados (IDs 1 y 2):", filteredTipos);
     }
   }, [tiposData]);
+
+  // Calcular fecha fin cuando cambie fecha inicio o plazo
+  useEffect(() => {
+    if (fechaInicio && plazoDias) {
+      const fechaInicioObj = new Date(fechaInicio);
+      const fechaFinObj = new Date(fechaInicioObj);
+      fechaFinObj.setDate(fechaInicioObj.getDate() + parseInt(plazoDias));
+      
+      // Formatear a YYYY-MM-DD para el input type="date"
+      const fechaFinFormateada = fechaFinObj.toISOString().split('T')[0];
+      setFechaFin(fechaFinFormateada);
+    }
+  }, [fechaInicio, plazoDias, setFechaFin]);
 
   // Determinar qué componente mostrar basado en el ID del tipo seleccionado
   const renderComponenteAdicional = () => {
@@ -72,8 +86,6 @@ const DatosTransferencia = ({
 
       <div className="form-fieldsets">
         <div className={`form-card ${shakeError ? "error shake" : ""}`}>
-          {/* <h2 className="form-card-header">Información básica</h2> */}
-
           <div className="input-row">
             <label className="input-group">
               Fecha de inicio
@@ -86,17 +98,34 @@ const DatosTransferencia = ({
             </label>
 
             <label className="input-group">
+              Plazo
+              <div className="plazo-input-container">
+                <input
+                  type="number"
+                  value={plazoDias}
+                  onChange={(e) => setPlazoDias(e.target.value)}
+                  min="1"
+                  placeholder="Número de días"
+                  className="plazo-input"
+                />
+                <span className="plazo-suffix">días</span>
+              </div>
+            </label>
+          </div>
+
+          <div className="input-row">
+            <label className="input-group">
               Fecha de fin
               <input
                 type="date"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
                 className={errores.fechaFin ? "error" : ""}
+                readOnly
+                style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
               />
             </label>
-          </div>
 
-          <div className="input-row">
             <label className="input-group">
               Modalidad
               <select
@@ -114,7 +143,9 @@ const DatosTransferencia = ({
                 ))}
               </select>
             </label>
+          </div>
 
+          <div className="input-row">
             <label className="input-group">
               Nombre
               <input
@@ -125,9 +156,7 @@ const DatosTransferencia = ({
                 placeholder="Nombre o Título Referencial"
               />
             </label>
-          </div>
 
-          <div className="input-row">
             <label className="input-group">
               Monto
               <input
@@ -140,7 +169,9 @@ const DatosTransferencia = ({
                 placeholder="0.00"
               />
             </label>
+          </div>
 
+          <div className="input-row">
             <label className="input-group checkbox-group">
               <input
                 type="checkbox"

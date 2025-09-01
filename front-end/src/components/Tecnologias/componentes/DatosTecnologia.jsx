@@ -1,4 +1,4 @@
-import React, { useState, useImperativeHandle, forwardRef, useEffect } from 'react';
+import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import TipoProteccion from './TipoProteccion';
 import './DatosTecnologia.css';
 import * as Components from '../../layouts/components/index';
@@ -19,8 +19,13 @@ const DatosTecnologia = forwardRef((_, ref) => {
   const [tiposProteccion, setTiposProteccion] = useState({});
   const [cotitularidad, setCotitularidad] = useState(null);
 
+  // key: idTipoProteccion -> [{ file, fecha }]
   const [archivosPorProteccion, setArchivosPorProteccion] = useState({});
+  // compat antigua (ya no se usa como única fecha, pero se mantiene para no romper props)
   const [fechasConcesion, setFechasConcesion] = useState({});
+
+  /** Mapa por idTipoProteccion => { solicitud, concesion, fechaSolicitud, fechaConcesion, fechaCreacion } */
+  const [proteccionMetaMap, setProteccionMetaMap] = useState({});
 
   const [errores, setErrores] = useState({
     nombre: false, descripcion: false, tipoProteccion: false,
@@ -33,32 +38,23 @@ const DatosTecnologia = forwardRef((_, ref) => {
 
   const { data: tiposData, isLoading, isError } = useGetTiposQuery();
 
-  const mapArchivosToLog = (mapa) =>
-    Object.fromEntries(
-      Object.entries(mapa).map(([k, arr]) => [
-        k,
-        (arr || []).map((a, i) => {
-          const f = (typeof File !== 'undefined' && a instanceof File) ? a : a?.file;
-          return {
-            idx: i,
-            hasFile: !!f,
-            fileName: f?.name ?? null,
-            fecha: a?.fecha ?? null,
-          };
-        }),
-      ])
-    );
-
-  useEffect(() => {
-    console.log('[Step0] State snapshot =>', {
-      nombre, descripcion, tiposProteccion, cotitularidad,
-      archivosPorProteccion: mapArchivosToLog(archivosPorProteccion),
-      fechasConcesion
-    });
-  }, [nombre, descripcion, tiposProteccion, cotitularidad, archivosPorProteccion, fechasConcesion]);
-
   const handleFechaChange = (tipoId, fecha) =>
     setFechasConcesion((p) => ({ ...p, [tipoId]: fecha }));
+
+  const handleProteccionChange = (payload) => {
+    if (!payload?.idTipoProteccion) return;
+    setProteccionMetaMap((prev) => ({
+      ...prev,
+      [Number(payload.idTipoProteccion)]: {
+        solicitud: true, // 👈 SIEMPRE true por requerimiento
+        concesion: !!payload.concesion,
+        fechaSolicitud: payload.fechaSolicitud ?? null,
+        fechaConcesion: payload.fechaConcesion ?? null,
+        fechaCreacion: payload.fechaCreacion ?? null,
+      },
+    }));
+    console.log("[DatosTecnologia] proteccionMetaMap:update =>", payload);
+  };
 
   const handleCheckboxChange = (tipoId, checked) => {
     setTiposProteccion((prev) => {
@@ -68,7 +64,8 @@ const DatosTecnologia = forwardRef((_, ref) => {
         if (checked) {
           setArchivosPorProteccion({});
           setFechasConcesion({});
-          console.log('[Step0] Seleccionó solo "No aplica" (8). Limpiando archivos/fechas.');
+          setProteccionMetaMap({});
+          console.log('[DatosTecnologia] Seleccionó "No aplica" (8). Limpieza.');
           return { [ID_NO_APLICA]: true };
         }
         return {};
@@ -79,12 +76,9 @@ const DatosTecnologia = forwardRef((_, ref) => {
         nuevo[tipoId] = true;
       } else {
         delete nuevo[tipoId];
-        setArchivosPorProteccion((p) => {
-          const n = { ...p }; delete n[tipoId]; return n;
-        });
-        setFechasConcesion((p) => {
-          const n = { ...p }; delete n[tipoId]; return n;
-        });
+        setArchivosPorProteccion((p) => { const n = { ...p }; delete n[tipoId]; return n; });
+        setFechasConcesion((p) => { const n = { ...p }; delete n[tipoId]; return n; });
+        setProteccionMetaMap((p) => { const n = { ...p }; delete n[tipoId]; return n; });
       }
       return nuevo;
     });
@@ -99,9 +93,8 @@ const DatosTecnologia = forwardRef((_, ref) => {
     return t?.nombre || `Tipo ${idTipo}`;
   };
 
-  /** Normaliza al shape unificado con metadatos para DSpace en cada archivo */
-  const buildUnifiedPayload = ({ includeFiles = true } = {}) => {
-    // OJO: idPersona solo se usa como hint en UI; el orquestador vuelve a resolverlo.
+  /** Construye el payload unificado (tecnología + protecciones con archivosProteccion) */
+  const buildUnifiedPayload = () => {
     let idPersona = null;
     try { idPersona = getIdPersonaFromAppJwt?.() ?? null; } catch {}
 
@@ -109,61 +102,65 @@ const DatosTecnologia = forwardRef((_, ref) => {
     const tiposValidos = tiposSeleccionados.filter((id) => id !== ID_NO_APLICA);
 
     const tecnologia = {
-      idPersona, // el orquestador lo recalcula seguro
+      idPersona,
       titulo: nombre,
       descripcion,
-      estado: ESTADO_DISPONIBLE,
+      estado: ESTADO_DISPONIBLE, // 'D'
       cotitularidad: !!cotitularidad,
+      completed: true,           // 👈 SIEMPRE true
     };
 
-    const protecciones = tiposValidos.map((idTipoProteccion) => ({
-      idTipoProteccion,
-      fechaSolicitud: fechasConcesion?.[idTipoProteccion] ?? null,
-    }));
+    const protecciones = tiposValidos.map((idTipoProteccion) => {
+      const meta = proteccionMetaMap?.[idTipoProteccion] || {};
+      const nombreTipo = getNombreTipo(idTipoProteccion);
+      const slots = archivosPorProteccion?.[idTipoProteccion] || [];
 
-    const archivos = [];
-    if (includeFiles) {
-      for (const tipoId of tiposValidos) {
-        const arr = archivosPorProteccion?.[tipoId] || [];
-        const nombreTipo = getNombreTipo(tipoId);
-        for (const it of arr) {
+      // Archivos por protección en el shape solicitado
+      const archivosProteccion = (slots || [])
+        .map((it) => {
           const file =
-            (typeof File !== 'undefined' && it instanceof File) ? it
-            : it?.file || null;
-          if (!file) continue;
-          const fecha = it?.fecha ?? fechasConcesion?.[tipoId] ?? null;
-
-          // 🔥 Metadatos DSpace para que el orquestador pueda enviar "normalmente"
-          const dspace = {
-            idColeccion: DEFAULT_ID_COLECCION,
-            titulo: `${nombre || 'Tecnología'} - ${nombreTipo}`,
-            nombresAutor: null,              // opcional
-            identificacion: idPersona ?? null, // opcional
-            formato: file.type || 'application/pdf',
+            (typeof File !== 'undefined' && it instanceof File) ? it :
+            it?.file || null;
+          if (!file) return null;
+          return {
+            nombre: file.name || null,
+            formato: 'pdf',             // 👈 requerido
+            tipoEntidad: 'PI',          // 👈 requerido
             tamano: file.size ?? null,
+            file,                       // mantenemos File para orquestador
+            // metadata opcional para tu DSpace/orquestador
+            metadataDSpace: {
+              idColeccion: DEFAULT_ID_COLECCION,
+              titulo: `${nombre || 'Tecnología'} - ${nombreTipo}`,
+              identificacion: idPersona ?? null,
+            },
           };
+        })
+        .filter(Boolean);
 
-          archivos.push({
-            idTipoProteccion: Number(tipoId),
-            fecha,
-            file,
-            dspace,
-          });
-        }
-      }
-    }
+      return {
+        idTipoProteccion,
+        solicitud: true,                                    // 👈 SIEMPRE true
+        concesion: !!meta.concesion,
+        fechaSolicitud: meta.fechaSolicitud ?? fechasConcesion?.[idTipoProteccion] ?? null,
+        fechaConcesion: meta.fechaConcesion ?? null,
+        archivosProteccion,                                 // 👈 anidado por protección
+      };
+    });
 
-    const payload = { tecnologia, protecciones, archivos };
-    console.log('[Step0] Unified payload (con DSpace meta) =>', {
+    const payload = { tecnologia, protecciones };
+    // Log auxiliar sin archivos binarios enormes
+    console.log('[DatosTecnologia] Preview payload =>', {
       tecnologia,
-      protecciones,
-      archivos: archivos.map((a, i) => ({
-        i,
-        idTipoProteccion: a.idTipoProteccion,
-        hasFile: !!a.file,
-        fileName: a.file?.name ?? null,
-        fecha: a.fecha,
-        dspace: a.dspace,
+      protecciones: protecciones.map(p => ({
+        idTipoProteccion: p.idTipoProteccion,
+        solicitud: p.solicitud,
+        concesion: p.concesion,
+        fechaSolicitud: p.fechaSolicitud,
+        fechaConcesion: p.fechaConcesion,
+        archivosProteccion: p.archivosProteccion.map((a, i) => ({
+          i, nombre: a.nombre, formato: a.formato, tipoEntidad: a.tipoEntidad, tamano: a.tamano,
+        })),
       })),
     });
     return payload;
@@ -198,8 +195,13 @@ const DatosTecnologia = forwardRef((_, ref) => {
           })
         : [];
 
+      // fechaSolicitud (obligatoria si el tipo está marcado)
       const tiposSinFecha = !seleccionoNoAplica
-        ? tiposValidos.filter((id) => !isValidISODate(fechasConcesion[id]))
+        ? tiposValidos.filter((id) => {
+            const meta = proteccionMetaMap?.[id];
+            const fechaSol = meta?.fechaSolicitud ?? fechasConcesion?.[id];
+            return !isValidISODate(fechaSol);
+          })
         : [];
 
       const archivosOk = seleccionoNoAplica ? true : tiposSinArchivo.length === 0;
@@ -207,7 +209,7 @@ const DatosTecnologia = forwardRef((_, ref) => {
 
       const canAdvance = nombreOk && descripcionOk && seleccionoAlMenosUno && archivosOk && cotitularidadOk && fechasOk;
 
-      console.log('[Step0] Validate =>', {
+      console.log('[DatosTecnologia] Validate =>', {
         nombreOk, descripcionOk, seleccionoAlMenosUno, seleccionoNoAplica,
         archivosOk, fechasOk, cotitularidadOk,
         tiposSinArchivo, tiposSinFecha,
@@ -238,8 +240,8 @@ const DatosTecnologia = forwardRef((_, ref) => {
     getCotitularidad: () => cotitularidad,
 
     // FINAL y DRAFT usan el mismo shape unificado
-    getPayload: () => buildUnifiedPayload({ includeFiles: true }),
-    getDraftPayload: () => buildUnifiedPayload({ includeFiles: true }),
+    getPayload: () => buildUnifiedPayload(),
+    getDraftPayload: () => buildUnifiedPayload(),
   }));
 
   const renderTipos = () => {
@@ -259,6 +261,7 @@ const DatosTecnologia = forwardRef((_, ref) => {
         onArchivoChange={(archivos) => handleArchivoChange(tipo.id, archivos)}
         onFechaChange={(fecha) => handleFechaChange(tipo.id, fecha)}
         fechaConcesion={fechasConcesion[tipo.id]}
+        onProteccionChange={handleProteccionChange}
       />
     ));
   };
@@ -266,13 +269,12 @@ const DatosTecnologia = forwardRef((_, ref) => {
   return (
     <form className="formulario">
       <div className="form-header">
-        <h1 className="titulo-principal-form">Datos de la tecnología/know-how</h1>
+        <h1 className="titulo-principal-form">Datos de la tecnología<em>/know-how</em></h1>
         <p className="subtitulo-form">Complete la información sobre la tecnología o conocimiento.</p>
       </div>
 
       <div className="form-fieldsets">
         <div className={`form-card ${errores.nombre || errores.descripcion ? 'error' : ''} ${shake.nombre || shake.descripcion ? 'shake' : ''}`}>
-          {/* <h2 className="form-card-header">Información básica</h2> */}
           <div className="">
             <label className="input-group ">
               <Components.GrowTextArea
@@ -298,12 +300,12 @@ const DatosTecnologia = forwardRef((_, ref) => {
 
         <div className={`form-card ${errores.cotitularidad ? 'error' : ''} ${shake.cotitularidad ? 'shake' : ''}`}>
           <h2 className="form-card-header">¿Existe cotitularidad?</h2>
-          <div className="checkboxs-cotitularidad">
-            <label>
+          <div className="checkbox-container">
+            <label className='checkbox-rounded'>
               <input type="radio" name="cotitularidad" value="si" checked={cotitularidad === true} onChange={() => setCotitularidad(true)} />
               Sí
             </label>
-            <label style={{ marginLeft: '1rem' }}>
+            <label className='checkbox-rounded'>
               <input type="radio" name="cotitularidad" value="no" checked={cotitularidad === false} onChange={() => setCotitularidad(false)} />
               No
             </label>

@@ -152,7 +152,7 @@ const AutoGrowTextarea = ({
       : 'Valor inválido.');
 
   return (
-    <div className={`agt-wrapper ${className} ${touched && !isValid ? 'agt-error' : ''}`}>
+    <div className={`agt-wrapper ${touched && !isValid ? 'agt-error' : ''}`}>
       {label && (
         <label htmlFor={id} className="agt-label">
           {label}
@@ -163,7 +163,7 @@ const AutoGrowTextarea = ({
         ref={ref}
         id={id}
         name={name}
-        className="agt-textarea"
+        className={`agt-textarea ${className}`}
         placeholder={placeholder}
         value={internalValue}
         onChange={(e) => {

@@ -69,7 +69,7 @@ const PagosPage = ({ onRegister }) => {
   return (
     <main className="page-container">
       <PageHeader
-        title="Administración de contratos de transferencia Tecnológica"
+        title="Administración de contratos de Transferencia Tecnológica (TT)"
         subtitle="Consulta y gestiona de los contratos de transferencia tecnológica vigentes."
       />
 
@@ -88,8 +88,8 @@ const PagosPage = ({ onRegister }) => {
           cardButtons={[
             "ver-pagos",
             "agregar-pagos",
-            "ver-documentos",
-            "agregar-documentos",
+            // "ver-documentos",
+            // "agregar-documentos",
           ]}
         />
       </ModalProvider>

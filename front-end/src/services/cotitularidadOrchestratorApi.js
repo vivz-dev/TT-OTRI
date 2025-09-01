@@ -3,6 +3,7 @@ import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQuery';
 import { getPersonaIdByEmail } from './espolUsers';
 import { getIdPersonaFromAppJwt, getAppUser } from './api';
+import { uploadAndSaveArchivo } from './storage/archivosOrchestrator';
 
 const DEBUG_ORCH = true;
 
@@ -15,19 +16,12 @@ const toInt = (v) => {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 };
 
-const toNumber = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
-
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
-
-const toDecimal_0_100 = (v) => {
-  if (v === '' || v === null || typeof v === 'undefined') return null;
-  const n = Number(v);
+const pctToDb = (val) => {
+  const n = Number(val);
   if (!Number.isFinite(n)) return null;
-  const clamped = clamp(n, 0, 100);
-  return Number(clamped.toFixed(4)); // más precisión para conversión a 0..1 si aplica
+  if (EXPECTS_PERCENT_FRACTION) return Number(clamp(n / 100, 0, 1).toFixed(4));
+  return Number(clamp(n, 0, 100).toFixed(2));
 };
 
 const isNonEmpty = (s) => typeof s === 'string' && s.trim().length > 0;
@@ -48,156 +42,134 @@ export const cotitularidadOrchestratorApi = createApi({
   reducerPath: 'cotitularidadOrchestratorApi',
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
+    /**
+     * Crea la cotitularidad completa:
+     * payload:
+     * {
+     *   idTecnologia?: number,
+     *   idCotitularidadTecno?: number,      // si ya existe
+     *   cotitulares: [{
+     *     perteneceEspol: boolean,
+     *     porcCotitularidad: number (0..100),
+     *     nombre, correo, telefono,
+     *     idPersona?: number,               // preferido si viene
+     *     idCotitularInst?: number,         // usar para ESPOL (p.ej. 1)
+     *     cotitularInst?: { nombre, correo, ruc } // solo para NO ESPOL
+     *   }],
+     *   archivoCotitularidad?: { file, nombre, ... },
+     *   skipCreateCotitularidadTecno?: boolean
+     * }
+     */
     createFullCotitularidad: builder.mutation({
-      /**
-       * payload:
-       * {
-       *   idTecnologia?: number,
-       *   tecnologia?: {...},
-       *   filas: [{
-       *     esEspol: boolean,
-       *     institucion, ruc, correo,
-       *     representante: { nombre, username, correo, porcentaje }
-       *   }]
-       * }
-       */
       async queryFn(payload, _api, _extra, baseQuery) {
         try {
-          if (DEBUG_ORCH) console.log('[ORCH] IN payload =>', payload);
+          if (DEBUG_ORCH) console.log('[COTI-ORCH] IN payload =>', payload);
 
-          // 1) idTecnologia (o crearla si vino "tecnologia")
-          let idTecnologia = toInt(payload?.idTecnologia);
-          if (!idTecnologia && payload?.tecnologia) {
-            const resTec = await baseQuery({
-              url: 'tecnologias',
+          const idTecnologia = toInt(payload?.idTecnologia) || null;
+
+          // 1) Crear cotitularidad-tecno (a menos que ya nos pasen el id)
+          let idCotitularidadTecno = toInt(payload?.idCotitularidadTecno);
+          if (!payload?.skipCreateCotitularidadTecno && !idCotitularidadTecno) {
+            if (!idTecnologia) return { error: { status: 400, data: 'Falta idTecnologia para crear cotitularidad-tecno.' } };
+            const resCotiTec = await baseQuery({
+              url: 'cotitularidad-tecno',
               method: 'POST',
-              body: { ...payload.tecnologia, completado: false },
+              body: { idTecnologia },
             });
-            if (resTec.error) return { error: resTec.error };
-            idTecnologia = toInt(resTec.data?.id ?? resTec.data?.Id);
-            if (!idTecnologia) {
-              return { error: { status: 500, data: 'No se obtuvo idTecnologia.' } };
+            if (resCotiTec.error) return { error: resCotiTec.error };
+            idCotitularidadTecno = toInt(resCotiTec.data?.id ?? resCotiTec.data?.Id);
+            if (!idCotitularidadTecno) {
+              return { error: { status: 500, data: 'No se obtuvo idCotitularidadTecno.' } };
             }
           }
-          if (!idTecnologia) {
-            return { error: { status: 400, data: 'Falta idTecnologia en el payload.' } };
+          if (!idCotitularidadTecno) return { error: { status: 400, data: 'Falta idCotitularidadTecno.' } };
+
+          // 2) Archivo de cotitularidad (tipoEntidad 'CO')
+          if (payload?.archivoCotitularidad?.file) {
+            const uploadToDspace = (p) => baseQuery({ url: 'dspace/upload', method: 'POST', body: p });
+            const createArchivo  = (dto) => baseQuery({ url: 'archivos',     method: 'POST', body: dto });
+
+            try {
+              await uploadAndSaveArchivo({
+                file: payload.archivoCotitularidad.file,
+                meta: { idTEntidad: idCotitularidadTecno, tipoEntidad: 'CO', titulo: 'Acuerdo de cotitularidad' },
+                uploadToDspace,
+                createArchivo,
+              });
+            } catch (e) {
+              return { error: { status: 500, data: e?.message || 'Error subiendo archivo de cotitularidad.' } };
+            }
           }
 
-          // 2) crear CotitularidadTecno
-          const resCotiTec = await baseQuery({
-            url: 'cotitularidad-tecno',
-            method: 'POST',
-            body: { idTecnologia },
+          // 3) Crear cotitularidadInst para NO ESPOL
+          const cotitulares = Array.isArray(payload?.cotitulares) ? payload.cotitulares : [];
+          const instIds = [];    // ids creados (solo nuevos)
+          const createdCotIds = [];
+
+          const instMap = new Map(); // key=index -> idInst
+          cotitulares.forEach((c, i) => {
+            if (!c?.perteneceEspol && c?.cotitularInst) instMap.set(i, null);
           });
-          if (resCotiTec.error) return { error: resCotiTec.error };
-          const idCotitularidadTecno = toInt(resCotiTec.data?.id ?? resCotiTec.data?.Id);
-          if (!idCotitularidadTecno) {
-            return { error: { status: 500, data: 'No se obtuvo idCotitularidadTecno.' } };
-          }
 
-          // 3) filas -> crear Inst y Cotitular
-          const filas = Array.isArray(payload?.filas) ? payload.filas : [];
-          const createdInstIds = [];
-          const createdCotitularIds = [];
-
-          for (let i = 0; i < filas.length; i++) {
-            const f = filas[i] || {};
-
-            // 3.1) CotitularidadInst
-            const bodyInst = {
-              nombre: String(f?.institucion ?? '').trim(),
-              correo: String(f?.correo ?? '').trim(),
-              ruc: String(f?.ruc ?? '').trim(),
-            };
-            if (!isNonEmpty(bodyInst.nombre) || !isNonEmpty(bodyInst.ruc)) {
-              return { error: { status: 400, data: `Fila ${i + 1}: institución y RUC son obligatorios.` } };
-            }
-
+          for (const [idx] of instMap) {
+            const ci = cotitulares[idx].cotitularInst;
             const resInst = await baseQuery({
               url: 'cotitularidad-institucional',
               method: 'POST',
-              body: bodyInst,
+              body: { nombre: ci.nombre?.trim(), correo: ci.correo?.trim(), ruc: ci.ruc?.trim() },
             });
             if (resInst.error) return { error: resInst.error };
-            const idCotitularidadInst = toInt(resInst.data?.id ?? resInst.data?.Id);
-            if (!idCotitularidadInst) {
-              return { error: { status: 500, data: `Fila ${i + 1}: no se obtuvo idCotitularidadInst.` } };
-            }
-            createdInstIds.push(idCotitularidadInst);
+            const idInst = toInt(resInst.data?.id ?? resInst.data?.Id);
+            if (!idInst) return { error: { status: 500, data: 'No se obtuvo idCotitularidadInst.' } };
+            instMap.set(idx, idInst);
+            instIds.push(idInst);
+          }
 
-            // 3.2) idPersona
-            let idPersona = null;
-            if (f?.esEspol) {
-              const email = isNonEmpty(f?.representante?.username)
-                ? `${String(f.representante.username).trim()}@espol.edu.ec`
-                : (f?.representante?.correo ?? '');
-              if (!isNonEmpty(email)) {
-                return { error: { status: 400, data: `Fila ${i + 1}: falta correo/username ESPOL.` } };
-              }
-              idPersona = await getPersonaIdByEmail(email);
+          // 4) Crear cotitulares
+          for (let i = 0; i < cotitulares.length; i++) {
+            const c = cotitulares[i];
+
+            const porcentaje = pctToDb(c?.porcCotitularidad);
+            if (porcentaje == null) return { error: { status: 400, data: `Cotitular #${i + 1}: porcentaje inválido.` } };
+
+            let idCotitularidadInst = null;
+            if (c?.perteneceEspol) {
+              idCotitularidadInst = toInt(c?.idCotitularInst) || 1; // default ESPOL
             } else {
-              idPersona = await resolvePersonaIdFromSession();
+              idCotitularidadInst = toInt(instMap.get(i));
             }
+            if (!idCotitularidadInst) return { error: { status: 500, data: `Cotitular #${i + 1}: idCotitularidadInst inválido.` } };
 
-            idPersona = toInt(idPersona);
-            if (!idPersona) {
-              return { error: { status: 500, data: `Fila ${i + 1}: idPersona inválido.` } };
+            // idPersona preferido si viene; si no:
+            let idPersona = toInt(c?.idPersona);
+            if (!idPersona && isNonEmpty(c?.correo)) {
+              idPersona = toInt(await getPersonaIdByEmail(String(c.correo).trim()));
             }
-
-            // 3.3) porcentaje -> normaliza 0..100 y transforma si DB espera 0..1
-            const pct0to100 = toDecimal_0_100(f?.representante?.porcentaje);
-            if (pct0to100 === null) {
-              return { error: { status: 400, data: `Fila ${i + 1}: porcentaje inválido.` } };
+            if (!idPersona && !c?.perteneceEspol) {
+              idPersona = toInt(await resolvePersonaIdFromSession());
             }
+            if (!idPersona) return { error: { status: 400, data: `Cotitular #${i + 1}: idPersona requerido.` } };
 
-            // 🔧 porcentaje → formato DB
-            let porcentajeDb = pct0to100;
-            if (EXPECTS_PERCENT_FRACTION) {
-              // Si llega 0..100, lo llevamos a 0..1 con 4 decimales (p. ej., 100 => 1.0000)
-              if (porcentajeDb > 1) porcentajeDb = porcentajeDb / 100;
-              porcentajeDb = Number(clamp(porcentajeDb, 0, 1).toFixed(4));
-            } else {
-              // DB espera 0..100 (asegura 2 decimales)
-              porcentajeDb = Number(clamp(porcentajeDb, 0, 100).toFixed(2));
-            }
-
-            const bodyCotitular = {
-              idCotitularidadTecno,
-              idCotitularidadInst,
-              idPersona,
-              porcentaje: porcentajeDb,
-            };
-
-            if (DEBUG_ORCH) {
-              console.log(`[ORCH] POST /cotitulares (fila ${i + 1}) =>`, bodyCotitular);
-            }
-
-            const resCotit = await baseQuery({
+            const resCot = await baseQuery({
               url: 'cotitulares',
               method: 'POST',
-              body: bodyCotitular,
+              body: { idCotitularidadTecno, idCotitularidadInst, idPersona, porcentaje },
             });
-            if (resCotit.error) {
-              // Logguea payload para diagnóstico de rango
-              console.error('[ORCH] Error POST /cotitulares con body =>', bodyCotitular);
-              return { error: resCotit.error };
-            }
-
-            const idCot = toInt(resCotit.data?.id ?? resCotit.data?.Id);
-            if (idCot) createdCotitularIds.push(idCot);
+            if (resCot.error) return { error: resCot.error };
+            const idCot = toInt(resCot.data?.id ?? resCot.data?.Id);
+            if (idCot) createdCotIds.push(idCot);
           }
 
           const data = {
-            idTecnologia,
             idCotitularidadTecno,
-            cotitularesInst: createdInstIds,
-            cotitulares: createdCotitularIds,
+            cotitularesInst: instIds,
+            cotitulares: createdCotIds,
           };
-          if (DEBUG_ORCH) console.log('[ORCH] OUT result =>', data);
+          if (DEBUG_ORCH) console.log('[COTI-ORCH] OUT =>', data);
           return { data };
         } catch (e) {
-          if (DEBUG_ORCH) console.error('[ORCH] Fatal error:', e);
-          return { error: { status: 500, data: e?.message || 'Error en orquestador.' } };
+          if (DEBUG_ORCH) console.error('[COTI-ORCH] Fatal error:', e);
+          return { error: { status: 500, data: e?.message || 'Error en orquestador de cotitularidad.' } };
         }
       },
     }),

@@ -34,6 +34,7 @@ import { regaliasApi } from "./services/regaliasApi";
 /** NUEVO: Unidades */
 import { unidadesApi } from "./services/unidadesApi";
 import { tipoTransferenciaTecnoApi } from "./services/tipoTransferenciaTecnoApi";
+import {technologyDetailsApi} from "./services/technologyDetailsApi"
 
 
 export const store = configureStore({
@@ -73,6 +74,7 @@ export const store = configureStore({
     [unidadesApi.reducerPath]: unidadesApi.reducer,
     [tipoTransferenciaApi.reducerPath]: tipoTransferenciaApi.reducer,
     [tipoTransferenciaTecnoApi.reducerPath]: tipoTransferenciaTecnoApi.reducer,
+    [technologyDetailsApi.reducerPath]: technologyDetailsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -111,4 +113,5 @@ export const store = configureStore({
       .concat(unidadesApi.middleware)
       .concat(tipoTransferenciaApi.middleware)
       .concat(tipoTransferenciaTecnoApi.middleware)
+      .concat(technologyDetailsApi.middleware)
 });

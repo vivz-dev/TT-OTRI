@@ -164,85 +164,91 @@ const TTForm = forwardRef(({ shakeError }, ref) => {
     adminCorreoLocal,
   ]);
 
-  /* ---------------- Exponer validate() y getData() ---------------- */
-  useImperativeHandle(ref, () => ({
-    validate() {
-      const correoAdminCompleto = adminCorreoLocal
-        ? `${adminCorreoLocal}${adminCorreoDominio}`
-        : "";
+// ... (código anterior sin cambios)
 
-      const nuevo = {
-        fechaInicio: !fechaInicio,
-        fechaFin: !fechaFin,
-        tipo: tipo.trim() === "",
-        nombre: nombre.trim() === "",
-        monto: monto === "" || isNaN(Number(monto)),
-        idResolucion: !idResolucion,
-        idTecnologia: !idTecnologia,
-        espolNombre: espolNombre.trim() === "",
-        espolRuc: !isRucLike(espolRuc),
-        espolCorreo: !isEmail(espolCorreo),
-        adminCorreoLocal: adminCorreoLocal.trim() === "",
-      };
-      setErrores(nuevo);
+/* ---------------- Exponer validate() y getData() ---------------- */
+useImperativeHandle(ref, () => ({
+  validate() {
+    const correoAdminCompleto = adminCorreoLocal
+      ? `${adminCorreoLocal}${adminCorreoDominio}`
+      : "";
 
-      const ok = !Object.values(nuevo).some(Boolean);
-      return {
-        valido: ok,
-        data: ok
-          ? {
-              fechaInicio,
-              fechaFin,
-              tipo,
-              nombre,
-              monto: parseFloat(monto),
-              Pago: pago,
-              idResolucion: Number(idResolucion),
-              idTecnologia: Number(idTecnologia),
-              espol: {
-                nombre: espolNombre,
-                ruc: espolRuc,
-                correo: espolCorreo,
-              },
-              adminContrato: {
-                correo: correoAdminCompleto,
-                nombre: adminNombre,
-                cedula: adminCedula,
-                contacto: adminContacto,
-              },
-            }
-          : null,
-      };
-    },
+    const nuevo = {
+      fechaInicio: !fechaInicio,
+      fechaFin: !fechaFin,
+      tipo: tipo.trim() === "",
+      nombre: nombre.trim() === "",
+      monto: monto === "" || isNaN(Number(monto)),
+      idResolucion: !idResolucion,
+      idTecnologia: !idTecnologia,
+      espolNombre: espolNombre.trim() === "",
+      espolRuc: !isRucLike(espolRuc),
+      espolCorreo: !isEmail(espolCorreo),
+      adminCorreoLocal: adminCorreoLocal.trim() === "",
+    };
+    setErrores(nuevo);
 
-    getData() {
-      const correoAdminCompleto = adminCorreoLocal
-        ? `${adminCorreoLocal}${adminCorreoDominio}`
-        : "";
+    const ok = !Object.values(nuevo).some(Boolean);
+    return {
+      valido: ok,
+      data: ok
+        ? {
+            fechaInicio,
+            fechaFin,
+            tipo,
+            nombre,
+            monto: parseFloat(monto),
+            Pago: pago,
+            datosAdicionales, // Añadido
+            idResolucion: Number(idResolucion),
+            idTecnologia: Number(idTecnologia),
+            espol: {
+              nombre: espolNombre,
+              ruc: espolRuc,
+              correo: espolCorreo,
+            },
+            adminContrato: {
+              correo: correoAdminCompleto,
+              nombre: adminNombre,
+              cedula: adminCedula,
+              contacto: adminContacto,
+            },
+          }
+        : null,
+    };
+  },
 
-      return {
-        fechaInicio,
-        fechaFin,
-        tipo,
-        nombre,
-        monto: monto === "" ? null : parseFloat(monto),
-        Pago: pago,
-        idResolucion: idResolucion ? Number(idResolucion) : null,
-        idTecnologia: idTecnologia ? Number(idTecnologia) : null,
-        espol: {
-          nombre: espolNombre,
-          ruc: espolRuc,
-          correo: espolCorreo,
-        },
-        adminContrato: {
-          correo: correoAdminCompleto,
-          nombre: adminNombre,
-          cedula: adminCedula,
-          contacto: adminContacto,
-        },
-      };
-    },
-  }));
+  getData() {
+    const correoAdminCompleto = adminCorreoLocal
+      ? `${adminCorreoLocal}${adminCorreoDominio}`
+      : "";
+
+    return {
+      fechaInicio,
+      fechaFin,
+      tipo,
+      nombre,
+      monto: monto === "" ? null : parseFloat(monto),
+      Pago: pago,
+      datosAdicionales, // Añadido
+      idResolucion: idResolucion ? Number(idResolucion) : null,
+      idTecnologia: idTecnologia ? Number(idTecnologia) : null,
+      espol: {
+        nombre: espolNombre,
+        ruc: espolRuc,
+        correo: espolCorreo,
+      },
+      adminContrato: {
+        correo: correoAdminCompleto,
+        nombre: adminNombre,
+        cedula: adminCedula,
+        contacto: adminContacto,
+      },
+    };
+  },
+}));
+
+// ... (resto del código sin cambios)
 
   /* ---------------- Helpers UI ---------------- */
   const selectedRes = resolucionesOpts.find(

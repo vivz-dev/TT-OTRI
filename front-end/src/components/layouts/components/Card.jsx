@@ -48,11 +48,11 @@ const Card = ({
       className="custom-card"
     >
       <div className="card-header">
-        {titulo && <h3 className="card-title">{titulo || '—'}</h3>}
+        {titulo && <h3 className="card-title ellipsis-3">{titulo || '—'}</h3>}
         <CardStatus estado={estado} iconoExtra={iconoExtra} completed={completed}/>
       </div>
 
-      {descripcion && <p className="card-description">{descripcion}</p>}
+      {descripcion && <p className="card-description ellipsis-3">{descripcion}</p>}
       {!descripcion && <p className="card-description">—</p>}
 
       <CardFooter

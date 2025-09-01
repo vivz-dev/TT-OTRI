@@ -1,8 +1,21 @@
-import React, { useEffect } from "react";
-// si luego quieres, puedes mover estos estilos a tu CSS y quitar los inline
+import React, { useEffect, useCallback } from "react";
+import { useGetFullTechnologyDetailsQuery } from "../../../services/technologyDetailsApi";
+
+import VerProtecciones from "./tecnologia/VerProtecciones";
+import DatosTecnologia from "./tecnologia/DatosTecnologia";
+
+import * as Buttons from "../buttons/buttons_index";
 
 const VistaPreviaTecnologia = ({ item, onClose }) => {
-  
+  const technologyId = item?.id ?? null;
+
+  const { data, error, isLoading } = useGetFullTechnologyDetailsQuery(
+    technologyId,
+    { skip: !technologyId }
+  );
+
+  // Normaliza el objeto para evitar leer "undefined.tecnologia"
+  const tec = data?.tecnologia ?? null;
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose?.();
@@ -17,53 +30,41 @@ const VistaPreviaTecnologia = ({ item, onClose }) => {
 
   const stop = (e) => e.stopPropagation();
 
-  const protecciones = Array.isArray(item.protecciones) ? item.protecciones : [];
+  // Callback para abrir archivos de protección (opcional, hijo tiene fallback)
+  const handleOpenArchivoProteccion = useCallback((url) => {
+    const finalUrl = url || "";
+    if (!finalUrl) {
+      alert("El archivo no tiene URL disponible.");
+      return;
+    }
+    window.open(finalUrl, "_blank", "noopener,noreferrer");
+  }, []);
 
   if (!item) return null;
 
+  console.log("TECNOLOGIA (item prop) ---> ", item);
+  console.log("TECNOLOGIA DETALLES DEL API ---> ", data);
+
   return (
-    <div className="otri-modal-backdrop backdropStyle" onClick={onClose}>
-      <div className="otri-modal modalStyle" onClick={stop}>
-        <header className="otri-modal-header headerStyle">
-          <h3>Tecnología — {item.titulo || "Sin título"}</h3>
-          <button
-            className="otri-close-btn"
-            onClick={onClose}
-            style={{ fontSize: 22, border: "none", background: "transparent", cursor: "pointer" }}
-            aria-label="Cerrar"
-          >
-            ×
-          </button>
-        </header>
+    <div className="otri-modal-backdrop" onClick={onClose}>
+      <div className="otri-modal" onClick={stop}>
+        <div className="otri-modal-container">
+          <section className="otri-modal-body">
+            {/* Datos de la tecnología (extraído) */}
+            <DatosTecnologia tec={tec} isLoading={isLoading} error={error} />
 
-        <section className="otri-modal-body bodyStyle">
-          <div className='mtStyle}'>
-            <strong>Descripción</strong>
-            <p style={{ whiteSpace: "pre-wrap" }}>{item.descripcion || "Sin descripción"}</p>
-          </div>
+            {/* Protecciones (ya extraído) */}
+            <VerProtecciones
+              protecciones={data?.protecciones}
+              isLoading={isLoading}
+              onOpenArchivo={handleOpenArchivoProteccion}
+            />
+          </section>
 
-          <div className='mtStyle}'><strong>Estado:</strong> <span>{item.estado ?? "—"}</span></div>
-          <div className='mtStyle}'><strong>Fecha:</strong> <span>{item.fecha ?? "—"}</span></div>
-          <div className='mtStyle}'><strong>Registrado por:</strong> <span>{item.usuario ?? "—"}</span></div>
-          <div className='mtStyle}'><strong>Completado:</strong> <span>{item.completed ? "Sí" : "No"}</span></div>
-
-          <div className='mtStyle}'>
-            <strong>Protecciones</strong>
-            {protecciones.length === 0 ? (
-              <div><i>Sin protecciones registradas</i></div>
-            ) : (
-              <ul style={{ marginTop: 6 }}>
-                {protecciones.map((p, i) => (
-                  <li key={i}>{String(p)}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        <footer className="otri-modal-footer footerStyle">
-          <button onClick={onClose}>Cerrar</button>
-        </footer>
+          <footer className="otri-modal-footer">
+            <Buttons.RegisterButton onClick={onClose} text={"Cerrar"} />
+          </footer>
+        </div>
       </div>
     </div>
   );

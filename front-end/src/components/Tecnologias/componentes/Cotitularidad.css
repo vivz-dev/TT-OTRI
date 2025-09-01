@@ -1,105 +1,84 @@
-/* -------- Contenedor -------- */
-.table-wrap{
-  display:block;
-  width:100%;
-  max-width:100%;
-  overflow-x:auto;      /* scroll horizontal si no cabe */
-  overflow-y:visible;   /* deja salir el dropdown hacia abajo */
+/* Contenedor relativo para posicionar el dropdown “aparte” */
+.autocomplete-root {
+  position: relative;
+  width: 100%;
 }
 
-/* Si tu .card o .coti-card tenía overflow oculto, libéralo */
-.coti-card{
-  overflow:visible;
+/* El dropdown se muestra como panel flotante bajo el input */
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+
+  max-height: 240px;
+  overflow-y: auto;
+
+  margin-top: 6px;
+  padding: 6px 0;
+
+  background: var(--bg-panel, #fff);
+  border: 1px solid rgba(0,0,0,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+
+  z-index: 9999;
 }
 
-.th-group{
-  text-align: center;
-  background: var(--esp-azul-institucional);
-  color: white;
-  font-weight: bold;
-}
-/* -------- Tabla -------- */
-.coti-table{
-  border-collapse:separate;
-  border-spacing:0;
-  font-size:.95rem;
-  color:#0f172a;
-  min-width: 960px;     /* 🔑 evita que “salte” del contenedor; usa scroll dentro de .table-wrap */
-  table-layout:fixed;   /* 🔑 columnas respetan sus anchos */
-  position:relative;
+/* Cada opción ocupa su propia línea (lista “aparte”) */
+.autocomplete-option {
+  display: block;
+  padding: 10px 12px;
+  cursor: pointer;
+  line-height: 1.2;
 }
 
-/* Anchos por columna (suman 100%) */
-.coti-table th:nth-child(1), .coti-table td:nth-child(1){ width:14%; }
-.coti-table th:nth-child(2), .coti-table td:nth-child(2){ width:12%; }
-.coti-table th:nth-child(3), .coti-table td:nth-child(3){ width:18%; }
-.coti-table th:nth-child(4), .coti-table td:nth-child(4){ width:16%; }
-.coti-table th:nth-child(5), .coti-table td:nth-child(5){ width:30%; } /* correo */
-.coti-table th:nth-child(6), .coti-table td:nth-child(6){ width:6%;  text-align:center; }
-.coti-table th:nth-child(7), .coti-table td:nth-child(7){ width:4%;  text-align:center; padding-left:0; padding-right:0; }
-
-/* Permite que el dropdown se vea sin ensanchar la tabla */
-.coti-table th,
-.coti-table td{
-  overflow:visible;     /* antes hidden -> recortaba el dropdown */
-  word-wrap:break-word; /* no romper el layout con textos largos */
+.autocomplete-option:hover,
+.autocomplete-option.active {
+  background: rgba(0, 0, 0, 0.06);
 }
 
-/* Inputs en celdas (no fuerzan el ancho de la columna) */
-.coti-table input,
-.coti-table textarea{
-  box-sizing:border-box;
-  font:inherit;
-  padding:10px 12px;
-  border:1px solid #d1d5db;
-  border-radius:8px;
-  outline:none;
-  max-width:100%;       /* evita que el padding empuje la celda */
+.autocomplete-option.muted {
+  color: #666;
+  cursor: default;
 }
 
-/* Celda de correo con dropdown */
-.cell-correo{ position:relative; overflow:visible; z-index:0; }
-
-/* Input usuario de correo: tamaño fijo sin romper layout */
-.correo-institucional-wrapper{
-  display:grid;
-  grid-template-columns: 220px auto; /* input fijo + dominio flexible */
-  align-items:center;
-  gap:8px;
-}
-.correo-user-input{
-  width:220px;
-  min-width:220px;
-  max-width:220px;
-}
-.correo-dominio{
-  padding:10px 12px;
-  background:#f9fafb;
-  border:1px solid #e5e7eb;
-  border-radius:8px;
-  color:#475569;
-  white-space:nowrap;
+.autocomplete-option.error {
+  color: #b00020;
 }
 
-/* Menú del dropdown (por encima de la tabla, no afecta layout) */
-.correo-menu,
-.cell-correo .autocomplete-menu,
-.cell-correo .dropdown,
-.cell-correo .select-menu{
-  position:absolute;
-  top:calc(100% + 4px);
-  left:0;
-  min-width:220px;
-  max-height:240px;
-  overflow:auto;
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:8px;
-  box-shadow:0 8px 24px rgba(0,0,0,.08);
-  z-index:50;
+/* Layout interno de la opción (username y email en la misma línea) */
+.opt-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
-/* % titularidad */
-.input-porcentaje{ width:88px; text-align:center; }
+.opt-username {
+  font-weight: 600;
+}
 
-/* Encabezados / tfoot como ya tenías */
+.opt-email {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.opt-name {
+  margin-top: 2px;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+/* Opcional: si usas dark mode, ajusta colores */
+/* @media (prefers-color-scheme: dark) {
+  .autocomplete-dropdown {
+    background: #1c1c1c;
+    border-color: #333;
+    box-shadow: 0 8px 24px rgba(0,0,0,.6);
+  }
+  .autocomplete-option:hover,
+  .autocomplete-option.active {
+    background: rgba(255,255,255,0.08);
+  }
+  .opt-name { color: #bbb; }
+} */

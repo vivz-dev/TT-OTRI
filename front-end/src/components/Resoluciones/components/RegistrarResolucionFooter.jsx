@@ -57,7 +57,7 @@ const RegistrarResolucionFooter = forwardRef(({
       </div>
 
       <div className="footer-buttons">
-        <Buttons.SaveButton   onClick={onSave}   />
+        {/* <Buttons.SaveButton   onClick={onSave}   /> */}
         <Buttons.FinishButton onClick={onFinish} />
       </div>
     </footer>

@@ -19,6 +19,8 @@
   font-weight: bold;
   margin: 0;
   text-transform: capitalize;
+  overflow: hidden;
+  margin-right: 10px;
 }
 
 .card-number {
@@ -37,4 +39,7 @@
   color: #4b5563;
   margin-bottom: 16px;
   text-transform: math-auto;
+  overflow: hidden;
+  margin-right: 190px;
+  text-align: justify;
 }

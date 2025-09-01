@@ -42,19 +42,20 @@
 .agt-counter {
   font-size: 0.78rem;
   color: #6b7280;
+  /* color: #b91c1c; */
 }
 
 .agt-counter.warn {
-  color: #b91c1c;
+  /* color: #b91c1c; */
   font-weight: 600;
 }
 
 
 .agt-wrapper.agt-error .agt-textarea {
-  border-color: #ef4444 !important;
+  /* border-color: #ef4444 !important; */
   box-shadow: 0 0 0 2px rgba(239, 68, 68, .15);
 }
 .agt-error-text {
-  color: #ef4444;
+  /* color: #ef4444; */
   margin-left: .5rem;
 }

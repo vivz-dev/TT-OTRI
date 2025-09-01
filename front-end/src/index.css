@@ -269,6 +269,9 @@ input:disabled {
 
 .otri-modal-body {
   padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }
 .otri-modal-footer {
   padding: 12px 20px;
@@ -362,7 +365,7 @@ input:disabled {
 
 .subtotal {
   text-align: right;
-  color: #364b6e;
+  /* color: #364b6e; */
 }
 
 .tabla-titulo {
@@ -391,6 +394,7 @@ input:disabled {
   text-align: center;
   border-bottom: 1px solid #dcdcdc;
   border: 1px solid black;
+  text-transform: uppercase;
 }
 
 .nombre-col {
@@ -403,8 +407,8 @@ input:disabled {
 }
 
 .porcentaje-total{
-  text-align: right;
-  padding-right: 50px;
+  text-align: center;
+  /* padding-right: 50px; */
 }
 
 
@@ -450,4 +454,124 @@ input:disabled {
   flex-direction: column;
   gap: 20px;
 
+}
+
+/* CHECKBOX */
+
+.checkbox-rounded{
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.checkbox-container{
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 50px;
+}
+
+/* TABLA COTITULARIDAD */
+
+.cotitularidad-input-height{
+  min-height: 80px;
+}
+
+.cotitular-box{
+  align-content: start;
+}
+
+.cotitular-textarea {
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cotitular-textarea:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.15);
+}
+
+.porcentaje-cotitular{
+  width: 100%;
+  max-width: 80px;
+}
+
+/* BOTON ELMINAR */
+.delete-row-btn {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.delete-row-btn:hover:not(:disabled) {
+  background-color: #ffeaea;
+}
+
+.delete-row-btn:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.right-border{
+  border-right: 1px solid black;
+}
+
+.fixed-td{
+  align-content: start;
+  padding-top: 50px !important;
+}
+
+.espol-fixed-td{
+  align-content: start;
+  padding-top: 30px !important;
+}
+
+.max-width-td{
+  max-width: 150px !important;
+}
+
+.max-width-td-centro{
+  width: 200px !important;
+  max-width: 200px !important;
+}
+
+.placeholder{
+  background-color: transparent;
+
+}
+
+/* ELIPSIS */
+/* Multilínea con elipsis (compat amplia) */
+.ellipsis-3 {
+  /* Soporte amplio (WebKit/Blink) */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;   /* <- número de líneas */
+  overflow: hidden;
+
+  /* Extras útiles (opcionales) */
+  /* evita desbordes por palabras muy largas */
+  overflow-wrap: anywhere;
+}
+
+.parrafo-container {
+  white-space: normal;   /* Permite que el texto salte de línea */
+  word-wrap: break-word; /* Si hay palabras muy largas, las corta */
+  overflow-wrap: break-word; /* Variante moderna, más compatible */
+}
+
+
+
+/* Opt-in moderno (cuando el navegador soporta line-clamp sin prefijo) */
+@supports (line-clamp: 3) {
+  .ellipsis-3 {
+    display: block;        /* ya no necesita -webkit-box */
+    line-clamp: 3;
+  }
 }
