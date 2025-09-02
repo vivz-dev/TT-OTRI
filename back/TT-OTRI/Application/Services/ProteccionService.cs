@@ -1,3 +1,4 @@
+// Application/Services/ProteccionService.cs
 using TT_OTRI.Application.DTOs;
 using TT_OTRI.Application.Interfaces;
 using TT_OTRI.Domain;
@@ -8,61 +9,52 @@ public sealed class ProteccionService
 {
     private readonly IProteccionRepository _repo;
 
-    public ProteccionService(IProteccionRepository repo)
-    {
-        _repo = repo;
-    }
+    public ProteccionService(IProteccionRepository repo) => _repo = repo;
 
     public async Task<IEnumerable<ProteccionReadDto>> GetAllAsync(CancellationToken ct)
-    {
-        var list = await _repo.GetAllAsync(ct);
-        return list.Select(MapToDto);
-    }
+        => (await _repo.GetAllAsync(ct)).Select(MapToDto);
 
     public async Task<ProteccionReadDto?> GetByIdAsync(int id, CancellationToken ct)
-    {
-        var entity = await _repo.GetByIdAsync(id, ct);
-        return entity is null ? null : MapToDto(entity);
-    }
+        => (await _repo.GetByIdAsync(id, ct)) is { } e ? MapToDto(e) : null;
 
     public async Task<int> CreateAsync(ProteccionCreateDto dto, CancellationToken ct)
     {
         var entity = new Proteccion
         {
-            IdTecnologia = dto.IdTecnologia,
+            IdTecnologia     = dto.IdTecnologia,
             IdTipoProteccion = dto.IdTipoProteccion,
-            FechaSolicitud = dto.FechaSolicitud
+            FechaSolicitud   = dto.FechaSolicitud,
+            Concesion        = dto.Concesion,
+            Solicitud        = dto.Solicitud,
+            FechaConcesion   = dto.FechaConcesion
         };
         return await _repo.AddAsync(entity, ct);
     }
 
     public async Task UpdateAsync(int id, ProteccionPatchDto dto, CancellationToken ct)
     {
-        var entity = await _repo.GetByIdAsync(id, ct);
-        if (entity is null)
-            throw new KeyNotFoundException($"Proteccion con id {id} no encontrada.");
+        var e = await _repo.GetByIdAsync(id, ct) ?? throw new KeyNotFoundException($"Proteccion {id} no encontrada.");
 
-        // Aplicar cambios parciales
-        if (dto.IdTecnologia.HasValue)
-            entity.IdTecnologia = dto.IdTecnologia.Value;
-        if (dto.IdTipoProteccion.HasValue)
-            entity.IdTipoProteccion = dto.IdTipoProteccion.Value;
-        if (dto.FechaSolicitud.HasValue)
-            entity.FechaSolicitud = dto.FechaSolicitud.Value;
+        if (dto.IdTecnologia.HasValue)     e.IdTecnologia     = dto.IdTecnologia.Value;
+        if (dto.IdTipoProteccion.HasValue) e.IdTipoProteccion = dto.IdTipoProteccion.Value;
+        if (dto.FechaSolicitud.HasValue)   e.FechaSolicitud   = dto.FechaSolicitud.Value;
+        if (dto.Concesion.HasValue)        e.Concesion        = dto.Concesion.Value;
+        if (dto.Solicitud.HasValue)        e.Solicitud        = dto.Solicitud.Value;
+        if (dto.FechaConcesion.HasValue)   e.FechaConcesion   = dto.FechaConcesion.Value;
 
-        await _repo.UpdateAsync(entity, ct);
+        await _repo.UpdateAsync(e, ct);
     }
 
-    private static ProteccionReadDto MapToDto(Proteccion entity)
+    private static ProteccionReadDto MapToDto(Proteccion e) => new()
     {
-        return new ProteccionReadDto
-        {
-            Id = entity.Id,
-            IdTecnologia = entity.IdTecnologia,
-            IdTipoProteccion = entity.IdTipoProteccion,
-            FechaSolicitud = entity.FechaSolicitud,
-            CreatedAt = entity.CreatedAt,
-            UpdatedAt = entity.UpdatedAt
-        };
-    }
+        Id               = e.Id,
+        IdTecnologia     = e.IdTecnologia,
+        IdTipoProteccion = e.IdTipoProteccion,
+        FechaSolicitud   = e.FechaSolicitud,
+        Concesion        = e.Concesion,
+        Solicitud        = e.Solicitud,
+        FechaConcesion   = e.FechaConcesion,
+        CreatedAt        = e.CreatedAt,
+        UpdatedAt        = e.UpdatedAt
+    };
 }

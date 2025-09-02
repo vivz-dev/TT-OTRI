@@ -10,4 +10,8 @@ public class RoleCatalogService : IRoleCatalogService
 
     public Task<IReadOnlyList<RoleDto>> GetRolesByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
         => _repo.GetRolesByIdsAsync(ids, ct);
+
+    // Nuevo método
+    public Task<IReadOnlyList<RoleDto>> GetOtriRolesAsync(CancellationToken ct = default)
+        => _repo.GetOtriRolesAsync(ct);
 }

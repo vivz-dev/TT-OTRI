@@ -1,3 +1,4 @@
+// Infrastructure/Repositories/ProteccionRepositoryDb2.cs
 using System.Data;
 using System.Data.Common;
 using IBM.Data.Db2;
@@ -27,8 +28,15 @@ public sealed class ProteccionRepositoryDb2 : IProteccionRepository
 
         var sql = $@"
 SELECT
-  IDOTRITTPROTECCION, IDOTRITTTECNOLOGIA, IDOTRITTTIPOPROTECCION,
-  FECHASOLICITUD, FECHACREACION, ULTIMO_CAMBIO
+  IDOTRITTPROTECCION,
+  IDOTRITTTECNOLOGIA,
+  IDOTRITTTIPOPROTECCION,
+  FECHASOLICITUD,
+  CONCESION,
+  SOLICITUD,
+  FECHACONCESION,
+  FECHACREACION,
+  ULTIMO_CAMBIO
 FROM {FQN}
 ORDER BY IDOTRITTPROTECCION DESC";
 
@@ -48,8 +56,15 @@ ORDER BY IDOTRITTPROTECCION DESC";
 
         var sql = $@"
 SELECT
-  IDOTRITTPROTECCION, IDOTRITTTECNOLOGIA, IDOTRITTTIPOPROTECCION,
-  FECHASOLICITUD, FECHACREACION, ULTIMO_CAMBIO
+  IDOTRITTPROTECCION,
+  IDOTRITTTECNOLOGIA,
+  IDOTRITTTIPOPROTECCION,
+  FECHASOLICITUD,
+  CONCESION,
+  SOLICITUD,
+  FECHACONCESION,
+  FECHACREACION,
+  ULTIMO_CAMBIO
 FROM {FQN}
 WHERE IDOTRITTPROTECCION = @id";
 
@@ -70,23 +85,39 @@ WHERE IDOTRITTPROTECCION = @id";
         {
             var insert = $@"
 INSERT INTO {FQN}
-( IDOTRITTTECNOLOGIA, IDOTRITTTIPOPROTECCION, FECHASOLICITUD )
+( IDOTRITTTECNOLOGIA,
+  IDOTRITTTIPOPROTECCION,
+  FECHASOLICITUD,
+  CONCESION,
+  SOLICITUD,
+  FECHACONCESION )
 VALUES
-( @idTecnologia, @idTipoProteccion, @fechaSolicitud )";
+( @idTecnologia,
+  @idTipoProteccion,
+  @fechaSolicitud,
+  @concesion,
+  @solicitud,
+  @fechaConcesion )";
 
             using (var cmd = new DB2Command(insert, conn))
             {
                 cmd.Transaction = (DB2Transaction)tx;
-                cmd.Parameters.Add(new DB2Parameter("@idTecnologia", DB2Type.Integer) { Value = p.IdTecnologia });
+                cmd.Parameters.Add(new DB2Parameter("@idTecnologia", DB2Type.Integer)   { Value = p.IdTecnologia });
                 cmd.Parameters.Add(new DB2Parameter("@idTipoProteccion", DB2Type.SmallInt) { Value = p.IdTipoProteccion });
                 cmd.Parameters.Add(new DB2Parameter("@fechaSolicitud", DB2Type.Date)
                 {
                     Value = p.FechaSolicitud.HasValue ? p.FechaSolicitud.Value.Date : DBNull.Value
                 });
+                cmd.Parameters.Add(new DB2Parameter("@concesion", DB2Type.SmallInt) { Value = p.Concesion });
+                cmd.Parameters.Add(new DB2Parameter("@solicitud", DB2Type.SmallInt) { Value = p.Solicitud });
+                cmd.Parameters.Add(new DB2Parameter("@fechaConcesion", DB2Type.Date)
+                {
+                    Value = p.FechaConcesion.HasValue ? p.FechaConcesion.Value.Date : DBNull.Value
+                });
+
                 await cmd.ExecuteNonQueryAsync(ct);
             }
 
-            // Obtener ID autogenerado
             using (var idCmd = new DB2Command("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1", conn))
             {
                 idCmd.Transaction = (DB2Transaction)tx;
@@ -96,7 +127,6 @@ VALUES
 
             await tx.CommitAsync(ct);
 
-            // Recuperar timestamps reales
             var back = await GetByIdAsync(p.Id, ct);
             if (back != null)
             {
@@ -124,27 +154,42 @@ VALUES
 
         var sql = $@"
 UPDATE {FQN} SET
-  IDOTRITTTECNOLOGIA = @idTecnologia,
-  IDOTRITTTIPOPROTECCION = @idTipoProteccion,
-  FECHASOLICITUD = @fechaSolicitud,
-  ULTIMO_CAMBIO = CURRENT TIMESTAMP
+  IDOTRITTTECNOLOGIA    = @idTecnologia,
+  IDOTRITTTIPOPROTECCION= @idTipoProteccion,
+  FECHASOLICITUD        = @fechaSolicitud,
+  CONCESION             = @concesion,
+  SOLICITUD             = @solicitud,
+  FECHACONCESION        = @fechaConcesion,
+  ULTIMO_CAMBIO         = CURRENT TIMESTAMP
 WHERE IDOTRITTPROTECCION = @id";
 
         using var cmd = new DB2Command(sql, conn);
-        cmd.Parameters.Add(new DB2Parameter("@idTecnologia", DB2Type.Integer) { Value = p.IdTecnologia });
+        cmd.Parameters.Add(new DB2Parameter("@idTecnologia", DB2Type.Integer)   { Value = p.IdTecnologia });
         cmd.Parameters.Add(new DB2Parameter("@idTipoProteccion", DB2Type.SmallInt) { Value = p.IdTipoProteccion });
         cmd.Parameters.Add(new DB2Parameter("@fechaSolicitud", DB2Type.Date)
         {
             Value = p.FechaSolicitud.HasValue ? p.FechaSolicitud.Value.Date : DBNull.Value
+        });
+        cmd.Parameters.Add(new DB2Parameter("@concesion", DB2Type.SmallInt) { Value = p.Concesion });
+        cmd.Parameters.Add(new DB2Parameter("@solicitud", DB2Type.SmallInt) { Value = p.Solicitud });
+        cmd.Parameters.Add(new DB2Parameter("@fechaConcesion", DB2Type.Date)
+        {
+            Value = p.FechaConcesion.HasValue ? p.FechaConcesion.Value.Date : DBNull.Value
         });
         cmd.Parameters.Add(new DB2Parameter("@id", DB2Type.Integer) { Value = p.Id });
 
         var rows = await cmd.ExecuteNonQueryAsync(ct);
         if (rows == 0) throw new KeyNotFoundException($"Proteccion {p.Id} no existe.");
 
-        // Sincronizar UpdatedAt
         var back = await GetByIdAsync(p.Id, ct);
         if (back != null) p.UpdatedAt = back.UpdatedAt;
+    }
+
+    private static DateTime? GetNullableDate(IDataRecord rec, string col)
+    {
+        var idx = rec.GetOrdinal(col);
+        if (rec.IsDBNull(idx)) return null;
+        return Convert.ToDateTime(rec.GetValue(idx));
     }
 
     private static Proteccion MapFromRecord(IDataRecord rec)
@@ -153,12 +198,15 @@ WHERE IDOTRITTPROTECCION = @id";
 
         return new Proteccion
         {
-            Id = rec.GetInt32(Ord("IDOTRITTPROTECCION")),
-            IdTecnologia = rec.GetInt32(Ord("IDOTRITTTECNOLOGIA")),
-            IdTipoProteccion = rec.GetInt16(Ord("IDOTRITTTIPOPROTECCION")),
-            FechaSolicitud = rec["FECHASOLICITUD"] as DateTime?,
-            CreatedAt = (DateTime)rec["FECHACREACION"],
-            UpdatedAt = (DateTime)rec["ULTIMO_CAMBIO"]
+            Id              = rec.GetInt32(Ord("IDOTRITTPROTECCION")),
+            IdTecnologia    = rec.GetInt32(Ord("IDOTRITTTECNOLOGIA")),
+            IdTipoProteccion= rec.GetInt16(Ord("IDOTRITTTIPOPROTECCION")),
+            FechaSolicitud  = GetNullableDate(rec, "FECHASOLICITUD"),
+            Concesion       = rec.GetInt16(Ord("CONCESION")),
+            Solicitud       = rec.GetInt16(Ord("SOLICITUD")),
+            FechaConcesion  = GetNullableDate(rec, "FECHACONCESION"),
+            CreatedAt       = Convert.ToDateTime(rec["FECHACREACION"]),
+            UpdatedAt       = Convert.ToDateTime(rec["ULTIMO_CAMBIO"])
         };
     }
 }

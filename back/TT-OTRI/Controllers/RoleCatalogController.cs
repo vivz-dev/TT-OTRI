@@ -25,4 +25,13 @@ public sealed class RoleCatalogController : ControllerBase
         var roles = await _svc.GetRolesByIdsAsync(arr, ct);
         return Ok(roles);
     }
+
+    // NUEVO ENDPOINT: Obtener todos los roles con CODIGOSISTEMA = 'OTRI'
+    [HttpGet("otri")]
+    public async Task<IActionResult> GetOtriRoles(CancellationToken ct)
+    {
+        // Este método necesita ser implementado en el servicio y repositorio
+        var roles = await _svc.GetOtriRolesAsync(ct);
+        return Ok(roles);
+    }
 }

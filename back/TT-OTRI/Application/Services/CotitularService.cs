@@ -30,9 +30,13 @@ public sealed class CotitularService
         var cotitular = new Cotitular
         {
             IdCotitularidadTecno = dto.IdCotitularidadTecno,
-            IdCotitularidadInst = dto.IdCotitularidadInst,
-            IdPersona = dto.IdPersona,
-            Porcentaje = dto.Porcentaje
+            IdCotitularidadInst  = dto.IdCotitularidadInst,
+            IdPersona            = dto.IdPersona,
+            Porcentaje           = dto.Porcentaje,
+            PerteneceEspol       = dto.PerteneceEspol,
+            Nombre               = string.IsNullOrWhiteSpace(dto.Nombre) ? null : dto.Nombre!.Trim(),
+            Correo               = string.IsNullOrWhiteSpace(dto.Correo) ? null : dto.Correo!.Trim(),
+            Telefono             = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono!.Trim(),
         };
 
         return await _repository.AddAsync(cotitular, ct);
@@ -42,29 +46,35 @@ public sealed class CotitularService
     {
         var cotitular = new Cotitular
         {
-            Id = id,
+            Id                   = id,
             IdCotitularidadTecno = dto.IdCotitularidadTecno,
-            IdCotitularidadInst = dto.IdCotitularidadInst,
-            IdPersona = dto.IdPersona,
-            Porcentaje = dto.Porcentaje
+            IdCotitularidadInst  = dto.IdCotitularidadInst,
+            IdPersona            = dto.IdPersona,
+            Porcentaje           = dto.Porcentaje,
+            PerteneceEspol       = dto.PerteneceEspol,
+            Nombre               = string.IsNullOrWhiteSpace(dto.Nombre) ? null : dto.Nombre!.Trim(),
+            Correo               = string.IsNullOrWhiteSpace(dto.Correo) ? null : dto.Correo!.Trim(),
+            Telefono             = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono!.Trim(),
         };
 
         await _repository.UpdateAsync(cotitular, ct);
     }
 
     public async Task<bool> PatchAsync(int id, CotitularPatchDto dto, CancellationToken ct)
-    {
-        return await _repository.PatchAsync(id, dto, ct);
-    }
+        => await _repository.PatchAsync(id, dto, ct);
 
-    private static CotitularReadDto MapToDto(Cotitular entity) => new()
+    private static CotitularReadDto MapToDto(Cotitular e) => new()
     {
-        Id = entity.Id,
-        IdCotitularidadTecno = entity.IdCotitularidadTecno,
-        IdCotitularidadInst = entity.IdCotitularidadInst,
-        IdPersona = entity.IdPersona,
-        Porcentaje = entity.Porcentaje,
-        FechaCreacion = entity.FechaCreacion,
-        UltimoCambio = entity.UltimoCambio
+        Id                   = e.Id,
+        IdCotitularidadTecno = e.IdCotitularidadTecno,
+        IdCotitularidadInst  = e.IdCotitularidadInst,
+        IdPersona            = e.IdPersona,
+        Porcentaje           = e.Porcentaje,
+        PerteneceEspol       = e.PerteneceEspol,
+        Nombre               = e.Nombre,
+        Correo               = e.Correo,
+        Telefono             = e.Telefono,
+        FechaCreacion        = e.FechaCreacion,
+        UltimoCambio         = e.UltimoCambio
     };
 }

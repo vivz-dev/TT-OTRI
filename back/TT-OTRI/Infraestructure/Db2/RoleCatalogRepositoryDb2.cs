@@ -79,6 +79,39 @@ ORDER BY NOMBRE";
             return result.AsReadOnly();
         }
 
+        public async Task<IReadOnlyList<RoleDto>> GetOtriRolesAsync(CancellationToken ct = default)
+        {
+            var sql = $@"
+SELECT IDROLES, NOMBRE
+FROM {_schema}.TBL_ROL
+WHERE CODIGOSISTEMA = 'OTRI'
+ORDER BY NOMBRE";
+
+            var result = new List<RoleDto>();
+
+            await using var conn = new DB2Connection(_connString);
+            await conn.OpenAsync(ct);
+
+            await using var cmd = new DB2Command(sql, conn);
+
+            try
+            {
+                await using var rdr = await cmd.ExecuteReaderAsync(ct);
+                while (await rdr.ReadAsync(ct))
+                {
+                    var id = Convert.ToInt32(rdr.GetValue(0));
+                    var nombre = rdr.IsDBNull(1) ? string.Empty : rdr.GetString(1);
+                    result.Add(new RoleDto(id, nombre));
+                }
+            }
+            catch (DB2Exception ex)
+            {
+                throw new InvalidOperationException("Error ejecutando consulta de roles OTRI en DB2.", ex);
+            }
+
+            return result.AsReadOnly();
+        }
+
         private static string? FirstNonEmpty(params string?[] xs) =>
             xs.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
     }
