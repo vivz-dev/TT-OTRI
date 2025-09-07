@@ -1,3 +1,4 @@
+
 import React from "react";
 import * as ReactPDF from "@react-pdf/renderer";
 import { ensureAppJwt } from "../../../../services/api";
@@ -5,6 +6,15 @@ import { ensureAppJwt } from "../../../../services/api";
 import { toNumber, parseDate } from "./docHelpers";
 import { DistribucionFinalPdf } from "./distribucionPdf";
 import { runDistribucionTablaForPagos } from "./docOrquestrator";
+
+// >>> Polyfill mínimo para Buffer en navegador (sin crear archivos nuevos)
+import { Buffer as BufferPolyfill } from "buffer";
+/* eslint-env browser */
+if (typeof window !== "undefined" && !window.Buffer) {
+  window.Buffer = BufferPolyfill;
+}
+// <<< fin polyfill
+
 
 /* =========================
    Parámetros de configuración

@@ -9,6 +9,7 @@ import {
   getMontoInstitucion,
   getNombreCentro,
   getMontoCentro,
+    fetchTTDetails
 } from "./docHelpers";
 import { generateAndOpenDistribucionPdf } from "./resumenPagos";
 
@@ -30,6 +31,9 @@ export async function runDistribucionTablaForPagos(
     console.warn("[ORQ][Distribución] idTT inválido, se omite la ejecución.");
     return;
   }
+
+  const transferencia = await fetchTTDetails(tid);
+  console.log("TT --->", transferencia)
 
   const computeDistribucion = options.computeDistribucion;
   if (typeof computeDistribucion !== "function") {
@@ -252,8 +256,8 @@ export async function runDistribucionTablaForPagos(
     }));
 
   const resultadoLike = {
-    nombreTecnologia: `Transferencia #${Number(idTT)}`,
-    codigoResolucion: "—",
+    nombreTecnologia: transferencia.tecnologia.titulo,
+    codigoResolucion: transferencia.resolucion.codigo,
     fechas: salida.fechas,
     autores: autoresForPdf,
     centros: centrosForPdf,

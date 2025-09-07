@@ -2,6 +2,8 @@
 
 import * as ReactPDF from "@react-pdf/renderer";
 
+ReactPDF.Font.registerHyphenationCallback((word) => [word]);
+
 /* =========================
    Estilos PDF
    ========================= */
@@ -21,7 +23,10 @@ export const styles = ReactPDF.StyleSheet.create({
     fontFamily: "Helvetica",
     color: palette.textDark,
   },
+
+  /* ===== Encabezado ===== */
   headerBox: {
+    position: "relative",
     backgroundColor: palette.primary,
     borderColor: palette.border,
     borderWidth: 1,
@@ -35,6 +40,15 @@ export const styles = ReactPDF.StyleSheet.create({
     color: "#ffffff",
     textAlign: "center",
   },
+  headerLogoRight: {
+    position: "absolute",
+    top: 6,
+    right: 8,
+    height: 22,         // "altura pequeña"
+    opacity: 0.5,       // 50% de transparencia
+  },
+
+  /* ===== Cuerpo ===== */
   labelRow: {
     flexDirection: "row",
     borderColor: palette.border,
@@ -183,5 +197,18 @@ export const styles = ReactPDF.StyleSheet.create({
     paddingHorizontal: 8,
     textAlign: "right",
     fontWeight: 700,
+  },
+
+  /* ===== Footer ===== */
+  footer: {
+    position: "absolute",
+    left: 28,
+    right: 28,
+    bottom: 18,
+  },
+  footerText: {
+    fontSize: 8,      // letra pequeña
+    color: "#000000", // negro normal
+    textAlign: "center",
   },
 });

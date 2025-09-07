@@ -2,6 +2,9 @@
 // =========================
 // Utils (compartidos)
 // =========================
+
+import { ensureAppJwt } from "../../../../services/api";
+
 export const toNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -112,4 +115,122 @@ export function getNombreCentro(x) {
 export function getMontoCentro(x) {
   if (Number.isFinite(Number(x?.montoCentro))) return Number(x.montoCentro);
   return toNumber(x?.monto ?? x?.valor ?? x?.total);
+}
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+/* =========================================================
+   Ya existente: obtiene la transferencia y la loguea
+   ========================================================= */
+export async function fetchTransferById(idTT) {
+  const id = Number(idTT);
+  if (!Number.isFinite(id)) {
+    console.warn("[TT] idTT inválido:", idTT);
+    return null;
+  }
+
+  try {
+    const token = await ensureAppJwt();
+    const res = await fetch(`${API_BASE_URL}/transfers/${id}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${res.statusText} – ${msg}`);
+    }
+
+    const data = await res.json();
+    console.log("[TT] Transferencia obtenida por ID:", data);
+    return data;
+  } catch (err) {
+    console.error("[TT] Error obteniendo transferencia:", err);
+    return null;
+  }
+}
+
+/* =========================================================
+   NUEVO: helpers internos con auth para GET JSON
+   ========================================================= */
+async function authGetJson(path) {
+  const token = await ensureAppJwt();
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`GET ${path} → HTTP ${res.status} ${res.statusText} – ${body}`);
+  }
+  return res.json();
+}
+
+/* =========================================================
+   NUEVO: obtiene resolución por id
+   ========================================================= */
+export async function fetchResolutionById(idResolucion) {
+  const rid = Number(idResolucion);
+  if (!Number.isFinite(rid)) {
+    console.warn("[TT] idResolucion inválido:", idResolucion);
+    return null;
+  }
+  try {
+    const data = await authGetJson(`/resoluciones/${rid}`);
+    return data;
+  } catch (err) {
+    console.error("[TT] Error obteniendo resolución:", err);
+    return null;
+  }
+}
+
+/* =========================================================
+   NUEVO: obtiene tecnología (RAW) por id
+   - Usa el endpoint de tecnologías tal como lo expone tu API
+   ========================================================= */
+export async function fetchTechnologyRawById(idTecnologia) {
+  const tid = Number(idTecnologia);
+  if (!Number.isFinite(tid)) {
+    console.warn("[TT] idTecnologia inválido:", idTecnologia);
+    return null;
+  }
+  try {
+    const data = await authGetJson(`/tecnologias/${tid}`);
+    return data; // crudo del backend; si quieres, aquí podrías mapear a "toCardItem"
+  } catch (err) {
+    console.error("[TT] Error obteniendo tecnología:", err);
+    return null;
+  }
+}
+
+/* =========================================================
+   NUEVO: dado idTT → { resolucion, tecnologia }
+   - 1) Lee la TT
+   - 2) Con idResolucion e idTecnologia, trae ambos objetos
+   - 3) Loguea y retorna el paquete
+   ========================================================= */
+export async function fetchTTDetails(idTT) {
+  const tt = await fetchTransferById(idTT);
+  if (!tt) {
+    console.warn("[TT] No se pudo obtener la transferencia. Devuelvo {resolucion:null, tecnologia:null}");
+    const res = { resolucion: null, tecnologia: null };
+    console.log("[TT] Detalles TT:", res);
+    return res;
+  }
+
+  const { idResolucion, idTecnologia } = tt || {};
+  const [resolucion, tecnologia] = await Promise.all([
+    fetchResolutionById(idResolucion),
+    fetchTechnologyRawById(idTecnologia),
+  ]);
+
+  const paquete = { resolucion, tecnologia };
+  console.log("[TT] Detalles TT (resolución + tecnología):", paquete);
+  return paquete;
 }
