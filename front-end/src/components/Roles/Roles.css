@@ -1,0 +1,260 @@
+.roles-page {
+  max-width: 100%;
+  padding: 0 20px;
+}
+
+.roles-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+  color: #555;
+}
+
+.back-button:hover {
+  background-color: #f5f5f5;
+}
+
+.roles-content-full {
+  width: 100%;
+}
+
+.table-actions {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-add-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-add-user:hover {
+  background-color: #218838;
+}
+
+.roles-table-container-full {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 100%;
+}
+
+.roles-table-full {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.roles-table-full th {
+  background-color: #f8f9fa;
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.roles-table-full td {
+  padding: 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.roles-table-full tr:last-child td {
+  border-bottom: none;
+}
+
+.role-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.role-administrador {
+  background-color: #fff0f0;
+  color: #dc3545;
+}
+
+.role-editor {
+  background-color: #e6f7ff;
+  color: #007bff;
+}
+
+.role-lector {
+  background-color: #f0f8ff;
+  color: #17a2b8;
+}
+
+.role-select {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  font-size: 14px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon.edit {
+  color: #007bff;
+}
+
+.btn-icon.edit:hover {
+  background-color: #e6f7ff;
+}
+
+.btn-icon.save {
+  color: #28a745;
+}
+
+.btn-icon.save:hover {
+  background-color: #f0fff4;
+}
+
+.btn-icon.cancel {
+  color: #dc3545;
+}
+
+.btn-icon.cancel:hover {
+  background-color: #fff0f0;
+}
+
+.roles-disclaimer {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #6c757d;
+}
+
+.roles-disclaimer p {
+  margin: 0;
+  color: #6c757d;
+  font-style: italic;
+}
+.add-user-form {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.add-user-form h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.form-field {
+  margin-bottom: 16px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.correo-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.correo-menu {
+  width: 100%;
+  max-width: 400px;
+}
+
+.selected-user-info {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  border-left: 4px solid #007bff;
+}
+
+.selected-user-info h4 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #007bff;
+}
+
+.selected-user-info p {
+  margin: 4px 0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.form-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.form-actions button:first-child {
+  background-color: #007bff;
+  color: white;
+}
+
+.form-actions button:first-child:hover:not(:disabled) {
+  background-color: #0069d9;
+}
+
+.form-actions button:first-child:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.form-actions button:last-child {
+  background-color: #6c757d;
+  color: white;
+}
+
+.form-actions button:last-child:hover {
+  background-color: #5a6268;
+}

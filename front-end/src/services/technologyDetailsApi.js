@@ -1,6 +1,7 @@
 // src/services/technologyDetailsApi.js
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQuery';
+
 import { technologiesApi } from './technologiesApi';
 import { proteccionesApi } from './proteccionesApi';
 import { tiposProteccionApi } from './tiposProteccionApi';
@@ -11,6 +12,10 @@ import { acuerdosDistribAutoresApi } from './acuerdosDistribAutoresApi';
 import { autoresApi } from './autoresApi';
 import { archivosApi } from './storage/archivosApi';
 
+// ⬇️ IMPORTS para resolver nombres por ID
+import { getPersonaNameById } from './espolUsers';
+import { unidadesApi } from './unidadesApi';
+
 export const technologyDetailsApi = createApi({
   reducerPath: 'technologyDetailsApi',
   baseQuery: baseQueryWithReauth,
@@ -20,18 +25,18 @@ export const technologyDetailsApi = createApi({
         try {
           console.log('Obteniendo detalles completos para tecnología ID:', id);
 
-          // 1. Obtener información básica de la tecnología
+          // 1. Obtener información básica de la tecnología (sin enriquecer aquí)
           console.log('1. Obteniendo información de tecnología...');
           const techResult = await _api.dispatch(
             technologiesApi.endpoints.getTechnologyRaw.initiate(id)
           );
-          
+
           if (techResult.error) {
             console.error('Error obteniendo tecnología:', techResult.error);
             return { error: techResult.error };
           }
-          
-          const tecnologia = techResult.data;
+
+          const tecnologia = techResult.data || null;
           console.log('Tecnología obtenida:', tecnologia);
 
           // 2. Obtener protecciones relacionadas
@@ -39,14 +44,14 @@ export const technologyDetailsApi = createApi({
           const proteccionesResult = await _api.dispatch(
             proteccionesApi.endpoints.getProtecciones.initiate()
           );
-          
+
           if (proteccionesResult.error) {
             console.error('Error obteniendo protecciones:', proteccionesResult.error);
             return { error: proteccionesResult.error };
           }
-          
-          const protecciones = proteccionesResult.data.filter(
-            p => p.idTecnologia === id
+
+          const protecciones = (proteccionesResult.data || []).filter(
+            (p) => p.idTecnologia === id
           );
           console.log('Protecciones filtradas por tecnología:', protecciones);
 
@@ -55,13 +60,13 @@ export const technologyDetailsApi = createApi({
           const tiposProteccionResult = await _api.dispatch(
             tiposProteccionApi.endpoints.getTipos.initiate()
           );
-          
+
           if (tiposProteccionResult.error) {
             console.error('Error obteniendo tipos de protección:', tiposProteccionResult.error);
             return { error: tiposProteccionResult.error };
           }
-          
-          const tiposProteccion = tiposProteccionResult.data;
+
+          const tiposProteccion = tiposProteccionResult.data || [];
           console.log('Tipos de protección obtenidos:', tiposProteccion);
 
           // 4. Obtener archivos de protecciones y combinar con tipos
@@ -71,25 +76,24 @@ export const technologyDetailsApi = createApi({
               const archivosResult = await _api.dispatch(
                 archivosApi.endpoints.getArchivosByEntidad.initiate({
                   idTEntidad: proteccion.id,
-                  tipoEntidad: 'PI'
+                  tipoEntidad: 'PI',
                 })
               );
-              
-              // Encontrar el tipo de protección correspondiente
+
               const tipoProteccion = tiposProteccion.find(
-                tp => tp.id === proteccion.idTipoProteccion
+                (tp) => tp.id === proteccion.idTipoProteccion
               );
-              
+
               console.log(`Protección ${proteccion.id}:`, {
                 proteccion,
                 tipoProteccion,
-                archivos: archivosResult.data || []
+                archivos: archivosResult.data || [],
               });
-              
+
               return {
                 ...proteccion,
                 tipoProteccion: tipoProteccion || null,
-                archivos: archivosResult.data || []
+                archivos: archivosResult.data || [],
               };
             })
           );
@@ -102,63 +106,63 @@ export const technologyDetailsApi = createApi({
           let cotitulares = [];
           let instituciones = [];
 
-          // PRIMERO: Obtener todas las cotitularidades usando baseQuery directamente
           console.log('5.1. Obteniendo todas las cotitularidades...');
           const allCotitularidadesResult = await baseQuery({
             url: 'cotitularidad-tecno',
             method: 'GET',
           });
-          
+
           if (allCotitularidadesResult.error) {
-            console.error('Error obteniendo cotitularidades:', allCotitularidadesResult.error);
+            console.error(
+              'Error obteniendo cotitularidades:',
+              allCotitularidadesResult.error
+            );
           } else if (allCotitularidadesResult.data) {
-            // Filtrar por idTecnologia
-            cotitularidadTecno = allCotitularidadesResult.data.find(
-              ct => ct.idTecnologia === id
-            ) || null;
+            cotitularidadTecno =
+              allCotitularidadesResult.data.find((ct) => ct.idTecnologia === id) ||
+              null;
 
             if (cotitularidadTecno) {
               console.log('Cotitularidad encontrada:', cotitularidadTecno);
-              
-              // 6. Obtener archivo de cotitularidad
+
+              // 6. Archivos de cotitularidad
               console.log('6. Obteniendo archivos de cotitularidad...');
               const archivosCotitularidadResult = await _api.dispatch(
                 archivosApi.endpoints.getArchivosByEntidad.initiate({
                   idTEntidad: cotitularidadTecno.id,
-                  tipoEntidad: 'CO'
+                  tipoEntidad: 'CO',
                 })
               );
 
               cotitularidadTecno = {
                 ...cotitularidadTecno,
-                archivos: archivosCotitularidadResult.data || []
+                archivos: archivosCotitularidadResult.data || [],
               };
 
-              // 7. Obtener todos los cotitulares usando baseQuery
+              // 7. Cotitulares
               console.log('7. Obteniendo cotitulares...');
               const allCotitularesResult = await baseQuery({
                 url: 'cotitulares',
                 method: 'GET',
               });
-              
+
               if (allCotitularesResult.data) {
-                cotitulares = allCotitularesResult.data.filter(
-                  c => c.idCotitularidadTecno === cotitularidadTecno.id
+                cotitulares = (allCotitularesResult.data || []).filter(
+                  (c) => c.idCotitularidadTecno === cotitularidadTecno.id
                 );
                 console.log('Cotitulares filtrados:', cotitulares);
 
-                // 8. Obtener información de instituciones usando baseQuery
+                // 8. Instituciones
                 console.log('8. Obteniendo instituciones...');
                 const allInstitucionesResult = await baseQuery({
                   url: 'cotitularidad-institucional',
                   method: 'GET',
                 });
-                
+
                 if (allInstitucionesResult.data) {
-                  // Obtener IDs de instituciones de los cotitulares
-                  const instIds = cotitulares.map(c => c.idCotitularidadInst);
-                  instituciones = allInstitucionesResult.data.filter(
-                    inst => instIds.includes(inst.id)
+                  const instIds = cotitulares.map((c) => c.idCotitularidadInst);
+                  instituciones = (allInstitucionesResult.data || []).filter((inst) =>
+                    instIds.includes(inst.id)
                   );
                   console.log('Instituciones encontradas:', instituciones);
                 }
@@ -168,47 +172,88 @@ export const technologyDetailsApi = createApi({
             }
           }
 
-          // 9. Obtener acuerdo de distribución
+          // 9. Acuerdo de distribución + autores
           console.log('9. Obteniendo acuerdos de distribución...');
           const acuerdosResult = await _api.dispatch(
             acuerdosDistribAutoresApi.endpoints.getAcuerdos.initiate()
           );
-          
+
           let acuerdoDistribucion = null;
           let autores = [];
 
           if (acuerdosResult.data) {
-            acuerdoDistribucion = acuerdosResult.data.find(
-              a => a.idTecnologia === id
-            ) || null;
+            acuerdoDistribucion =
+              acuerdosResult.data.find((a) => a.idTecnologia === id) || null;
 
             if (acuerdoDistribucion) {
               console.log('Acuerdo de distribución encontrado:', acuerdoDistribucion);
-              
-              // 10. Obtener autores del acuerdo
+
+              // 10. Autores del acuerdo
               console.log('10. Obteniendo autores...');
               const autoresResult = await _api.dispatch(
                 autoresApi.endpoints.getByAcuerdoDistrib.initiate(acuerdoDistribucion.id)
               );
-              
+
               if (autoresResult.data) {
                 autores = autoresResult.data;
-                console.log('Autores encontrados:', autores);
+
+                // 10.1 Enriquecer CADA autor con nombrePersona y nombreUnidad
+                console.log('10.1 Enriqueciendo autores con nombres...');
+                autores = await Promise.all(
+                  (autores || []).map(async (a) => {
+                    let nombrePersona = 'Usuario no disponible';
+                    let nombreUnidad = '—';
+
+                    try {
+                      if (a?.idPersona != null) {
+                        nombrePersona = await getPersonaNameById(a.idPersona);
+                      }
+                    } catch (e) {
+                      console.warn(`No se pudo resolver nombrePersona para autor ${a?.id}:`, e);
+                    }
+
+                    try {
+                      if (a?.idUnidad != null) {
+                        const nombreUnidadResult = await _api.dispatch(
+                          unidadesApi.endpoints.getNombreUnidadById.initiate(a.idUnidad)
+                        );
+                        if (!nombreUnidadResult.error) {
+                          nombreUnidad = nombreUnidadResult.data ?? '—';
+                        } else {
+                          console.warn(
+                            `Error resolviendo nombreUnidad para autor ${a?.id}:`,
+                            nombreUnidadResult.error
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      console.warn(`No se pudo resolver nombreUnidad para autor ${a?.id}:`, e);
+                    }
+
+                    return {
+                      ...a,
+                      nombrePersona,
+                      nombreUnidad,
+                    };
+                  })
+                );
+
+                console.log('Autores enriquecidos:', autores);
               }
 
-              // 11. Obtener archivo del acuerdo
+              // 11. Archivos del acuerdo
               console.log('11. Obteniendo archivos de acuerdo...');
               const archivosAcuerdoResult = await _api.dispatch(
                 archivosApi.endpoints.getArchivosByEntidad.initiate({
                   idTEntidad: acuerdoDistribucion.id,
-                  tipoEntidad: 'D'
+                  tipoEntidad: 'D',
                 })
               );
-              
+
               acuerdoDistribucion = {
                 ...acuerdoDistribucion,
                 archivos: archivosAcuerdoResult.data || [],
-                autores: autores
+                autores: autores,
               };
             } else {
               console.log('No se encontró acuerdo de distribución para esta tecnología');
@@ -217,16 +262,20 @@ export const technologyDetailsApi = createApi({
 
           // Estructurar la respuesta final
           const result = {
-            tecnologia,
+            tecnologia, // <- sin cambios
             protecciones: proteccionesCompletas,
-            cotitularidad: cotitularidadTecno ? {
-              ...cotitularidadTecno,
-              cotitulares: cotitulares.map(c => ({
-                ...c,
-                institucion: instituciones.find(inst => inst.id === c.idCotitularidadInst) || null
-              }))
-            } : null,
-            acuerdoDistribucion
+            cotitularidad: cotitularidadTecno
+              ? {
+                  ...cotitularidadTecno,
+                  cotitulares: (cotitulares || []).map((c) => ({
+                    ...c,
+                    institucion:
+                      (instituciones || []).find((inst) => inst.id === c.idCotitularidadInst) ||
+                      null,
+                  })),
+                }
+              : null,
+            acuerdoDistribucion, // <- sus autores ya traen nombrePersona y nombreUnidad
           };
 
           console.log('Resultado final completo:', result);

@@ -196,7 +196,7 @@ const TipoProteccion = ({
             <label className="input-group">
               <div className="checkbox-rounded">
                 <input type="checkbox" checked={chkSolicitud} onChange={(e) => toggleSolicitud(e.target.checked)} />
-                Solicitud
+                Solicitud ante el ente rector de PI
               </div>
               <input type="date" value={fechaSolicitud || ""} onChange={(e) => handleFechaSolicitudChange(e.target.value)} required />
             </label>

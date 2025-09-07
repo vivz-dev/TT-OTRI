@@ -278,7 +278,7 @@ const RegistrarFactura = ({ idTT, onChange, showErrors = false }) => {
                     {st.archivos.map((a) => (
                       <div key={a.id} style={{ display: "flex", gap: 8 }}>
                         <AdjuntarArchivo
-                          descripcion={`Factura para "${tipo.nombre || tipo.descripcion || `Tipo #${tipoId}`}"`}
+                          descripcion={`Sustento de pago para "${tipo.nombre || tipo.descripcion || `Tipo #${tipoId}`}"`}
                           onSelectedChange={handleSelectedChange(tipoId, a.id)}
                         />
                         <button

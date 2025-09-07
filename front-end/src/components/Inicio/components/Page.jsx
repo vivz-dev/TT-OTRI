@@ -7,20 +7,8 @@ import RegistrarTecnologiasPage from "../../Tecnologias/RegistrarTecnologiasPage
 import TransferenciaTecnologicaPage from "../../Transferencia/TransferenciaTecnologicaPage";
 import RegistrarTransferenciaPage from "../../Transferencia/RegistrarTransferenciaPage";
 import PagosPage from "../../Pagos/PagosPage";
-
-const RolesPermisosPage = () => (
-  <div className="page-content">
-    <h2>Roles y Permisos</h2>
-    <p>Contenido de roles y permisos...</p>
-  </div>
-);
-
-const AjustesPage = () => (
-  <div className="page-content">
-    <h2>Ajustes</h2>
-    <p>Contenido de ajustes...</p>
-  </div>
-);
+import Ajustes from "../../Ajustes/Ajustes"; // Asegúrate de que la ruta sea correcta
+import Roles from "../../Roles/Roles";
 
 const Page = ({ activeSection, setActiveSection }) => {
   const renderContent = () => {
@@ -66,9 +54,9 @@ const Page = ({ activeSection, setActiveSection }) => {
       case "pagos":
         return <PagosPage />;
       case "roles-permisos":
-        return <RolesPermisosPage />;
-      case "ajustes":
-        return <AjustesPage />;
+        return <Roles setActiveSection={setActiveSection} />;
+     case "ajustes":
+        return <Ajustes setActiveSection={setActiveSection} />;
       default:
         return <ResolucionesPage />;
     }

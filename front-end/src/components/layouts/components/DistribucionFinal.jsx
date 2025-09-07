@@ -53,18 +53,18 @@ const DistribucionFinal = ({ data }) => {
         </thead>
         <tbody>
           <tr className="fila-subtotal-titulo">
-            <td >
-              Nombre de la tecnología/<em>know-how</em> a transferir
+            <td>
+              Nombre de la tecnología/<em>know-how</em> transferida:
             </td>
-            <td className="subtotal" colSpan={3}>
+            <td className="subtotal">
               {data?.nombreTecnologia ?? "No hay datos de la tecnología"}
             </td>
           </tr>
           <tr className="autor-name">
-            <td className="" colSpan={2}>
-              {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual de fecha XX del mes XX del año XXXX, y a la resolución ${
+            <td className="" colSpan={2} style={{textAlign: "justify"}}>
+              {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual, y a la resolución No. ${
                 data?.codigoResolucion ?? "—"
-              } de fecha dd del mes mm del año aaaa, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
+              } de fecha 7 de julio del año 2024, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
             </td>
           </tr>
         </tbody>
@@ -87,7 +87,6 @@ const DistribucionFinal = ({ data }) => {
             return (
               <tr>
                 <td className="input-select autor-name">{label}</td>
-
                 <td className="input-col autor-monto">{money(monto)}</td>
               </tr>
             );
@@ -107,7 +106,7 @@ const DistribucionFinal = ({ data }) => {
 
           {centros.map((c, i) => (
             <tr>
-              <td className="input-select autor-name">{c.nombreCentro}</td>
+              <td className="input-select autor-name" style={{textTransform:"capitalize"}}>{c.nombreCentro.toLowerCase()}</td>
               <td className="input-col autor-monto">{money(c?.montoCentro ?? 0)}</td>
             </tr>
           ))}

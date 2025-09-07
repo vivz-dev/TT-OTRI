@@ -61,7 +61,7 @@ const DatosTecnologia = ({ tec, isLoading, error }) => {
     <div className="distribucion-section">
       <div className="form-header">
         <h1 className="titulo-principal-form">
-          Datos de la tecnología
+          Datos de la tecnología/<em>know-how</em>
         </h1>
       </div>
 

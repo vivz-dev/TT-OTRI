@@ -278,7 +278,7 @@ const DatosTecnologia = forwardRef((_, ref) => {
           <div className="">
             <label className="input-group ">
               <Components.GrowTextArea
-                id="tec-nombre" name="nombre" label="Nombre de la tecnología"
+                id="tec-nombre" name="nombre" label={`Nombre de la tecnología/know-how`}
                 placeholder="Escribe el nombre…" value={nombre}
                 onChange={(e) => setNombre(e.target.value)} maxLength={300} rows={1} kind="text" required
               />

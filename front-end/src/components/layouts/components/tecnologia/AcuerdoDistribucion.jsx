@@ -1,8 +1,7 @@
-// src/pages/layouts/components/tecnologia/Cotitulares.jsx
+// src/pages/layouts/components/tecnologia/AcuerdoDistribucion.jsx
 import React, { useCallback } from "react";
 import { CalendarCheck, FileText } from "lucide-react";
 
-// Helpers locales
 const fmtFecha = (iso) =>
   iso
     ? new Date(iso).toLocaleDateString("es-EC", {
@@ -26,17 +25,14 @@ const toPct = (v) => {
   return Number.isFinite(num) ? Math.round(num * 100) / 100 : 0;
 };
 
-const safeTrim = (s) => (typeof s === "string" ? s.trim() : s ?? "");
-
-const Cotitulares = ({
-  cotitularidad = null,
+const AcuerdoDistribucion = ({
+  acuerdoDistribucion = null,
   isLoading = false,
   onOpenArchivo, // opcional; si no llega, usamos window.open
 }) => {
-  const archivos = cotitularidad?.archivos ?? [];
-  const cotis = cotitularidad?.cotitulares ?? [];
+  const archivos = acuerdoDistribucion?.archivos ?? [];
+  const autores = acuerdoDistribucion?.autores ?? [];
 
-  // fallback para abrir archivos si el padre no provee callback
   const openArchivo = useCallback(
     (url) => {
       const finalUrl = url || "";
@@ -56,13 +52,13 @@ const Cotitulares = ({
   return (
     <div className="distribucion-section">
       <div className="form-header">
-        <h1 className="titulo-principal-form">Cotitulares</h1>
+        <h1 className="titulo-principal-form">Autores/Inventores</h1>
       </div>
 
       <div className="form-fieldsets">
         <div className="form-card resolucion-card">
-          {/* Fechas generales de la cotitularidad */}
-          <div className="information-input-row">
+          {/* Fechas */}
+          <div className="information-input-row" style={{ marginTop: 8 }}>
             <div className="item-wrapper">
               <CalendarCheck size={30} color="var(--esp-azul-institucional)" />
               <div className="information-row">
@@ -72,7 +68,7 @@ const Cotitulares = ({
                 <label>
                   {isLoading
                     ? "Cargando..."
-                    : fmtFecha(cotitularidad?.createdAt)}
+                    : fmtFecha(acuerdoDistribucion?.fechaCreacion)}
                 </label>
               </div>
             </div>
@@ -83,76 +79,88 @@ const Cotitulares = ({
                 <label>
                   {isLoading
                     ? "Cargando..."
-                    : fmtFecha(cotitularidad?.updatedAt)}
+                    : fmtFecha(acuerdoDistribucion?.ultimoCambio)}
                 </label>
               </div>
             </div>
           </div>
 
+          {/* Autores/Unidades */}
+
           <table className="tabla-distribucion">
             <thead>
               <tr>
                 <th colSpan={4} className="beneficiarios">
-                  ACUERDO DE COTITULARIDAD
+                  ACUERDO DE DISTRIBUCIÓN DE AUTORES
                 </th>
               </tr>
             </thead>
 
             <tbody>
               <tr className="fila-subtotal-titulo">
-                <td style={{ textAlign: "center", width: "25%" }}>Cotitular</td>
-                <td style={{ textAlign: "center", width: "25%" }}>RUC</td>
-                <td style={{ textAlign: "center", width: "25%" }}>Correo</td>
                 <td
-                  style={{ textAlign: "center", width: "25%" }}
+                  colSpan={2}
+                  style={{ textAlign: "center" }}
                   className="autor-name"
                 >
-                  % titularidad
+                  Autor/Inventor
                 </td>
+                <td colSpan={2} style={{ textAlign: "center" }}>
+                  Unidad/Centro
+                </td>
+              </tr>
+              <tr className="fila-subtotal-titulo">
+                <td style={{ textAlign: "center" }}>Nombre</td>
+                <td style={{ textAlign: "center" }} className="divisor-border">
+                  {" "}
+                  % autoría
+                </td>
+                <td style={{ textAlign: "center" }}> Nombre</td>
+                <td style={{ textAlign: "center" }}> % autoría</td>
               </tr>
 
               {isLoading ? (
-                <p style={{ marginTop: 12 }}>Cargando cotitulares…</p>
-              ) : (cotis?.length ?? 0) === 0 ? (
-                <p style={{ marginTop: 12 }}>Sin cotitulares registrados.</p>
+                <p style={{ marginTop: 12 }}>Cargando participantes…</p>
+              ) : (autores?.length ?? 0) === 0 ? (
+                <p style={{ marginTop: 12 }}>Sin participantes registrados.</p>
               ) : (
-                (cotis ?? []).map((c) => {
-                  const inst = c?.institucion ?? {};
-                  const nombre = safeTrim(inst?.nombre) || "—";
-                  const ruc = safeTrim(inst?.ruc) || "—";
-                  const correo = inst?.correo || "—";
-                  const pct = toPct(c?.porcentaje);
-
+                (autores ?? []).map((a) => {
+                  const pctAutor = toPct(a?.porcAutor);
+                  const pctUnidad = toPct(a?.porcUnidad);
                   return (
                     <tr className="autor-name">
                       <td style={{ textAlign: "center", width: "25%" }}>
-                        {nombre ?? "—"}
-                      </td>
-                      <td style={{ textAlign: "center", width: "25%" }}>
-                        {ruc ?? "—"}
-                      </td>
-                      <td style={{ textAlign: "center", width: "25%" }}>
-                        {correo ?? "—"}
+                        {" "}
+                        {a?.nombrePersona ?? "—"}{" "}
                       </td>
                       <td
-                        className="autor-name"
                         style={{ textAlign: "center", width: "25%" }}
+                        className="divisor-border"
                       >
-                        {pct ?? "—"} %
+                        {" "}
+                        {pctAutor} %{" "}
+                      </td>
+                      <td style={{ textAlign: "center", width: "25%" }}>
+                        {a?.nombreUnidad ?? "—"}
+                      </td>
+                      <td style={{ textAlign: "center", width: "25%" }}>
+                        {pctUnidad} %
                       </td>
                     </tr>
                   );
                 })
               )}
+
+              <tr></tr>
             </tbody>
           </table>
 
-          {/* Archivos de la cotitularidad — mismo formato que Protecciones */}
-          <div className="input-row">
+          {/* Archivos del acuerdo */}
+          <div className="input-row" style={{ marginTop: 12 }}>
             <div className="form-card information-card">
               <div className="information-row parrafo-container">
                 <label className="information-row-title">
-                  Acuerdo de cotitularidad adjunto:
+                  Acuerdo de distribución adjunto:
                 </label>
                 {(archivos ?? []).map((f, idx) => {
                   const fileUrl =
@@ -165,7 +173,7 @@ const Cotitulares = ({
                   return (
                     <div
                       className="item-wrapper"
-                      key={f?.id ?? `co-file-${idx}`}
+                      key={f?.id ?? `ad-file-${idx}`}
                     >
                       <button
                         className="btn-add-archivo"
@@ -173,7 +181,7 @@ const Cotitulares = ({
                         disabled={!hasUrl}
                         title={
                           hasUrl
-                            ? "Abrir documento de la cotitularidad"
+                            ? "Abrir documento del acuerdo de distribución"
                             : "Sin URL disponible"
                         }
                       >
@@ -193,4 +201,4 @@ const Cotitulares = ({
   );
 };
 
-export default Cotitulares;
+export default AcuerdoDistribucion;

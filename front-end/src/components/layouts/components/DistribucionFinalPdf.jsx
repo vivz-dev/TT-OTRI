@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingVertical: 8,
     paddingHorizontal: 8,
+    textTransform: "capitalize"
   },
   cellMoney: {
     width: 120,
@@ -212,7 +213,7 @@ const DistribucionFinalPdf = ({ data }) => {
         {/* Párrafo explicativo (pegado al siguiente) */}
         <View style={styles.paragraphBox}>
           <Text style={styles.paragraph}>
-            {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual de fecha XX del mes XX del año XXXX, y a la resolución ${data?.codigoResolucion ?? "—"} de fecha dd del mes mm del año aaaa, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
+            {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual, y a la resolución No. ${data?.codigoResolucion ?? "—"} de fecha 7 de julio del año 2024, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
           </Text>
         </View>
 
@@ -253,7 +254,7 @@ const DistribucionFinalPdf = ({ data }) => {
 
         {centros.map((c, i) => (
           <View key={`centro-${i}`} style={styles.row}>
-            <Text style={styles.cellLabel}>{c?.nombreCentro ?? `Centro ${i + 1}`}</Text>
+            <Text style={styles.cellLabel}>{c?.nombreCentro.toLowerCase() ?? `Centro ${i + 1}`}</Text>
             <Text style={styles.cellMoney}>{money(c?.montoCentro ?? 0)}</Text>
           </View>
         ))}

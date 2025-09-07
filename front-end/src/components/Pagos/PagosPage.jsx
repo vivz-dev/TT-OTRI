@@ -40,7 +40,7 @@ const PagosPage = ({ onRegister }) => {
         estado: transfer.estado,
         completed: transfer.completed || false,
         titulo: transfer.titulo || "Sin título",
-        descripcion: transfer.descripcion || "Sin descripción",
+        descripcion: transfer.descripcion || "",
         fecha: fmtFecha(transfer.fechaInicio),
         usuario: transfer.idPersona || "Usuario no disponible",
       }));
@@ -86,8 +86,8 @@ const PagosPage = ({ onRegister }) => {
           searchText={searchText}
           dummyData={transfersData}
           cardButtons={[
-            "ver-pagos",
             "agregar-pagos",
+            "ver-pagos",
             // "ver-documentos",
             // "agregar-documentos",
           ]}

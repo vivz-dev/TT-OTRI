@@ -465,7 +465,7 @@ const ModalAgregarPagos = ({ item, onClose }) => {
                           marginRight: "auto",
                         }}
                       >
-                        Factura #{idx + 1}
+                        Datos del pago
                       </h2>
                       <button
                         type="button"

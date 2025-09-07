@@ -61,27 +61,33 @@ const SublicenciaTabla = ({ datos, setDatos, errores }) => {
 
   return (
     <div className="sublicencias-table-container">
-      <h3>Tabla de Sublicencias</h3>
-      
-      <table className="sublicencias-table">
+
+      <table className="tabla-distribucion">
         <thead>
           <tr>
-            <th colSpan="2">No. Sublicencias</th>
-            <th>% ESPOL</th>
-            <th>% Receptor</th>
-            <th>Acciones</th>
+            <th colSpan={6} className="beneficiarios">
+              TABLA DE SUBLICENCIAS
+            </th>
           </tr>
         </thead>
-        <tbody>
+
+         <tbody>
+          <tr className="fila-subtotal-titulo">
+            <td colSpan={2}>No. Sublicencias</td>
+            <td>% ESPOL</td>
+            <td>% Receptor</td>
+            <td></td>
+          </tr>
+
           {datos.sublicencias.map((sublicencia, index) => {
             const espol = parseInt(sublicencia.porcentajeEspol) || 0;
             const receptor = parseInt(sublicencia.porcentajeReceptor) || 0;
             const rowError = espol + receptor !== 100;
             
             return (
-              <tr key={index} className={rowError ? "row-error" : ""}>
+              <tr key={index} className="autor-name">
                 <td>
-                  <div className="input-with-label">
+                  <div>
                     <label>Mínimo</label>
                     <input
                       type="text"
@@ -93,7 +99,7 @@ const SublicenciaTabla = ({ datos, setDatos, errores }) => {
                   </div>
                 </td>
                 <td>
-                  <div className="input-with-label">
+                  <div>
                     <label>Máximo</label>
                     <input
                       type="text"
@@ -141,8 +147,11 @@ const SublicenciaTabla = ({ datos, setDatos, errores }) => {
               </tr>
             );
           })}
-        </tbody>
+
+         </tbody>
+
       </table>
+      
 
       <div className="table-footer">
         <button type="button" onClick={handleAddRow} className="add-row-btn">

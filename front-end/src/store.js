@@ -34,8 +34,11 @@ import { regaliasApi } from "./services/regaliasApi";
 /** NUEVO: Unidades */
 import { unidadesApi } from "./services/unidadesApi";
 import { tipoTransferenciaTecnoApi } from "./services/tipoTransferenciaTecnoApi";
-import {technologyDetailsApi} from "./services/technologyDetailsApi"
+import { technologyDetailsApi } from "./services/technologyDetailsApi"
+import { rolesApi } from "./services/rolesApi"
 
+/** NUEVO: Orquestador de Transferencia Tecnológica (frontend) */
+import { transferTecnologicaOrquestratorApi } from "./services/transferTecnologicaOrquestratorApi";
 
 export const store = configureStore({
   reducer: {
@@ -75,6 +78,10 @@ export const store = configureStore({
     [tipoTransferenciaApi.reducerPath]: tipoTransferenciaApi.reducer,
     [tipoTransferenciaTecnoApi.reducerPath]: tipoTransferenciaTecnoApi.reducer,
     [technologyDetailsApi.reducerPath]: technologyDetailsApi.reducer,
+    [rolesApi.reducerPath]: rolesApi.reducer,
+
+    // ---- NUEVO: Orquestador TT (frontend)
+    [transferTecnologicaOrquestratorApi.reducerPath]: transferTecnologicaOrquestratorApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
@@ -114,4 +121,8 @@ export const store = configureStore({
       .concat(tipoTransferenciaApi.middleware)
       .concat(tipoTransferenciaTecnoApi.middleware)
       .concat(technologyDetailsApi.middleware)
+      .concat(rolesApi.middleware)
+
+      // ---- NUEVO: Orquestador TT (frontend)
+      .concat(transferTecnologicaOrquestratorApi.middleware)
 });

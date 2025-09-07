@@ -179,7 +179,7 @@ function SearchableDropdown({
           position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: 0;
           background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
           box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-          width: 300px;
+          width: 500px;
         }
         .searchable-select__search {
           display: flex; align-items: center; gap: 6px; padding: 8px;

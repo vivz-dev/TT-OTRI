@@ -56,7 +56,7 @@ export const SYSTEM_ROLES = [
 const ROLE_ALIASES = {
   "admin sistema otri": "Administrador de sistema OTRI",
   "administrador de sistema": "Administrador de sistema OTRI",
-  "admin contrato tt": "Administrador de contrato de TT",
+  "administrador de contrato otri": "Administrador de contrato de TT",
   "administrador de contrato tt": "Administrador de contrato de TT",
   "autor(a)": "Autor",
   "autor/inventor": "Autor",
@@ -143,11 +143,13 @@ export function getAppUser(token = getAppJwt()) {
 
 export function getSystemRolesFromJwt(token = getAppJwt()) {
   const { roles } = getAppUser(token);
+  console.log("ROLES ->", roles)
   const set = new Set();
   roles.forEach(r => {
     const norm = normalizeRoleName(r);
     if (norm) set.add(norm);
   });
+  console.log(roles)
   return Array.from(set);
 }
 

@@ -49,7 +49,7 @@ const TransferenciaTecnologicaPage = ({ onRegister }) => {
       estado: transfer.estado,
       completed: transfer.completed || false,
       titulo: transfer.titulo || "Sin título",
-      descripcion: transfer.descripcion || "Sin descripción",
+      descripcion: transfer.descripcion || "",
       fecha: fmtFecha(transfer.fechaInicio),
       usuario: transfer.idPersona || "Usuario no disponible",
     }));

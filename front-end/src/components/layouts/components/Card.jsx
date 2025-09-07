@@ -53,7 +53,7 @@ const Card = ({
       </div>
 
       {descripcion && <p className="card-description ellipsis-3">{descripcion}</p>}
-      {!descripcion && <p className="card-description">—</p>}
+      {!descripcion && <p className="card-description"></p>}
 
       <CardFooter
         esTecnologia={esTecnologia}

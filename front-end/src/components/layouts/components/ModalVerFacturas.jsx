@@ -2,6 +2,7 @@
 import React, { useMemo } from "react";
 import { useGetFacturasByRegistroPagoIdQuery } from "../../../services/pagosFacturasApi";
 import Factura from "./Factura";
+import * as Buttons from "../buttons/buttons_index";
 
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
@@ -132,12 +133,14 @@ const ModalVerFacturas = ({ registroPago, onBack, onClose }) => {
             flexWrap: "wrap",
           }}
         >
-          <button type="button" className="btn-secondary" onClick={onBack}>
-            Atrás
-          </button>
-          <button type="button" onClick={onClose} className="btn-tertiary">
-            Cerrar
-          </button>
+          <Buttons.RegisterButton
+          onClick={onBack}
+          text={"Atrás"}
+          />
+          <Buttons.RegisterButton
+          onClick={onClose}
+          text={"Cerrar"}
+          />
         </footer>
       </div>
     </div>

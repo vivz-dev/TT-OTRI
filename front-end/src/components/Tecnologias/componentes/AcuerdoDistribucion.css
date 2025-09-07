@@ -118,8 +118,8 @@
   background: #fafafa;
 }
 .tfoot-label { text-align: right; font-weight: 700; color: #111827; }
-.total-ok  { background: #ecfdf5; color: #065f46; border-radius: 999px; text-align:center; }
-.total-bad { background: #fef2f2; color: #991b1b; border-radius: 999px; text-align:center; }
+.total-ok  { background: #ecfdf5; color: #065f46; text-align:center; }
+.total-bad { background: #fef2f2; color: #991b1b; text-align:center; }
 .acuerdo-table tfoot td.total-ok strong,
 .acuerdo-table tfoot td.total-bad strong { display: inline-block; padding: 6px 10px; }
 

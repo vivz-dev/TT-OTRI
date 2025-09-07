@@ -134,7 +134,7 @@ const Formulario = forwardRef(({ shakeError }, ref) => {
             <label className="input-group">
               Descripción
               <Components.GrowTextArea
-                placeholder="Sección del contenido “Resuelve“. Ejemplo: RESUELVE: CONOCER y APROBAR la Distribución de beneficios económicos por explotación del “SOFTWARE DE MONITOREO, PREDICCIÓN Y RESPUESTA A RIESGOS (SENTIFY)”, propuesta contenida en la recomendación de la Comisión de Investigación, Desarrollo e Innovación de la ESPOL (I+D+i) Nro. {recomendación}, acordada en sesión del {fecha}, contenida en el Oficio Nro. {numero de oficio}}, del 26 de junio de 2024, dirigido a ..."
+                placeholder="Describa el/los punto(s) que resuelve la resolución."
                 value={descripcion}
                 maxLength={1000}
                 onChange={(e) => setDescripcion(e.target.value)}
@@ -153,9 +153,6 @@ contenida en el Oficio Nro. {numero de oficio}}, del 26 de junio de 2024, dirigi
                 onChange={(e) => setDescripcion(e.target.value)}
                 className={errores.descripcion ? "error" : ""}
               /> */}
-              <div className="char-count">
-                Máximo 1000 caracteres. ({descripcion.length}/1000)
-              </div>
             </label>
           </div>
         </div>

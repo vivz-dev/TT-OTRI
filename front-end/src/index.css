@@ -359,8 +359,13 @@ input:disabled {
   border: 1px solid black;
 }
 
+.divisor-border{
+  border-right: 1px solid black;
+}
+
 .autor-monto{
   border: 1px solid black;
+  text-align: right;
 }
 
 .subtotal {
@@ -453,7 +458,6 @@ input:disabled {
   display: flex;
   flex-direction: column;
   gap: 20px;
-
 }
 
 /* CHECKBOX */
@@ -574,4 +578,12 @@ input:disabled {
     display: block;        /* ya no necesita -webkit-box */
     line-clamp: 3;
   }
+}
+
+/* GAP */
+
+.separate-card{
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
 }

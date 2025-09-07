@@ -79,6 +79,8 @@ const RoleSelection = () => {
         // Roles del JWT filtrados solo a los de tu sistema
         const rolesInSystem = getSystemRolesFromJwt();
 
+        console.log(rolesInSystem)
+
         // Construye tarjetas solo para los roles presentes
         const cardsToShow = rolesInSystem
           .filter(r => allowedNames.has(r)) // seguridad extra
@@ -128,9 +130,25 @@ const RoleSelection = () => {
 
   const empty = !cards || cards.length === 0;
 
-  return (
+  return (<>
+
+  <header className="app-header">
+        <div className="header-left" style={{display: "flex", flexDirection: "row", alignItems: "center"}}>
+          <div className="logo-container">
+            <img className="logo-img" src="./LogoOTRI2.png" alt="Logo de la OTRI" />
+             
+          </div>
+          
+        </div>
+        <span style={{textAlign: "center", fontWeight: "bold", marginLeft: "auto", marginRight: "auto", fontSize: "20px"}}>PLATAFORMA WEB PARA LA ADMINISTRACIÓN DE BENEFICIOS ECONÓMICOS POR TRANSFERENCIA TECNOLÓGICA</span>
+      </header>
+  
     <div className="role-selection-container">
       <div className="content-wrapper">
+        {/* <div>
+          PLATAFORMA WEB PARA LA ADMINISTRACIÓN DE BENEFICIOS ECONÓMICOS POR TRANSFERENCIA TECNOLÓGICA
+        </div> */}
+        {/* <img className="banner-inicio" style={{width: "100%"}} src="./banner-inicio.png" alt="Logo de la OTRI" /> */}
         <div className="header">
           <h1>Hola{userName ? `, ${userName}` : ""} 👋</h1>
           {!empty ? (
@@ -188,6 +206,7 @@ const RoleSelection = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

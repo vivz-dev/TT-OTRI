@@ -150,12 +150,25 @@ export const cotitularidadOrchestratorApi = createApi({
             }
             if (!idPersona) return { error: { status: 400, data: `Cotitular #${i + 1}: idPersona requerido.` } };
 
+            const payloadCot = {
+              idCotitularidadTecno,
+              idCotitularidadInst,
+              idPersona,
+              porcentaje, // 0..1
+              perteneceEspol: !!c?.perteneceEspol,
+              nombre: c?.nombre?.trim() || null,
+              correo: c?.correo?.trim() || null,
+              telefono: c?.telefono?.trim() || null,
+            };
+
+
             const resCot = await baseQuery({
               url: 'cotitulares',
               method: 'POST',
-              body: { idCotitularidadTecno, idCotitularidadInst, idPersona, porcentaje },
+              body: payloadCot,
             });
             if (resCot.error) return { error: resCot.error };
+
             const idCot = toInt(resCot.data?.id ?? resCot.data?.Id);
             if (idCot) createdCotIds.push(idCot);
           }

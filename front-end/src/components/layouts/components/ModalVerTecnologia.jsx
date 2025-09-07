@@ -3,8 +3,10 @@ import { useGetFullTechnologyDetailsQuery } from "../../../services/technologyDe
 
 import VerProtecciones from "./tecnologia/VerProtecciones";
 import DatosTecnologia from "./tecnologia/DatosTecnologia";
+import AcuerdoDistribucion from "./tecnologia/AcuerdoDistribucion";
 
 import * as Buttons from "../buttons/buttons_index";
+import Cotitulares from "./tecnologia/Cotitulares";
 
 const VistaPreviaTecnologia = ({ item, onClose }) => {
   const technologyId = item?.id ?? null;
@@ -56,6 +58,19 @@ const VistaPreviaTecnologia = ({ item, onClose }) => {
             {/* Protecciones (ya extraído) */}
             <VerProtecciones
               protecciones={data?.protecciones}
+              isLoading={isLoading}
+              onOpenArchivo={handleOpenArchivoProteccion}
+            />
+
+            <Cotitulares
+              cotitularidad={data?.cotitularidad}
+              isLoading={isLoading}
+              // opcional: reusa el mismo callback para abrir archivos
+              onOpenArchivo={handleOpenArchivoProteccion}
+            />
+
+            <AcuerdoDistribucion
+              acuerdoDistribucion={data?.acuerdoDistribucion}
               isLoading={isLoading}
               onOpenArchivo={handleOpenArchivoProteccion}
             />
