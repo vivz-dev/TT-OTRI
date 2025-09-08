@@ -1,183 +1,41 @@
 // src/pdf/DistribucionFinalPdf.jsx
 import React from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import ESLOGO_URL from "../components/utils/assets/Espol_Logo_2023.png";
+import { styles } from "../components/utils/docStyles";
 
-/* Paleta */
-const palette = {
-  primary: "#1f2f56",
-  primaryLight: "#d9e2ff",
-  subtotalBg: "#e6e6e6",
-  border: "#000000",
-  textDark: "#0b132b",
-};
+import * as ReactPDF from "@react-pdf/renderer";
 
-const styles = StyleSheet.create({
-  page: {
-    padding: 28,
-    fontSize: 10,
-    fontFamily: "Helvetica",
-    color: palette.textDark,
-  },
+ReactPDF.Font.registerHyphenationCallback((word) => [word]);
 
-  /* Encabezado principal */
-  headerBox: {
-    backgroundColor: palette.primary,
-    borderColor: palette.border,
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 6,
-  },
-  headerTitle: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: "#ffffff",
-    textAlign: "center",
-  },
+function fechaHoraEcuadorString(date = new Date()) {
+  // Día de la semana
+  const diaSemana = date.toLocaleDateString("es-EC", {
+    weekday: "long",
+    timeZone: "America/Guayaquil",
+  });
 
-  /* Fila rotulada (tecnología) */
-  labelRow: {
-    flexDirection: "row",
-    borderColor: palette.border,
-    borderWidth: 1,
-    backgroundColor: palette.primaryLight,
-  },
-  labelCell: {
-    flexGrow: 1,
-    fontWeight: 700,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-  },
-  valueCell: {
-    width: 250,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    textAlign: "right",
-    fontWeight: 700,
-  },
+  // Fecha (día, mes, año)
+  const fecha = date.toLocaleDateString("es-EC", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "America/Guayaquil",
+  });
 
-  /* Párrafo (SIN margen inferior para pegarlo con lo siguiente) */
-  paragraphBox: {
-    borderColor: palette.border,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    padding: 10,
-    marginBottom: 0, // 👈 antes 8; ahora 0 para que se una al siguiente bloque
-  },
-  paragraph: {
-    lineHeight: 1.4,
-    textAlign: "justify",
-  },
+  // Hora (hh:mm:ss en 24h)
+  const hora = date.toLocaleTimeString("es-EC", {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZone: "America/Guayaquil",
+  });
 
-  /* Sección “Listado de beneficiarios” (sin márgenes, sin borde superior) */
-  sectionHeader: {
-    backgroundColor: palette.primary,
-    borderColor: palette.border,
-    borderWidth: 1,
-    borderTopWidth: 0, // 👈 usa el borde inferior del párrafo anterior
-    marginTop: 0,      // 👈 sin espacio arriba
-    marginBottom: 0,   // 👈 sin espacio abajo
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  sectionHeaderText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: 700,
-    textAlign: "center",
-  },
-
-  /* Subtítulo de bloque (azul claro) – sin borde superior */
-  blockHeader: {
-    flexDirection: "row",
-    backgroundColor: palette.primaryLight,
-    borderColor: palette.border,
-    borderTopWidth: 0,   // 👈 se pega al header anterior
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-  },
-  blockHeaderLabel: {
-    flexGrow: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    fontWeight: 700,
-  },
-  blockHeaderRight: {
-    width: 120,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-  },
-
-  /* Filas de tabla */
-  row: {
-    flexDirection: "row",
-    borderColor: palette.border,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-  },
-  cellLabel: {
-    flexGrow: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    textTransform: "capitalize"
-  },
-  cellMoney: {
-    width: 120,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    textAlign: "right",
-  },
-
-  /* Subtotales */
-  subtotalRow: {
-    flexDirection: "row",
-    backgroundColor: palette.subtotalBg,
-    borderColor: palette.border,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-  },
-  subtotalLabel: {
-    flexGrow: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    fontWeight: 700,
-    textAlign: "right",
-  },
-  subtotalMoney: {
-    width: 120,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    textAlign: "right",
-    fontWeight: 700,
-  },
-
-  /* Total (azul claro) */
-  totalRow: {
-    flexDirection: "row",
-    backgroundColor: palette.primaryLight,
-    borderColor: palette.border,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-  },
-  totalLabel: {
-    flexGrow: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    fontWeight: 700,
-    textAlign: "right",
-  },
-  totalMoney: {
-    width: 120,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    textAlign: "right",
-    fontWeight: 700,
-  },
-});
+  return {
+    composed: `${diaSemana}, ${fecha} a las ${hora}`,
+  };
+}
 
 const money = (n) =>
   new Intl.NumberFormat("es-EC", {
@@ -191,10 +49,31 @@ const DistribucionFinalPdf = ({ data }) => {
   const instituciones = Array.isArray(data?.instituciones) ? data.instituciones : [];
   const centros = Array.isArray(data?.centros) ? data.centros : [];
 
+  // const fechaResolucion = data.re;
+  console.log("DATA PARA PDF --->>> ", data);
+
+  const fechaResolucion = data?.fechaResolucion ?? "Sin fecha"; 
+
+
+  const { composed } = fechaHoraEcuadorString();
+  const footerText = `Este documento ha sido generado por el sistema de la Oficina de Transferencia de Resultados de Investigación (OTRI) el ${composed}`;
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Encabezado principal */}
+
+        <ReactPDF.View style={styles.headerWrapper}>
+                {/* Logo arriba-derecha, ahora sí visible */}
+                <ReactPDF.Image
+                  src={ESLOGO_URL} // 👈 usa el import bundlado, no una función async
+                  style={styles.headerLogoRight}
+                  cache={false}
+                />
+              </ReactPDF.View>
+
+        <ReactPDF.View style={{ top: 60}}>
+
+          {/* Encabezado principal */}
         <View style={styles.headerBox}>
           <Text style={styles.headerTitle}>
             FORMULARIO DE DISTRIBUCIÓN DE BENEFICIOS ECONÓMICOS DE LA ESPOL
@@ -213,7 +92,7 @@ const DistribucionFinalPdf = ({ data }) => {
         {/* Párrafo explicativo (pegado al siguiente) */}
         <View style={styles.paragraphBox}>
           <Text style={styles.paragraph}>
-            {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual, y a la resolución No. ${data?.codigoResolucion ?? "—"} de fecha 7 de julio del año 2024, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
+            {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual, y a la resolución No. ${data?.codigoResolucion ?? "—"} de fecha ${fechaResolucion}, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
           </Text>
         </View>
 
@@ -275,6 +154,14 @@ const DistribucionFinalPdf = ({ data }) => {
           <Text style={styles.totalLabel}>Total del pago realizado</Text>
           <Text style={styles.totalMoney}>{money(data?.total)}</Text>
         </View>
+
+        </ReactPDF.View>
+
+        {/* Footer fijo en cada página */}
+              <ReactPDF.View style={styles.footer} fixed>
+                <ReactPDF.Text style={styles.footerText}>{footerText}</ReactPDF.Text>
+              </ReactPDF.View>
+        
       </Page>
     </Document>
   );

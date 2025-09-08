@@ -101,6 +101,8 @@ const ModalDistribucion = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  console.log("RESULTADO --->>> ", resultado);
+
   // 🆕 Guardar & Ver PDF
   const savingRef = useRef(false);
   const handleGuardarYVerPdf = async () => {

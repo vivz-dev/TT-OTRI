@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PageHeader } from '../layouts/components';
+import React, { useState, useEffect, useMemo } from 'react';
+import RolesHeader  from './RolesHeader';
 import { 
   ArrowLeft, 
   Save, 
@@ -18,8 +18,19 @@ import {
 } from '../../services/rolesApi';
 import CorreoESPOLInput from '../Tecnologias/componentes/CorreoESPOLInput';
 import './Roles.css';
+import Badge from './Badge';
 
-const Roles = ({ setActiveSection }) => {
+// 🔧 Helper para clases CSS de badges (evita espacios/acentos)
+const slugifyRoleName = (name = "") =>
+  String(name)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const Roles = ({ onBack }) => {
   const { 
     data: personasData, 
     isLoading: isLoadingPersonas, 
@@ -43,14 +54,34 @@ const Roles = ({ setActiveSection }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState('');
+  const [bulkEdit, setBulkEdit] = useState(false); // 👈 edición masiva de badges
 
-  const availableRoles = rolesData || [];
+  // 🔧 Normaliza roles: siempre { id, nombre }
+  const availableRoles = useMemo(() => {
+    if (!Array.isArray(rolesData)) return [];
+    const mapped = rolesData.map(r => ({
+      id: r?.id ?? r?.idRol ?? r?.ID ?? r?.codigo ?? r?.code ?? null,
+      nombre: r?.nombre ?? r?.nombreRol ?? r?.descripcion ?? r?.title ?? '—',
+      _raw: r,
+    }));
+    const sinId = mapped.filter(x => x.id == null);
+    if (sinId.length) {
+      console.warn('[Roles] Algunos roles no tienen "id" ni "idRol":', sinId);
+    }
+    return mapped.filter(x => x.id != null);
+  }, [rolesData]);
 
   useEffect(() => {
-    if (personasData) {
-      setUsers(personasData);
-    }
+    if (personasData) setUsers(personasData);
   }, [personasData]);
+
+  // Logs útiles
+  useEffect(() => {
+    console.log('[Roles] rolesData crudo:', rolesData);
+    console.table(
+      availableRoles.map(r => ({ id: r.id, nombre: r.nombre }))
+    );
+  }, [rolesData, availableRoles]);
 
   const handleSelectUsuario = (usuario) => {
     console.log('Usuario seleccionado:', usuario);
@@ -59,16 +90,22 @@ const Roles = ({ setActiveSection }) => {
 
   const handleEdit = (idRolPersona, currentIdRol) => {
     setEditingId(idRolPersona);
-    setTempRole(currentIdRol.toString());
+    setTempRole(String(currentIdRol ?? ''));
+    console.log('[Roles] Entrando en edición con:', { idRolPersona, currentIdRol });
   };
 
-  const handleSave = async (idRolPersona, idPersona) => {
+  const handleSave = async (idRolPersona /*, idPersona*/) => {
+    const idRol = Number(tempRole);
+    console.log('[Roles] Validación idRol en editar:', { tempRole, idRol, isFinite: Number.isFinite(idRol) });
+    if (!Number.isFinite(idRol)) {
+      alert('Selecciona un rol válido');
+      return;
+    }
     try {
       await updateRolPersona({
         idRolPersona,
-        body: { idRol: parseInt(tempRole) }
+        body: { idRol }
       }).unwrap();
-      
       setEditingId(null);
       refetch();
     } catch (error) {
@@ -79,6 +116,7 @@ const Roles = ({ setActiveSection }) => {
 
   const handleCancel = () => {
     setEditingId(null);
+    setTempRole('');
   };
 
   const handleDelete = async (idRolPersona) => {
@@ -94,40 +132,38 @@ const Roles = ({ setActiveSection }) => {
   };
 
   const handleAddUser = async () => {
-    if (!selectedUser || !selectedUser.raw || !selectedUser.raw.idPersona) {
+    if (!selectedUser?.raw?.idPersona) {
       alert('Por favor, selecciona un usuario válido con correo ESPOL');
       return;
     }
 
-    // Verificar que selectedRole sea un número válido
-    if (!selectedRole || isNaN(parseInt(selectedRole))) {
+    const idRol = Number(selectedRole);
+    console.log('[Roles] Validación idRol en agregar:', { selectedRole, idRol, isFinite: Number.isFinite(idRol) });
+
+    if (!Number.isFinite(idRol)) {
       alert('Por favor, selecciona un rol válido');
       return;
     }
 
     try {
-      // Asegurarse de que idRol sea un número válido
-      const idRol = parseInt(selectedRole);
-      
-      console.log('Enviando datos:', {
+      console.log('Enviando datos (createRolPersona):', {
         idPersona: selectedUser.raw.idPersona,
-        idRol: idRol,
+        idRol,
         tipoIdPersona: typeof selectedUser.raw.idPersona,
         tipoIdRol: typeof idRol
       });
 
       await createRolPersona({
         idPersona: selectedUser.raw.idPersona,
-        idRol: idRol
+        idRol
       }).unwrap();
       
       setShowAddForm(false);
       setSelectedUser(null);
-      setSelectedRole('');
+      setSelectedRole(''); // ✅ reset correcto
       refetch();
     } catch (error) {
       console.error('Error al agregar usuario:', error);
-      
       if (error.status === 400) {
         alert('Error en los datos enviados. Por favor, verifica que los valores sean correctos.');
       } else {
@@ -140,6 +176,12 @@ const Roles = ({ setActiveSection }) => {
     setShowAddForm(false);
     setSelectedUser(null);
     setSelectedRole('');
+  };
+
+  const onChangeSelectedRole = (e) => {
+    const v = e.target.value;
+    console.log('[Roles] Rol seleccionado en <select> (raw):', v, ' typeof:', typeof v);
+    setSelectedRole(v);
   };
 
   const isLoading = isLoadingPersonas || isLoadingRoles;
@@ -169,19 +211,9 @@ const Roles = ({ setActiveSection }) => {
   }
 
   return (
-    <main className="page-container roles-page">
-      <div className="roles-header">
-        <button 
-          className="back-button"
-          onClick={() => setActiveSection('ajustes')}
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <PageHeader
-          title="Gestión de Roles"
-          subtitle="Administra los permisos y roles de los usuarios del sistema"
-        />
-      </div>
+    <main className="page-container">
+
+      <RolesHeader onBack={onBack} />
 
       <div className="roles-content-full">
         <div className="table-actions">
@@ -191,7 +223,20 @@ const Roles = ({ setActiveSection }) => {
             disabled={isCreating}
           >
             {isCreating ? <Loader size={18} /> : <Plus size={18} />}
-            <span>{isCreating ? 'Agregando...' : 'Agregar usuario'}</span>
+            <span>{isCreating ? 'Agregando...' : 'Agregar usuario/rol'}</span>
+          </button>
+
+          {/* Botón para activar/desactivar edición masiva de badges */}
+          <button
+            className={`btn-edit-badges ${bulkEdit ? 'active' : ''}`}
+            onClick={() => setBulkEdit(v => !v)}
+            title="Editar todos los badges"
+          >
+            <Edit3 size={18} />
+            <span>{bulkEdit ?
+            ('Guardar cambios') :
+            ('Editar roles')
+            }</span>
           </button>
         </div>
 
@@ -220,12 +265,12 @@ const Roles = ({ setActiveSection }) => {
               <label>Seleccionar rol:</label>
               <select
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
+                onChange={onChangeSelectedRole}
                 className="role-select"
               >
                 <option value="">Seleccionar rol</option>
                 {availableRoles.map(role => (
-                  <option key={role.id} value={role.id}>
+                  <option key={String(role.id)} value={String(role.id)}>
                     {role.nombre}
                   </option>
                 ))}
@@ -242,87 +287,59 @@ const Roles = ({ setActiveSection }) => {
         )}
 
         <div className="roles-table-container-full">
-          <table className="roles-table-full">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Roles</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(persona => (
-                <React.Fragment key={persona.idPersona}>
-                  {persona.roles.map((rol, index) => (
-                    <tr key={rol.idRolPersona}>
-                      {index === 0 && (
-                        <td rowSpan={persona.roles.length}>
-                          {persona.apellidos} {persona.nombres}
-                        </td>
-                      )}
-                      <td>
-                        {editingId === rol.idRolPersona ? (
-                          <select 
-                            value={tempRole} 
-                            onChange={(e) => setTempRole(e.target.value)}
-                            className="role-select"
-                            disabled={isUpdating}
-                          >
-                            {availableRoles.map(role => (
-                              <option key={role.id} value={role.id}>
-                                {role.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className={`role-badge role-${rol.nombre.toLowerCase()}`}>
-                            {rol.nombre}
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {editingId === rol.idRolPersona ? (
-                          <div className="action-buttons">
-                            <button 
-                              className="btn-icon save"
-                              onClick={() => handleSave(rol.idRolPersona, persona.idPersona)}
-                              disabled={isUpdating}
-                            >
-                              {isUpdating ? <Loader size={16} /> : <Save size={16} />}
-                            </button>
-                            <button 
-                              className="btn-icon cancel"
-                              onClick={handleCancel}
-                              disabled={isUpdating}
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <button 
-                              className="btn-icon edit"
-                              onClick={() => handleEdit(rol.idRolPersona, rol.idRol)}
-                              disabled={isDeleting}
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button 
-                              className="btn-icon delete"
-                              onClick={() => handleDelete(rol.idRolPersona)}
-                              disabled={isDeleting}
-                            >
-                              {isDeleting ? <Loader size={16} /> : <Trash2 size={16} />}
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
+<table className="roles-table-full">
+  <thead>
+    <tr>
+      <th style={{textAlign: "center"}}>Usuario</th>
+      <th style={{textAlign: "center"}}>Roles</th>
+    </tr>
+  </thead>
+  <tbody>
+    {users.map((persona) => (
+      <React.Fragment key={persona.idPersona}>
+        <tr>
+          <td style={{width: "30%", textAlign: "center"}}>
+            {persona.apellidos} {persona.nombres}
+          </td>
+          <td className="roles-cell">
+            {persona.roles.map((rol) => (
+              <Badge
+                key={rol.idRolPersona}
+                rol={rol}
+                availableRoles={availableRoles}
+                bulkEdit={bulkEdit}
+                isEditing={editingId === rol.idRolPersona}
+                tempValue={tempRole}
+                onTempChange={setTempRole}
+                onDelete={() => handleDelete(rol.idRolPersona)}
+                slugifyRoleName={slugifyRoleName}
+                isUpdating={isUpdating || isDeleting}
+                onBulkChange={async (newIdRol) => {
+                  try {
+                    await updateRolPersona({
+                      idRolPersona: rol.idRolPersona,
+                      body: { idRol: newIdRol }
+                    }).unwrap();
+                    refetch();
+                  } catch (error) {
+                    console.error('Error al actualizar en edición masiva:', error);
+                    alert('No se pudo actualizar el rol. Intenta nuevamente.');
+                  }
+                }}
+              />
+            ))}
+          </td>
+        </tr>
+
+        {/* —— Separador visual por usuario —— */}
+        <tr className="user-separator">
+          <td colSpan={2}></td>
+        </tr>
+      </React.Fragment>
+    ))}
+  </tbody>
+</table>
+
         </div>
 
         <div className="roles-disclaimer">

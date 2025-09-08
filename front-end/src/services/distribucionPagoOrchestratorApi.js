@@ -22,6 +22,14 @@ import { buscarInstituciones } from './buscarInstituciones';
 import { buscarCentros } from './buscarCentros';
 
 /* ───── helpers numéricos (sin centavos) ───── */
+const fmtFecha = (iso) =>
+  iso
+    ? new Date(iso).toLocaleDateString("es-EC", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })
+    : "Sin fecha";
 
 /* ───── API ───── */
 
@@ -66,6 +74,7 @@ export const distribucionPagoOrchestratorApi = createApi({
             resolutionsApi.endpoints.getResolutionById.initiate(idResolucion, { forceRefetch: true })
           ).unwrap();
           const codigoResolucion = res?.codigo ?? res?.codigoResolucion ?? '—';
+          const fechaResolucion = res?.fechaResolucion ?? res?.fechaResolucion ?? 'Sin fecha';
 
           /* 4) Distribución por resolución */
           const distRes = await api.dispatch(
@@ -111,6 +120,7 @@ export const distribucionPagoOrchestratorApi = createApi({
           const dataTabla = {
             nombreTecnologia,
             codigoResolucion,
+            fechaResolucion: fmtFecha(fechaResolucion),
             subtotalAutores,
             autores: listaAutores,
             instituciones,          // ← ya sin el item id=1

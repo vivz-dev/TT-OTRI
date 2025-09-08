@@ -2,20 +2,29 @@
 import React from "react";
 import * as ReactPDF from "@react-pdf/renderer";
 import { styles } from "./docStyles";
+import ESLOGO_URL from "./assets/Espol_Logo_2023.png";
 import { fmtFecha, valueOnDate, money, toNumber } from "./docHelpers";
 
 /* =========================
    Utilidades locales
    ========================= */
-const ESLOGO_PATH = "./Espol_Logo_2023.png"; // sirve desde /public
-
+   
 function fechaHoraEcuadorString(date = new Date()) {
+  // Día de la semana
+  const diaSemana = date.toLocaleDateString("es-EC", {
+    weekday: "long",
+    timeZone: "America/Guayaquil",
+  });
+
+  // Fecha (día, mes, año)
   const fecha = date.toLocaleDateString("es-EC", {
     year: "numeric",
     month: "long",
     day: "numeric",
     timeZone: "America/Guayaquil",
   });
+
+  // Hora (hh:mm:ss en 24h)
   const hora = date.toLocaleTimeString("es-EC", {
     hour12: false,
     hour: "2-digit",
@@ -23,7 +32,10 @@ function fechaHoraEcuadorString(date = new Date()) {
     second: "2-digit",
     timeZone: "America/Guayaquil",
   });
-  return { fecha, hora, composed: `${fecha} a las ${hora}` };
+
+  return {
+    composed: `${diaSemana}, ${fecha} a las ${hora}`,
+  };
 }
 
 /* =========================
@@ -45,13 +57,20 @@ const PagoCounterRow = ({
     />
     {/* columnas de FECHAS con "Pago (k/total) registrado el {fecha}" */}
     {fechas.map((f, idx) => (
-      <ReactPDF.Text key={`cnt-${idx}`} style={{ ...styles.th, width: dateWidth }}>
-        {`Pago (${startIndex + idx + 1}/${totalFechas})\nregistrado el\n${fmtFecha(f)}`}
+      <ReactPDF.Text
+        key={`cnt-${idx}`}
+        style={{ ...styles.th, width: dateWidth }}
+      >
+        {`Pago (${
+          startIndex + idx + 1
+        }/${totalFechas})\nregistrado el\n${fmtFecha(f)}`}
       </ReactPDF.Text>
     ))}
     {/* última columna = Total pagado (solo en la última página) */}
     {showTotals && (
-      <ReactPDF.Text style={{ ...styles.th, width: 80 }}>Total pagado</ReactPDF.Text>
+      <ReactPDF.Text style={{ ...styles.th, width: 80 }}>
+        Total pagado
+      </ReactPDF.Text>
     )}
   </ReactPDF.View>
 );
@@ -67,19 +86,30 @@ const DistribucionFinalPage = ({
   footerText,
 }) => {
   const autores = Array.isArray(data?.autores) ? data.autores : [];
-  const instituciones = Array.isArray(data?.instituciones) ? data.instituciones : [];
+  const instituciones = Array.isArray(data?.instituciones)
+    ? data.instituciones
+    : [];
   const centros = Array.isArray(data?.centros) ? data.centros : [];
   const fechas = Array.isArray(data?.fechas) ? data.fechas : [];
 
   const dateWidth = 100;
 
-  console.log("DATA --->>", data)
+  console.log("DATA --->>", data);
 
   return (
     <ReactPDF.Page size="A4" style={styles.page}>
-      {/* Encabezado */}
+      <ReactPDF.View style={styles.headerWrapper}>
+        {/* Logo arriba-derecha, ahora sí visible */}
+        <ReactPDF.Image
+          src={ESLOGO_URL} // 👈 usa el import bundlado, no una función async
+          style={styles.headerLogoRight}
+          cache={false}
+        />
+      </ReactPDF.View>
+
+      <ReactPDF.View style={{ top: 60}}>
+              {/* Encabezado */}
       <ReactPDF.View style={styles.headerBox}>
-        <ReactPDF.Image src={ESLOGO_PATH} style={styles.headerLogoRight} />
         <ReactPDF.Text style={styles.headerTitle}>
           FORMULARIO DE DISTRIBUCIÓN DE BENEFICIOS ECONÓMICOS DE LA ESPOL
         </ReactPDF.Text>
@@ -127,13 +157,21 @@ const DistribucionFinalPage = ({
       <ReactPDF.View style={styles.headRow}>
         {/* Solo etiqueta, SIN fechas a la derecha */}
         <ReactPDF.Text
-          style={{ ...styles.th, textAlign: "left", flexGrow: 1, paddingLeft: 8 }}
+          style={{
+            ...styles.th,
+            textAlign: "left",
+            flexGrow: 1,
+            paddingLeft: 8,
+          }}
         >
           Autores/Inventores beneficiarios
         </ReactPDF.Text>
         {/* columnas vacías para conservar grilla */}
         {fechas.map((_, i) => (
-          <ReactPDF.Text key={`aut-h-${i}`} style={{ ...styles.th, width: dateWidth }}>
+          <ReactPDF.Text
+            key={`aut-h-${i}`}
+            style={{ ...styles.th, width: dateWidth }}
+          >
             {/* vacío */}
           </ReactPDF.Text>
         ))}
@@ -160,7 +198,9 @@ const DistribucionFinalPage = ({
               </ReactPDF.Text>
             ))}
             {showTotals && (
-              <ReactPDF.Text style={styles.cellMoney}>{money(monto)}</ReactPDF.Text>
+              <ReactPDF.Text style={styles.cellMoney}>
+                {money(monto)}
+              </ReactPDF.Text>
             )}
           </ReactPDF.View>
         );
@@ -171,7 +211,10 @@ const DistribucionFinalPage = ({
           Subtotal de autores/inventores beneficiarios
         </ReactPDF.Text>
         {fechas.map((f, i) => (
-          <ReactPDF.Text key={`aut-sub-${i}`} style={{ ...styles.subtotalMoney, width: dateWidth }}>
+          <ReactPDF.Text
+            key={`aut-sub-${i}`}
+            style={{ ...styles.subtotalMoney, width: dateWidth }}
+          >
             {money(toNumber(data?.porFechaAutores?.[f]))}
           </ReactPDF.Text>
         ))}
@@ -186,13 +229,21 @@ const DistribucionFinalPage = ({
       <ReactPDF.View style={styles.headRow}>
         {/* Solo etiqueta, SIN fechas a la derecha */}
         <ReactPDF.Text
-          style={{ ...styles.th, textAlign: "left", flexGrow: 1, paddingLeft: 8 }}
+          style={{
+            ...styles.th,
+            textAlign: "left",
+            flexGrow: 1,
+            paddingLeft: 8,
+          }}
         >
           Otros beneficiarios institucionales
         </ReactPDF.Text>
         {/* columnas vacías para conservar grilla */}
         {fechas.map((_, i) => (
-          <ReactPDF.Text key={`inst-h-${i}`} style={{ ...styles.th, width: dateWidth }}>
+          <ReactPDF.Text
+            key={`inst-h-${i}`}
+            style={{ ...styles.th, width: dateWidth }}
+          >
             {/* vacío */}
           </ReactPDF.Text>
         ))}
@@ -220,7 +271,9 @@ const DistribucionFinalPage = ({
               </ReactPDF.Text>
             ))}
             {showTotals && (
-              <ReactPDF.Text style={styles.cellMoney}>{money(monto)}</ReactPDF.Text>
+              <ReactPDF.Text style={styles.cellMoney}>
+                {money(monto)}
+              </ReactPDF.Text>
             )}
           </ReactPDF.View>
         );
@@ -243,7 +296,9 @@ const DistribucionFinalPage = ({
               </ReactPDF.Text>
             ))}
             {showTotals && (
-              <ReactPDF.Text style={styles.cellMoney}>{money(monto)}</ReactPDF.Text>
+              <ReactPDF.Text style={styles.cellMoney}>
+                {money(monto)}
+              </ReactPDF.Text>
             )}
           </ReactPDF.View>
         );
@@ -254,7 +309,10 @@ const DistribucionFinalPage = ({
           Subtotal de beneficiarios institucionales
         </ReactPDF.Text>
         {fechas.map((f, i) => (
-          <ReactPDF.Text key={`inst-sub-${i}`} style={{ ...styles.subtotalMoney, width: dateWidth }}>
+          <ReactPDF.Text
+            key={`inst-sub-${i}`}
+            style={{ ...styles.subtotalMoney, width: dateWidth }}
+          >
             {money(toNumber(data?.porFechaInstituciones?.[f]))}
           </ReactPDF.Text>
         ))}
@@ -267,12 +325,17 @@ const DistribucionFinalPage = ({
 
       {/* TOTAL DE FECHAS */}
       <ReactPDF.View style={styles.totalRow}>
-        <ReactPDF.Text style={styles.totalLabel}>Pago total de cada fecha</ReactPDF.Text>
+        <ReactPDF.Text style={styles.totalLabel}>
+          Pago total de cada fecha
+        </ReactPDF.Text>
         {fechas.map((f, i) => (
-          <ReactPDF.Text key={`tot-${i}`} style={{ ...styles.totalMoney, width: dateWidth }}>
+          <ReactPDF.Text
+            key={`tot-${i}`}
+            style={{ ...styles.totalMoney, width: dateWidth }}
+          >
             {money(
               toNumber(data?.porFechaAutores?.[f]) +
-              toNumber(data?.porFechaInstituciones?.[f])
+                toNumber(data?.porFechaInstituciones?.[f])
             )}
           </ReactPDF.Text>
         ))}
@@ -283,7 +346,9 @@ const DistribucionFinalPage = ({
       {/* TOTAL GENERAL SOLO EN LA ÚLTIMA PÁGINA */}
       {showTotals && (
         <ReactPDF.View style={styles.totalRow}>
-          <ReactPDF.Text style={styles.totalLabel}>Pago total hasta la actualidad</ReactPDF.Text>
+          <ReactPDF.Text style={styles.totalLabel}>
+            Pago total hasta la actualidad
+          </ReactPDF.Text>
           {/* columnas de fechas vacías para mantener grilla */}
           {fechas.map((_, i) => (
             <ReactPDF.Text
@@ -292,15 +357,16 @@ const DistribucionFinalPage = ({
             />
           ))}
           {/* total en la COLUMNA FINAL (Total pagado) */}
-          <ReactPDF.Text style={styles.totalMoney}>{money(data?.total)}</ReactPDF.Text>
+          <ReactPDF.Text style={styles.totalMoney}>
+            {money(data?.total)}
+          </ReactPDF.Text>
         </ReactPDF.View>
       )}
+      </ReactPDF.View>
 
       {/* Footer fijo en cada página */}
       <ReactPDF.View style={styles.footer} fixed>
-        <ReactPDF.Text style={styles.footerText}>
-          {footerText}
-        </ReactPDF.Text>
+        <ReactPDF.Text style={styles.footerText}>{footerText}</ReactPDF.Text>
       </ReactPDF.View>
     </ReactPDF.Page>
   );
@@ -317,7 +383,7 @@ export const DistribucionFinalPdf = ({ data, bloquesFechas, totalFechas }) => {
   }
 
   const { composed } = fechaHoraEcuadorString();
-  const footerText = `Este documento ha sido generado por el sistema de la Oficina de Transferencia de Resultados de Investigación (OTRI) en ${composed}`;
+  const footerText = `Este documento ha sido generado por el sistema de la Oficina de Transferencia de Resultados de Investigación (OTRI) el ${composed}`;
 
   return (
     <ReactPDF.Document>
@@ -329,7 +395,7 @@ export const DistribucionFinalPdf = ({ data, bloquesFechas, totalFechas }) => {
             data={{ ...data, fechas: fechasChunk }}
             totalFechas={totalFechas}
             startIndex={offsets[idx] || 0}
-            showTotals={isLast}   // solo última página
+            showTotals={isLast} // solo última página
             footerText={footerText}
           />
         );

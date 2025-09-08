@@ -54,7 +54,7 @@ const Page = ({ activeSection, setActiveSection }) => {
       case "pagos":
         return <PagosPage />;
       case "roles-permisos":
-        return <Roles setActiveSection={setActiveSection} />;
+        return <Roles onBack={() => setActiveSection("ajustes")} />;
      case "ajustes":
         return <Ajustes setActiveSection={setActiveSection} />;
       default:

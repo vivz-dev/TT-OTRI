@@ -22,7 +22,7 @@ const money = (n) =>
  *  }
  */
 const DistribucionFinal = ({ data }) => {
-  // console.log("DATA --->>>",data)
+  // console.log("DATA PARA FINAL --->>> ", data);
   const autores = Array.isArray(data?.autores) ? data.autores : [];
   const instituciones = Array.isArray(data?.instituciones)
     ? data.instituciones
@@ -30,6 +30,7 @@ const DistribucionFinal = ({ data }) => {
   const centros = Array.isArray(data?.centros) ? data.centros : [];
 
   // console.log("centros ---> ", centros)
+  const fechaResolucion = data?.fechaResolucion ?? "Sin fecha";
 
   // Normaliza por si viniera como solo IDs (retrocompat):
   const institucionesNorm = useMemo(() => {
@@ -64,7 +65,7 @@ const DistribucionFinal = ({ data }) => {
             <td className="" colSpan={2} style={{textAlign: "justify"}}>
               {`Con base al acuerdo de distribución de beneficios económicos de autores/inventores por explotación de la Propiedad Intelectual, y a la resolución No. ${
                 data?.codigoResolucion ?? "—"
-              } de fecha 7 de julio del año 2024, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
+              } de fecha ${fechaResolucion}, la distribución de los beneficios económicos que reciba la ESPOL por la explotación de la Propiedad Intelectual de la tecnología/know how descrita, se distribuya conforme al siguiente detalle:`}
             </td>
           </tr>
         </tbody>

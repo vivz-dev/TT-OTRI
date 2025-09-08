@@ -25,6 +25,10 @@ export const styles = ReactPDF.StyleSheet.create({
   },
 
   /* ===== Encabezado ===== */
+   headerWrapper: {
+    position: "relative",
+    marginBottom: 10,
+  },
   headerBox: {
     position: "relative",
     backgroundColor: palette.primary,
@@ -42,9 +46,9 @@ export const styles = ReactPDF.StyleSheet.create({
   },
   headerLogoRight: {
     position: "absolute",
-    top: 6,
-    right: 8,
-    height: 22,         // "altura pequeña"
+    top: 25,
+    left: 8,
+    height: 30,         // "altura pequeña"
     opacity: 0.5,       // 50% de transparencia
   },
 

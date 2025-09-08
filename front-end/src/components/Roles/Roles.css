@@ -84,28 +84,6 @@
   border-bottom: none;
 }
 
-.role-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.role-administrador {
-  background-color: #fff0f0;
-  color: #dc3545;
-}
-
-.role-editor {
-  background-color: #e6f7ff;
-  color: #007bff;
-}
-
-.role-lector {
-  background-color: #f0f8ff;
-  color: #17a2b8;
-}
-
 .role-select {
   padding: 6px 12px;
   border-radius: 4px;
@@ -258,3 +236,141 @@
 .form-actions button:last-child:hover {
   background-color: #5a6268;
 }
+
+/* ——— Separador visual por usuario ——— */
+.user-separator td {
+  padding: 0;
+  height: 8px;
+  border-bottom: 1px solid #e5e7eb; /* gris claro */
+}
+
+/* ——— Hover con "X" para eliminar ——— */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.role-badge:hover {
+  /* background: var(--bullet-rojo-text); */
+  background: rgb(210, 39, 39);
+  color: white;
+}
+
+.role-badge:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.badge-delete {
+  display: none;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.role-badge:hover .badge-delete {
+  display: inline-flex;
+}
+
+/* Icono a la izquierda */
+.badge-icon {
+  flex-shrink: 0;
+}
+
+.badge-text {
+  line-height: 1;
+}
+
+/* ——— Select inline (edición masiva) ——— */
+.role-select-inline {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+/* ——— Botón Edición de Badges ——— */
+.btn-edit-badges {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.btn-edit-badges.active {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+}
+
+/* Columna de roles: muestra badges en fila con wrap */
+.roles-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px; /* espacio entre badges */
+  align-items: center;
+}
+
+
+
+/* COLOR SEGUN ROL */
+.role-administrador-de-contrato-otri {
+  background-color: #E6ECFB;
+  color: #132c6e;
+}
+
+.role-administrador-de-sistema-otri {
+    background-color: #C1CEF6;
+    color: #120c8a;
+}
+
+.role-autor-otri{
+  background-color: #9AB0F0;
+  color: #360679;
+}
+
+.role-autoridad-otri {
+  /* background-color: #738FE9;   */
+  background-color: #ffecb8;  
+  color: #985511;
+}
+
+.role-director-de-la-otri {
+   background-color: #4C70E5;
+}
+
+.role-financiero-otri {
+  background-color: #4169E1;
+}
+
+.role-gerencia-juridica-otri {
+  background-color: #2F4EC0;
+}
+
+.role-gestor-de-la-otri {
+  background-color: #1F358C;  
+}
+
+
+
