@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj": {}
+    "/Users/guillermoarevalosaltos/Documents/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj": {}
   },
   "projects": {
-    "/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj": {
+    "/Users/guillermoarevalosaltos/Documents/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj",
+        "projectUniqueName": "/Users/guillermoarevalosaltos/Documents/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj",
         "projectName": "TT-OTRI",
-        "projectPath": "/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj",
-        "packagesPath": "/Users/vivianavera03/.nuget/packages/",
-        "outputPath": "/Users/vivianavera03/Desktop/ESPOL/integradora/github/TT-OTRI/back/TT-OTRI/obj/",
+        "projectPath": "/Users/guillermoarevalosaltos/Documents/TT-OTRI/back/TT-OTRI/TT-OTRI.csproj",
+        "packagesPath": "/Users/guillermoarevalosaltos/.nuget/packages/",
+        "outputPath": "/Users/guillermoarevalosaltos/Documents/TT-OTRI/back/TT-OTRI/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/vivianavera03/.nuget/NuGet/NuGet.Config"
+          "/Users/guillermoarevalosaltos/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -57,7 +57,7 @@
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[8.1.2, )"
+              "version": "[9.0.6, )"
             },
             "System.IdentityModel.Tokens.Jwt": {
               "target": "Package",
@@ -78,15 +78,15 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Runtime.linux-x64",
-              "version": "[8.0.18, 8.0.18]"
+              "version": "[8.0.20, 8.0.20]"
             },
             {
               "name": "Microsoft.NETCore.App.Host.linux-x64",
-              "version": "[8.0.18, 8.0.18]"
+              "version": "[8.0.20, 8.0.20]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.linux-x64",
-              "version": "[8.0.18, 8.0.18]"
+              "version": "[8.0.20, 8.0.20]"
             }
           ],
           "frameworkReferences": {
@@ -97,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.412/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.414/PortableRuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {

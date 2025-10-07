@@ -9,6 +9,8 @@
     <!-- PUBLICAR PARA LINUX EN DOCKER -->
     <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +18,7 @@
     <!-- 👇 Paquete correcto para .NET 8 en LINUX -->
     <PackageReference Include="Net.IBM.Data.Db2-lnx" Version="8.0.0.500" />
     <PackageReference Include="Scrutor" Version="6.1.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.1" />
   </ItemGroup>
 

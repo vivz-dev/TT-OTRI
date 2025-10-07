@@ -10,10 +10,17 @@ using TT_OTRI.Infrastructure.Auth;
 using TT_OTRI.Infrastructure.Cors;
 using TT_OTRI.Infrastructure.Db2;
 using TT_OTRI.Infrastructure.Swagger;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var cfg = builder.Configuration;
+
+// Servicios para habilitar Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddControllers();
 
 // Evitar mapeo automático de claims (recomendado)
 JwtSecurityTokenHandler.DefaultMapInboundClaims = false;
@@ -30,15 +37,18 @@ services.AddDb2(cfg);
 services.AddAppAuthentication(cfg);
 services.AddAppCors(cfg);
 services.AddAppSwagger();
+services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
 
 var app = builder.Build();
 
-// Swagger solo en dev
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger
+app.UseSwagger();
+app.UseSwaggerUI();
 
 // HTTPS (opcional en dev; recomendado en prod)
 // Solo redirige si existe puerto HTTPS configurado
